@@ -1,0 +1,32 @@
+﻿<UserControl x:Class="VGMGUI.AudioPlayer"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:VGMGUI"
+             xmlns:benlib="clr-namespace:BenLib.WPF;assembly=BenLib.WPF"
+             mc:Ignorable="d" 
+             d:DesignHeight="55" d:DesignWidth="500">
+    <Border BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderBrush}" Background="White">
+        <Grid>
+            <Label Name="currenttimelabel" Content="00:00:00" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,1,0,0"/>
+            <Slider Name="positionslider" VerticalAlignment="Top" Maximum="100" PreviewMouseUp="positionslider_PreviewMouseUp" IsEnabled="False" Margin="55,3,59,0" ValueChanged="positionslider_ValueChanged" Width="Auto" MouseWheel="positionslider_MouseWheel" benlib:GrabAnywhere.Enabled="True"/>
+            <Label Name="totaltimelabel" Content="00:00:00" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,10,0"/>
+            <Border Height="20" Width="20" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="8,0,0,9" Background="Transparent" PreviewMouseUp="VolumeIcon_PreviewMouseUp"> <ContentPresenter Name="VolumeIcon" Content="{DynamicResource High Volume}"/> </Border>
+            <Slider Name="volumeslider" Margin="30,0,0,13" VerticalAlignment="Bottom" Maximum="100" Value="100" ValueChanged="volumeslider_ValueChanged" Height="14" HorizontalAlignment="Left" Width="80" MouseWheel="volumeslider_MouseWheel" FocusVisualStyle="{x:Null}" ToolTip="{DynamicResource AP_Volume}" benlib:GrabAnywhere.Enabled="True"/>
+            <StackPanel Margin="128,0,0,5" VerticalAlignment="Bottom" HorizontalAlignment="Left" Orientation="Horizontal">
+                <Button Name="PlayButton" Style="{StaticResource ButtonNoBoldFocus}" Height="30" Width="30" VerticalAlignment="Bottom" HorizontalAlignment="Left" Click="PlayButton_Click" Content="{DynamicResource Play}" ToolTip="{DynamicResource AP_Play}"/>
+                <Button Name="PreviousButton" Style="{StaticResource ButtonNoBoldFocus}" Height="24" Width="24" Margin="14,0,0,3" VerticalAlignment="Bottom" HorizontalAlignment="Left" Content="{DynamicResource Skip Previous}" ToolTip="{DynamicResource AP_Previous}"/>
+                <Button Name="StopButton" Style="{StaticResource ButtonNoBoldFocus}" Height="24" Width="24" Margin="5,0,0,3" VerticalAlignment="Bottom" Click="StopButton_Click" HorizontalAlignment="Left" Content="{DynamicResource Stop}" ToolTip="{DynamicResource AP_Stop}"/>
+                <Button Name="NextButton" Style="{StaticResource ButtonNoBoldFocus}" Height="24" Width="24" Margin="5,0,0,3" VerticalAlignment="Bottom" HorizontalAlignment="Left" Content="{DynamicResource Skip Next}" ToolTip="{DynamicResource AP_Next}"/>
+                <Button Name="LoopButton" Style="{StaticResource ButtonNoBoldFocus}" Height="24" Width="24" Margin="14,0,0,3" VerticalAlignment="Bottom" Click="LoopButton_Click" HorizontalAlignment="Left" Content="{DynamicResource Loop}" ToolTip="{DynamicResource AP_LOOP_All}"/>
+                <Button Name="AddButton" Style="{StaticResource ButtonNoBoldFocus}" Height="24" Width="24" Margin="14,0,0,3" VerticalAlignment="Bottom" HorizontalAlignment="Left" Content="{DynamicResource Add}" ToolTip="{DynamicResource AP_AddFiles}"/>
+                <Button Name="RemButton" Style="{StaticResource ButtonNoBoldFocus}" Height="24" Width="24" Margin="5,0,0,3" VerticalAlignment="Bottom" HorizontalAlignment="Left" Content="{DynamicResource Minus}" ToolTip="{DynamicResource AP_Delete}"/>
+                <Button Name="UpButton" Style="{StaticResource ButtonNoBoldFocus}" Height="24" Width="24" Margin="5,0,0,3" VerticalAlignment="Bottom" HorizontalAlignment="Left" Content="{DynamicResource Chevron Up}" ToolTip="{DynamicResource AP_Up}"/>
+                <Button Name="DownButton" Style="{StaticResource ButtonNoBoldFocus}" Height="24" Width="24" Margin="5,0,0,3" VerticalAlignment="Bottom" HorizontalAlignment="Left" Content="{DynamicResource Chevron Down}" ToolTip="{DynamicResource AP_Down}"/>
+                <Button Name="SettingsButton" Style="{StaticResource ButtonNoBoldFocus}" Height="24" Width="24" Margin="14,0,0,3" VerticalAlignment="Bottom" HorizontalAlignment="Left" Content="{DynamicResource Settings}" ToolTip="{DynamicResource AP_Settings}"/>
+                <Button Name="DownloadButton" Style="{StaticResource ButtonNoBoldFocus}" Height="24" Width="24" Margin="5,0,0,3" VerticalAlignment="Bottom" HorizontalAlignment="Left" Content="{DynamicResource Down}" ToolTip="{DynamicResource AP_Download}"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This file is NOT compatible with Silverlight-->
+<Viewbox xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Stretch="Uniform">
+  <Canvas Name="Calque_1" Canvas.Left="0" Canvas.Top="0" Width="500" Height="500">
+    <Canvas.RenderTransform>
+      <TranslateTransform X="0" Y="0"/>
+    </Canvas.RenderTransform>
+    <Canvas.Resources/>
+    <!--Unknown tag: metadata-->
+    <!--Unknown tag: sodipodi:namedview-->
+    <Canvas Name="surface1">
+      <Path xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Name="path4277" Fill="#000000">
+        <Path.Data>
+          <PathGeometry Figures="M442.6 0.2L167.8 37.7c-25 2.5-42.5 25-42.5 50V345c-12.5-2.5-25-2.5-37.5 0c-47.5 12.5-87.4 55-87.4 97.4   s40 67.4 87.4 55s87.4-55 87.4-97.4V185L450 147.6v169.8c-12.5-2.5-25 0-37.5 2.5c-47.5 12.5-87.4 55-87.4 97.4s40 67.4 87.4 55   c47.5-12.5 87.4-55 87.4-97.4V50.1C500 20.2 472.5-2.3 442.6 0.2z" FillRule="NonZero"/>
+        </Path.Data>
+      </Path>
+    </Canvas>
+  </Canvas>
+</Viewbox>

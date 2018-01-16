@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This file is NOT compatible with Silverlight-->
+<Viewbox x:Key="Settings" x:Shared="False" Stretch="Uniform" Height="12">
+  <Canvas Name="SettingsLayer" Canvas.Left="0" Canvas.Top="0" Width="500" Height="500">
+    <Canvas.RenderTransform>
+      <TranslateTransform X="0" Y="0"/>
+    </Canvas.RenderTransform>
+    <Canvas.Resources/>
+    <!--Unknown tag: metadata-->
+    <!--Unknown tag: sodipodi:namedview-->
+    <Canvas Name="surface1">
+      <Path Name="path4" Fill="#000000">
+        <Path.Data>
+          <PathGeometry Figures="M500 287.9v-76.9l-73.4-12c-3.8-13.3-9.1-26-15.7-38l42.8-61l-54.4-54.3L339 89c-12.1-6.8-25-12.1-38.3-15.9   L287.9 0H211l-11.9 72.9c-13.4 3.8-26.3 9.1-38.4 15.7l-60.1-42.9L46.4 100l42.2 60.4c-6.8 12.2-12.2 25.2-16.1 38.6L0 211.1v76.9   l72.4 12.8c3.9 13.5 9.2 26.4 16.1 38.6l-42.8 59.8l54.3 54.4l60.5-42.3c12.2 6.7 25.1 12 38.4 15.9l12.1 72.9h76.8l13-73.1   c13.4-3.9 26.2-9.3 38.3-16l60.9 42.7l54.4-54.4l-43.5-60.4c6.7-12.1 11.9-24.8 15.7-38L500 287.9z M250 320c-38.6 0-70-31.4-70-70   s31.4-70 70-70s70 31.4 70 70S288.6 320 250 320z" FillRule="NonZero"/>
+        </Path.Data>
+      </Path>
+    </Canvas>
+  </Canvas>
+</Viewbox>

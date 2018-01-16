@@ -1,0 +1,144 @@
+﻿<UserControl x:Class="VGMGUI.FileList"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:VGMGUI"
+             xmlns:benlib="clr-namespace:BenLib.WPF;assembly=BenLib.WPF"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="1800" Loaded="UserControl_Loaded">
+    <UserControl.Resources>
+        <Style x:Key="{x:Type ListViewItem}" TargetType="{x:Type ListViewItem}" BasedOn="{StaticResource {x:Type ListViewItem}}">
+            <Setter Property="FontWeight" Value="{Binding FontWeight}"/>
+            <Setter Property="ContextMenu" Value="{DynamicResource FileListItemCM}"/>
+            <Setter Property="IsSelected" Value="{Binding Selected}"/>
+        </Style>
+        <local:FilterConverter x:Key="filterConverter"/>
+    </UserControl.Resources>
+    <Grid>
+        <local:SearchBox Height="63" x:Name="SearchBox" Panel.ZIndex="1" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,21,0,0" Visibility="Collapsed" IsVisibleChanged="SearchBox_IsVisibleChanged"/>
+        <ListView Name="FILEList" SelectionMode="Extended" benlib:ListBoxSelector.Enabled="True" AllowDrop="True" DragEnter="FILEList_DragEnterOverLeave" DragOver="FILEList_DragEnterOverLeave" DragLeave="FILEList_DragEnterOverLeave" Drop="FILEList_Drop" SelectionChanged="FILEList_SelectionChanged" GridViewColumnHeader.Click="FILEListHeader_Click" PreviewKeyDown="FILEList_PreviewKeyDown" FocusVisualStyle="{x:Null}">
+            <ListView.View>
+                <GridView>
+
+                    <GridViewColumn Width="27" HeaderContainerStyle="{StaticResource NoResizeColumn}">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox x:Name="SelectOne" IsChecked="{Binding Checked}" HorizontalContentAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" IsThreeState="False" Checked="SelectOne_Checked" Unchecked="SelectOne_UnChecked"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                        <CheckBox x:Name="SelectAll" HorizontalAlignment="Center" VerticalAlignment="Center" IsThreeState="False" IsChecked="True" Checked="SelectAll_Checked" Unchecked="SelectAll_UnChecked" Margin="4,0,0,0" />
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="{DynamicResource FL_COL_Name}" Width="200">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="-2,0,0,0">
+                                    <ContentPresenter Height="16" Width="16" Content="{Binding Icon}"/>
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding Name}" Margin="4,0,0,0" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Name}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="{DynamicResource FL_COL_State}" Width="112">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding State}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=State}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="{DynamicResource FL_COL_Duration}" Width="80">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DurationString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Duration}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="{DynamicResource FL_COL_Format}" Width="200">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Format}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Format}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="{DynamicResource FL_COL_Encoding}" Width="200">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Encoding}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Encoding}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="{DynamicResource FL_COL_SampleRate}" Width="70">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding SampleRateString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=SampleRate}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="{DynamicResource FL_COL_Channels}" Width="60">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Channels}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Channels}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="{DynamicResource FL_COL_Loop}" Width="50">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding LoopFlagString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Loop}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="{DynamicResource FL_COL_Layout}" Width="180">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Layout}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Layout}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="{DynamicResource FL_COL_Interleave}" Width="90">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding InterleaveString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Interleave}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="{DynamicResource FL_COL_Folder}" Width="300">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Folder}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Folder}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="{DynamicResource FL_COL_Size}" Width="70">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding SizeString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Size}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="{DynamicResource FL_COL_Date}" Width="150">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DateString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Date}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </Grid>
+</UserControl>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This file is NOT compatible with Silverlight-->
+<Viewbox x:Key="Settings" x:Shared="False" Stretch="Uniform" Height="12">
+  <Canvas Name="SettingsLayer" Canvas.Left="0" Canvas.Top="0" Width="512" Height="512">
+    <Canvas.RenderTransform>
+      <TranslateTransform X="0" Y="0"/>
+    </Canvas.RenderTransform>
+    <Canvas.Resources/>
+    <!--Unknown tag: metadata-->
+    <!--Unknown tag: sodipodi:namedview-->
+    <Canvas Name="surface1">
+      <Path Name="path4" Fill="#000000">
+        <Path.Data>
+          <PathGeometry Figures="M445.8 281.6c0-7.7 2.6-17.9 2.6-25.6c0-7.7 0-17.9-2.6-25.6l53.8-38.4c5.1-2.6 7.7-10.2 2.6-17.9L451 84.5   c-2.6-7.7-10.3-10.3-15.4-7.7L374.2 105c-12.8-10.3-30.8-20.5-46.1-25.6l-7.7-66.6c0-7.7-5.1-12.8-12.8-12.8H205.2   c-7.7 0-12.8 5.1-12.8 12.8l-7.7 64c-17.9 7.7-33.3 15.4-46.1 25.6L77.2 76.8c-5.1-2.6-12.8 0-15.4 5.1l-51.2 89.6   c-5.1 7.7-5.1 15.4 2.6 17.9l53.8 41c0 7.7-2.6 17.9-2.6 25.6c0 7.7 0 17.9 2.6 25.6L13.2 320c-5.1 2.6-7.7 10.2-2.6 17.9   l51.2 89.6c2.6 7.7 10.3 10.3 15.4 7.7l61.4-28.2c12.8 10.3 30.8 20.5 46.1 25.6l7.7 66.6c0 7.7 5.1 12.8 12.8 12.8h102.4   c7.7 0 12.8-5.1 12.8-12.8l7.7-66.6c17.9-7.6 33.3-15.3 46.1-25.6l61.4 28.2c5.1 2.6 12.8 0 15.4-5.1l51.2-89.6   c2.5-5.1 2.5-12.8-2.6-17.9L445.8 281.6z M256.4 358.4C200.1 358.4 154 312.3 154 256s46.1-102.4 102.4-102.4   S358.8 199.7 358.8 256S312.7 358.4 256.4 358.4z" FillRule="NonZero"/>
+        </Path.Data>
+      </Path>
+    </Canvas>
+  </Canvas>
+</Viewbox>

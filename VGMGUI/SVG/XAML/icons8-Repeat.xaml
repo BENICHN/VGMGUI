@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This file is NOT compatible with Silverlight-->
+<Viewbox xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Stretch="Uniform">
+  <Canvas Name="Calque_1" Canvas.Left="0" Canvas.Top="0" Width="500" Height="500">
+    <Canvas.RenderTransform>
+      <TranslateTransform X="0" Y="0"/>
+    </Canvas.RenderTransform>
+    <Canvas.Resources/>
+    <!--Unknown tag: metadata-->
+    <!--Unknown tag: sodipodi:namedview-->
+    <Canvas Name="surface1">
+      <Path xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Name="path4289" Fill="#000000">
+        <Path.Data>
+          <PathGeometry Figures="M78.4 53.9c-33.1 0-61.3 28.2-61.3 61.3v269.6c0 33.1 28.2 61.3 61.3 61.3h88.2l-19.6 19.6l34.3 34.3   l61.3-61.3l17.2-17.2l-17.2-17.2l-61.3-61.3l-34.3 34.3l19.6 19.6H78.4c-7.4 0-12.3-4.9-12.3-12.3V115.2c0-7.4 4.9-12.3 12.3-12.3   h147.1v-49H78.4z" FillRule="NonZero"/>
+        </Path.Data>
+      </Path>
+    </Canvas>
+    <Path xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Name="path4292" Fill="#000000">
+      <Path.Data>
+        <PathGeometry Figures="M318.6 0l-61.3 61.3l-17.2 17.2l17.2 17.2l61.3 61.3l34.3-34.3l-19.6-19.6h88.2c7.4 0 12.3 4.9 12.3 12.3v269.6  c0 7.4-4.9 12.3-12.3 12.3H274.5v49h147.1c33.1 0 61.3-28.2 61.3-61.3V115.2c0-33.1-28.2-61.3-61.3-61.3h-88.2l19.6-19.6L318.6 0z" FillRule="NonZero"/>
+      </Path.Data>
+    </Path>
+  </Canvas>
+</Viewbox>

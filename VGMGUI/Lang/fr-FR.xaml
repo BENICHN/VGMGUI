@@ -1,0 +1,210 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    
+    <sys:String x:Key="MW_Input">Entrée :</sys:String>
+    <sys:String x:Key="MW_Format">Format :</sys:String>
+    <sys:String x:Key="MW_Encoding">Encodage :</sys:String>
+    <sys:String x:Key="MW_Channels">Cannaux :</sys:String>
+    <sys:String x:Key="MW_SampleRate">Taux d'échantillonnage :</sys:String>
+    <sys:String x:Key="MW_TotalSamples">Nombre total d'échantillons :</sys:String>
+    <sys:String x:Key="MW_Layout">Structure :</sys:String>
+    <sys:String x:Key="MW_Interleave">Entrelacement :</sys:String>
+    <sys:String x:Key="MW_Loop">Boucle</sys:String>
+    <sys:String x:Key="MW_LoopStart">Début :</sys:String>
+    <sys:String x:Key="MW_LoopEnd">Fin :</sys:String>
+    <sys:String x:Key="MW_Output">Sortie :</sys:String>
+    <sys:String x:Key="MW_LoopCount">Nombre de boucles (défaut {0}) :</sys:String>
+    <sys:String x:Key="MW_StartEndLoop">Forcer la boucle Début → Fin</sys:String>
+    <sys:String x:Key="MW_FadeOut">Fondu de sortie</sys:String>
+    <sys:String x:Key="MW_FadeDelay">Délai avant le fondu (défaut {0}) :</sys:String>
+    <sys:String x:Key="MW_FadeTime">Durée du fondu de sortie (défaut {0}) :</sys:String>
+    <sys:String x:Key="MW_Dest">Destination :</sys:String>
+    <sys:String x:Key="MW_PreviewInPlayer">Aperçu dans le lecteur</sys:String>
+    <sys:String x:Key="MW_MainDest">Destination principale:</sys:String>
+    <sys:String x:Key="MW_StartConversion">DÉMARRER LA CONVERSION</sys:String>
+    <sys:String x:Key="MW_Pause">PAUSE</sys:String>
+    <sys:String x:Key="MW_Resume">REPRENDRE</sys:String>
+    <sys:String x:Key="MW_Cancel">ANNULER</sys:String>
+    <sys:String x:Key="MW_StartConversionToolTip">Démarrer la conversion (F5)</sys:String>
+    <sys:String x:Key="MW_PauseToolTip">Suspendre la conversion (F5)</sys:String>
+    <sys:String x:Key="MW_ResumeToolTip">Reprendre la conversion (F5)</sys:String>
+    <sys:String x:Key="MW_CancelToolTip">Annuler la conversion (Ctrl+F5)</sys:String>
+    <sys:String x:Key="MW_Multiple">&lt;Multiple&gt;</sys:String>
+
+    <sys:String x:Key="ERR_UnauthorizedChars">La destination principale contient des caractères non autorisés.</sys:String>
+    <sys:String x:Key="ERR_UnauthorizedAccess1">L'accès au chemin d'accès '</sys:String>
+    <sys:String x:Key="ERR_UnauthorizedAccess2">' est refusé.</sys:String>
+    <sys:String x:Key="ERR_AccessDenied">Accèss refusé</sys:String>
+    <sys:String x:Key="ERR_TryAdmin">Essayez d'exécuter VGMGUI en tant qu'administrateur.</sys:String>
+    <sys:String x:Key="ERR_VGMStreamNotFound">Impossible de trouver le fichier "vgmstream\test.exe".&#xD;&#xA;Voulez-vous le télécharger ?</sys:String>
+    <sys:String x:Key="ERR_FileNotFound">Fichier introuvable</sys:String>
+    <sys:String x:Key="ERR_SameSourceAndDest">La destination est identique à la source.</sys:String>
+
+    <sys:String x:Key="Q_Cancel">Voulez-vous vraiment annuler la conversion?</sys:String>
+    <sys:String x:Key="Q_DeleteCanceled">Supprimer les fichiers annulés ?</sys:String>
+
+    <sys:String x:Key="WW_Running">Opération en cours</sys:String>
+    <sys:String x:Key="WW_DownloadOf">Téléchargement de</sys:String>
+    <sys:String x:Key="WW_Decompression">Décompression...</sys:String>
+
+    <sys:String x:Key="INFO_ConversionCompleted">Conversion terminée</sys:String>
+    <sys:String x:Key="INFO_Info">Info</sys:String>
+
+    <sys:String x:Key="CM_Convert">Convertir</sys:String>
+    <sys:String x:Key="CM_Analyze">Analyser</sys:String>
+    <sys:String x:Key="CM_OpenFP">Ouvrir l'emplacement du fichier</sys:String>
+    <sys:String x:Key="CM_CopyFP">Copier en tant que chemin d'accès</sys:String>
+    <sys:String x:Key="CM_Delete">Supprimer</sys:String>
+    <sys:String x:Key="CM_Check">Cocher</sys:String>
+    <sys:String x:Key="CM_UnCheck">Décocher</sys:String>
+    <sys:String x:Key="CM_PlayIn">Lire l'entrée</sys:String>
+    <sys:String x:Key="CM_PlayOut">Lire la sortie</sys:String>
+    <sys:String x:Key="CM_Overwrite">Écraser</sys:String>
+    <sys:String x:Key="CM_Number">Numéroter</sys:String>
+    <sys:String x:Key="CM_Ignore">Ignorer</sys:String>
+
+    <sys:String x:Key="SRCH_Case">Respecter la case</sys:String>
+
+    <sys:String x:Key="ABOUT_Credits">Crédits</sys:String>
+    <sys:String x:Key="ABOUT_Icons">Icônes :</sys:String>
+    <sys:String x:Key="ABOUT_OtherIcons">Autres icônes :</sys:String>
+    <sys:String x:Key="ABOUT_LoadingCircle">Logo chargement :</sys:String>
+
+    <sys:String x:Key="AP_AddFiles">Ajouter des fichiers (Ctrl+O / Inser)</sys:String>
+    <sys:String x:Key="AP_AddFolders">Ajouter des dossiers (Ctrl+Maj+O / Ctrl+Inser)</sys:String>
+    <sys:String x:Key="AP_Play">Lire (Espace)</sys:String>
+    <sys:String x:Key="AP_Resume">Reprendre (Espace)</sys:String>
+    <sys:String x:Key="AP_Pause">Pause (Espace)</sys:String>
+    <sys:String x:Key="AP_Previous">Précédent (PageUp)</sys:String>
+    <sys:String x:Key="AP_Next">Suivant (PageDown)</sys:String>
+    <sys:String x:Key="AP_Stop">Stop (S)</sys:String>
+    <sys:String x:Key="AP_Volume">Volume</sys:String>
+    <sys:String x:Key="AP_Settings">Paramètres (Ctrl+P)</sys:String>
+    <sys:String x:Key="AP_Download">Télécharger la dernière version de VGMStream (Ctrl+D)</sys:String>
+    <sys:String x:Key="AP_LOOP_None">Lire une fois</sys:String>
+    <sys:String x:Key="AP_LOOP_All">Lire tout</sys:String>
+    <sys:String x:Key="AP_LOOP_Random">Aléatoire</sys:String>
+
+    <sys:String x:Key="TBI_Play">Lire</sys:String>
+    <sys:String x:Key="TBI_Resume">Reprendre</sys:String>
+    <sys:String x:Key="TBI_Pause">Pause</sys:String>
+    <sys:String x:Key="TBI_Previous">Précédent</sys:String>
+    <sys:String x:Key="TBI_Next">Suivant</sys:String>
+    <sys:String x:Key="TBI_Stop">Stop</sys:String>
+
+    <sys:String x:Key="ASKW_H1">Certains fichiers existent déjà dans la destination</sys:String>
+    <sys:String x:Key="ASKW_H2">Que souhaitez-vous faire ?</sys:String>
+    <sys:String x:Key="ASKW_COL_1">Fichier</sys:String>
+    <sys:String x:Key="ASKW_COL_2">Écraser</sys:String>
+    <sys:String x:Key="ASKW_COL_3">Numéroter</sys:String>
+
+    <sys:String x:Key="INPBOX_RiseOf">Monter de : </sys:String>
+    <sys:String x:Key="INPBOX_DescendOf">Descendre de : </sys:String>
+    <sys:String x:Key="INPBOX_MashRiseOf">Rassembler vers le haut et monter de :</sys:String>
+    <sys:String x:Key="INPBOX_MashDescendOf">Rassembler vers le bas et descendre de :</sys:String>
+
+    <sys:String x:Key="AP_Up">Monter (+)</sys:String>
+    <sys:String x:Key="AP_Down">Descendre (-)</sys:String>
+    <sys:String x:Key="AP_MashUp">Rassembler vers le haut (Alt++)</sys:String>
+    <sys:String x:Key="AP_MashDown">Rassembler vers le bas (Alt+-)</sys:String>
+    <sys:String x:Key="AP_CustomUp">Monter de... (Ctrl++)</sys:String>
+    <sys:String x:Key="AP_CustomDown">Descendre de... (Ctrl+-)</sys:String>
+    <sys:String x:Key="AP_First">Monter à la première place (Maj++)</sys:String>
+    <sys:String x:Key="AP_Last">Descendre à la dernière place (Maj+-)</sys:String>
+    <sys:String x:Key="AP_CustomUpMash">Rassembler vers le haut et monter de... (Alt+Ctrl++)</sys:String>
+    <sys:String x:Key="AP_CustomDownMash">Rassembler vers le bas et descendre de... (Alt+Ctrl+-)</sys:String>
+    <sys:String x:Key="AP_FirstMash">Rassembler vers le haut et monter à la première place (Alt+Maj++)</sys:String>
+    <sys:String x:Key="AP_LastMash">Rassembler vers le bas et descendre à la dernière place (Alt+Maj+-)</sys:String>
+
+    <sys:String x:Key="AP_Delete">Supprimer (Suppr)</sys:String>
+    <sys:String x:Key="AP_DeleteAll">Supprimer tout (Maj+Suppr)</sys:String>
+    <sys:String x:Key="AP_DeleteInvalidFiles">Supprimer les fichiers invalides (Ctrl+Suppr)</sys:String>
+
+    <sys:String x:Key="MW_Copy">Copier les informations</sys:String>
+    <sys:String x:Key="MW_Paste">Coller les informations</sys:String>
+    <sys:String x:Key="MW_SetAsDefault">Définir par défaut</sys:String>
+
+    <sys:String x:Key="TT_seconds">secondes</sys:String>
+    <sys:String x:Key="TT_samples">échantillons</sys:String>
+    <sys:String x:Key="TT_Error">Erreur</sys:String>
+    <sys:String x:Key="TT_UnhandledException">Exception non gérée</sys:String>
+    <sys:String x:Key="TT_Yes">Oui</sys:String>
+    <sys:String x:Key="TT_No">Non</sys:String>
+    <sys:String x:Key="TT_OK">OK</sys:String>
+    <sys:String x:Key="TT_Apply">Appliquer</sys:String>
+    <sys:String x:Key="TT_Cancel">Annuler</sys:String>
+    <sys:String x:Key="TT_Abort">Abandonner</sys:String>
+    <sys:String x:Key="TT_Retry">Recommencer</sys:String>
+    <sys:String x:Key="TT_Open">Ouvrir</sys:String>
+    <sys:String x:Key="TT_bytes">octets</sys:String>
+    <sys:String x:Key="TT_SelectFolder">Sélectionner un dossier</sys:String>
+    <sys:String x:Key="TT_SelectFolders">Sélectionner des dossiers</sys:String>
+    <sys:String x:Key="TT_Reset">Réinitialiser</sys:String>
+    <sys:String x:Key="TT_Ignore">Ignorer</sys:String>
+    <sys:String x:Key="TT_About">À propos</sys:String>
+    <sys:String x:Key="TT_Copy">Copier</sys:String>
+    <sys:String x:Key="TT_Cut">Couper</sys:String>
+    <sys:String x:Key="TT_Paste">Coller</sys:String>
+    <sys:String x:Key="TT_IncludeSubFolders">Inclure les sous-dossiers</sys:String>
+
+    <sys:String x:Key="DEST_Principal">Principale</sys:String>
+    <sys:String x:Key="DEST_SourceFolder">Dossier source</sys:String>
+    <sys:String x:Key="DEST_Browse">Parcourir...</sys:String>
+
+    <sys:String x:Key="FSTATE_Queued">En attente</sys:String>
+    <sys:String x:Key="FSTATE_Conversion">Conversion...</sys:String>
+    <sys:String x:Key="FSTATE_Completed">Terminé</sys:String>
+    <sys:String x:Key="FSTATE_Canceled">Annulé</sys:String>
+    <sys:String x:Key="FSTATE_Suspended">Suspendu</sys:String>
+    <sys:String x:Key="FSTATE_Error">Erreur</sys:String>
+
+    <sys:String x:Key="FL_COL_Name">Nom</sys:String>
+    <sys:String x:Key="FL_COL_Folder">Dossier</sys:String>
+    <sys:String x:Key="FL_COL_State">État</sys:String>
+    <sys:String x:Key="FL_COL_Size">Taille</sys:String>
+    <sys:String x:Key="FL_COL_Duration">Durée</sys:String>
+    <sys:String x:Key="FL_COL_SampleRate">Taux d'échantillonnage</sys:String>
+    <sys:String x:Key="FL_COL_Format">Format</sys:String>
+    <sys:String x:Key="FL_COL_Encoding">Encodage</sys:String>
+    <sys:String x:Key="FL_COL_Channels">Cannaux</sys:String>
+    <sys:String x:Key="FL_COL_Layout">Structure</sys:String>
+    <sys:String x:Key="FL_COL_Interleave">Entrelacement</sys:String>
+    <sys:String x:Key="FL_COL_Loop">Boucle</sys:String>
+    <sys:String x:Key="FL_COL_Date">Modifié le</sys:String>
+
+    <sys:String x:Key="STGS_Language">Langue :</sys:String>
+    <sys:String x:Key="STGS_PreAnalyse">Analyser les fichiers à l'ajout</sys:String>
+    <sys:String x:Key="STGS_MTH_Conversion">Multithreading à la conversion</sys:String>
+    <sys:String x:Key="STGS_MTH_MaxConversion1">Maximum :</sys:String>
+    <sys:String x:Key="STGS_MTH_MaxConversion2">processus simultanés (Illimité : 0)</sys:String>
+    <sys:String x:Key="STGS_MTH_Adding">Multithreading à l'ajout</sys:String>
+    <sys:String x:Key="STGS_MTH_MaxAdding1">Maximum :</sys:String>
+    <sys:String x:Key="STGS_MTH_MaxAdding2">processus simultanés (Illimité : 0)</sys:String>
+    <sys:String x:Key="STGS_SearchDelay1">Délai de la recherche :</sys:String>
+    <sys:String x:Key="STGS_SearchDelay2">millisecondes</sys:String>
+    <sys:String x:Key="STGS_Playback">Lecture</sys:String>
+    <sys:String x:Key="STGS_StopWhenDelete">Arrêter la lecture à la suppression du fichier</sys:String>
+    <sys:String x:Key="STGS_DTPTH">Emplacement des données audio lors de la lecture :</sys:String>
+    <sys:String x:Key="STGS_DTPTH_File">Dans un fichier temporaire</sys:String>
+    <sys:String x:Key="STGS_DTPTH_Mem">Dans la mémoire</sys:String>
+    <sys:String x:Key="STGS_PRV">Apperçu par défaut :</sys:String>
+    <sys:String x:Key="STGS_PRV_In">Entrée</sys:String>
+    <sys:String x:Key="STGS_PRV_Out">Sortie</sys:String>
+    <sys:String x:Key="STGS_SPLDSP">Affichage des échantillons</sys:String>
+    <sys:String x:Key="STGS_SPLDSP_S">Secondes</sys:String>
+    <sys:String x:Key="STGS_SPLDSP_HMS">Heures, minutes, secondes</sys:String>
+    <sys:String x:Key="STGS_SPLDSP_MAX1">Maximum</sys:String>
+    <sys:String x:Key="STGS_SPLDSP_MAX2">décimales (Illimité : 0)</sys:String>
+    <sys:String x:Key="STGS_CLRS_Foreground">Couleur de premier plan :</sys:String>
+    <sys:String x:Key="STGS_CLRS_Background">Couleur d'arrière plan :</sys:String>
+    <sys:String x:Key="STGS_CLRS_Error">Couleur d'erreur :</sys:String>
+
+    <sys:String x:Key="FMT_FFmpeg">Foramt supporté par FFmpeg</sys:String>
+
+    <sys:String x:Key="TITLE_ErrorWindow">Erreur lors de l'ouverture de certains fichiers</sys:String>
+    <sys:String x:Key="TITLE_ErrorWindow2">Impossible de charger certains fichiers/dossiers</sys:String>
+    <sys:String x:Key="TITLE_SettingsWindow">Paramètres</sys:String>
+    <sys:String x:Key="TITLE_AskWindow">Conflits de fichiers</sys:String>
+    <sys:String x:Key="TITLE_AboutWindow">À propos</sys:String>
+</ResourceDictionary>

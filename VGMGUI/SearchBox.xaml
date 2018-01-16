@@ -1,0 +1,76 @@
+﻿<UserControl x:Class="VGMGUI.SearchBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:VGMGUI"
+             mc:Ignorable="d" 
+             d:DesignHeight="63" d:DesignWidth="300" SnapsToDevicePixels="True" PreviewKeyDown="UserControl_PreviewKeyDown" LostFocus="UserControl_LostFocus" GotFocus="UserControl_GotFocus">
+
+    <UserControl.Resources>
+        <Style x:Key="{x:Type Button}" TargetType="{x:Type Button}">
+            <Setter Property="SnapsToDevicePixels" Value="true"/>
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+
+                        <Grid>
+                            <Border x:Name="Border" BorderThickness="1" Background="{StaticResource SearchBox_BackgroundBrush}">
+                                <ContentPresenter Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                            </Border>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#D5D5D5"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.313"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#B5B5B5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+    
+    <Border Background="{StaticResource SearchBox_BackgroundBrush}">
+        <Grid>
+            <StackPanel>
+            <StackPanel Orientation="Horizontal" Height="24" Margin="5,5,5,0" VerticalAlignment="Top">
+                <TextBox Name="TextBox" Width="260" Text="{Binding Path=(local:Settings.RestoreSearchFilter), Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FocusVisualStyle="{x:Null}" BorderThickness="0" IsVisibleChanged="TextBox_IsVisibleChanged" GotFocus="TextBox_GotFocus"/>
+                <Button Name="btn_close" Width="24" Click="btn_close_Click" Content="{DynamicResource Close}" Margin="5,0,0,0"/>
+            </StackPanel>
+                <DockPanel Height="24" Width="290" Margin="5,5,5,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <ToggleButton Name="btn_case" Width="24" BorderThickness="0" ToolTip="{DynamicResource SRCH_Case}" IsChecked="{Binding Path=(local:Settings.SearchCaseSensitive), Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <Label Content="Aa" FontSize="14" FontWeight="SemiBold"/>
+                    </ToggleButton>
+                    <ComboBox Name="cbx_column" Margin="5,0,0,0" FocusVisualStyle="{x:Null}" BorderThickness="0" SelectedIndex="0" SelectionChanged="cbx_column_SelectionChanged" Loaded="cbx_column_Loaded">
+                        <ComboBox.Items>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_Name}"/>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_State}"/>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_Duration}"/>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_Format}"/>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_Encoding}"/>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_SampleRate}"/>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_Channels}"/>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_Loop}"/>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_Layout}"/>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_Interleave}"/>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_Folder}"/>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_Size}"/>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_Date}"/>
+                        </ComboBox.Items>
+                    </ComboBox>
+                </DockPanel>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

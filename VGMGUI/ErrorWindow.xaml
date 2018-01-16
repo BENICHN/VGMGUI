@@ -1,0 +1,13 @@
+﻿<Window x:Class="VGMGUI.ErrorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:VGMGUI"
+        xmlns:benlib="clr-namespace:BenLib.WPF;assembly=BenLib.WPF"
+        mc:Ignorable="d"
+        Title="{DynamicResource TITLE_ErrorWindow}" SizeToContent="WidthAndHeight" ResizeMode="NoResize" SnapsToDevicePixels="True">
+    <Grid>
+        <ListBox Name="ErrorList" ItemsSource="{Binding BadFiles}" ItemContainerStyle="{StaticResource ErrorItem}" SelectionMode="Extended" benlib:ListBoxSelector.Enabled="True"/>
+    </Grid>
+</Window>

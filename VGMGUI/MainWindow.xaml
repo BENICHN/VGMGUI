@@ -1,0 +1,186 @@
+﻿<Window x:Class="VGMGUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:VGMGUI"
+        xmlns:bl="clr-namespace:BenLib;assembly=BenLib"
+        xmlns:benlib="clr-namespace:BenLib.WPF;assembly=BenLib.WPF"
+        mc:Ignorable="d"
+        Title="VGMGUI" Height="600" Width="1100" PreviewKeyDown="Window_PreviewKeyDown" PreviewKeyUp="Window_PreviewKeyUp" Loaded="Window_Loaded" Closing="Window_Closing" Activated="Window_Activated">
+
+    <Window.TaskbarItemInfo>
+        <TaskbarItemInfo x:Name="tii_main" ProgressState="None">
+            <TaskbarItemInfo.ThumbButtonInfos>
+                <ThumbButtonInfo x:Name="tbi_previous" Description="{DynamicResource TBI_Previous}" Command="{Binding TBI_Previous}"/>
+                <ThumbButtonInfo x:Name="tbi_playpause" Description="{DynamicResource TBI_Play}" Command="{Binding TBI_PlayPause}"/>
+                <ThumbButtonInfo x:Name="tbi_stop" Description="{DynamicResource TBI_Stop}" Command="{Binding TBI_Stop}"/>
+                <ThumbButtonInfo x:Name="tbi_next" Description="{DynamicResource TBI_Next}" Command="{Binding TBI_Next}"/>
+            </TaskbarItemInfo.ThumbButtonInfos>
+        </TaskbarItemInfo>
+    </Window.TaskbarItemInfo>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="65"/>
+        </Grid.RowDefinitions>
+        <!--================================================== Top ==================================================-->
+        <Grid Name="TopGrid" Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <!--================================================== Left ==================================================-->
+            <local:FileList Grid.Row="0" x:Name="tasklist" Grid.Column="0" Margin="0,0,0,60" FocusVisualStyle="{x:Null}"/>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Grid.RowSpan="1" Width="Auto">
+                <local:AudioPlayer x:Name="AP" Height="60"/>
+            </ScrollViewer>
+            <!--==========================================================================================================-->
+            <GridSplitter Grid.Column="0" Width="1" HorizontalAlignment="Right" Background="{StaticResource BorderBrush}" Panel.ZIndex="1"/>
+            <!--================================================== Right ==================================================-->
+            <Border Name="InfosSettings" Grid.Column="1" BorderThickness="1" BorderBrush="{StaticResource BorderBrush}" Padding="2" Margin="-1,0,0,0">
+                <Grid Name="RightGrid">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="2*"/>
+                        <RowDefinition Height="1.2*"/>
+                    </Grid.RowDefinitions>
+                    <!--================================================== Entrée ==================================================-->
+                    <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FocusVisualStyle="{x:Null}">
+                        <StackPanel Orientation="Vertical" VerticalAlignment="Top">
+                            <DockPanel>
+                                <Label Content="{DynamicResource MW_Input}" FontSize="25" Margin="5,0,0,5"/>
+                                <RadioButton Name="ALERadioButton" GroupName="AudioPreview" Content="{DynamicResource MW_PreviewInPlayer}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0" IsChecked="True"/>
+                            </DockPanel>
+                            <StackPanel Name="FormatSP" HorizontalAlignment="Left" Height="25" Orientation="Horizontal" Margin="5,0,0,0">
+                                <ContentPresenter Content="{DynamicResource Music}"/>
+                                <Label Content="{DynamicResource MW_Format}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                <TextBox Name="FormatTB" IsReadOnly="True" HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0"/>
+                            </StackPanel>
+                            <StackPanel Name="EncodingSP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="5,0,0,0">
+                                <ContentPresenter Content="{DynamicResource Binary}"/>
+                                <Label Content="{DynamicResource MW_Encoding}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                <TextBox Name="EncodingTB" HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0" IsReadOnly="True"/>
+                            </StackPanel>
+                            <StackPanel Name="ChannelsSP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="5,0,0,0">
+                                <ContentPresenter Content="{DynamicResource Channels}"/>
+                                <Label Content="{DynamicResource MW_Channels}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                <TextBox Name="ChannelsTB" HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0" IsReadOnly="True"/>
+                            </StackPanel>
+                            <StackPanel Name="LayoutSP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="5,0,0,0">
+                                <ContentPresenter Content="{DynamicResource Layout}"/>
+                                <Label Content="{DynamicResource MW_Layout}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                <TextBox Name="LayoutTB" HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0" IsReadOnly="True"/>
+                            </StackPanel>
+                            <StackPanel Name="InterleaveSP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="5,0,0,0">
+                                <ContentPresenter Content="{DynamicResource Interleave}"/>
+                                <Label Content="{DynamicResource MW_Interleave}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                <TextBox Name="InterleaveTB" HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0" IsReadOnly="True"/>
+                            </StackPanel>
+                            <StackPanel Name="SampleRateSP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="5,0,0,0">
+                                <ContentPresenter Content="{DynamicResource Sample Rate}"/>
+                                <Label Content="{DynamicResource MW_SampleRate}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                <TextBox Name="SampleRateTB" HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0" IsReadOnly="True"/>
+                            </StackPanel>
+                            <StackPanel Name="TotalSamplesSP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="5,0,0,0">
+                                <ContentPresenter Content="{DynamicResource Sample Rate + Sigma}"/>
+                                <Label Content="{DynamicResource MW_TotalSamples}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                <TextBox Name="TotalsamplesTB" HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0" IsReadOnly="True"/>
+                            </StackPanel>
+                            <GroupBox HorizontalAlignment="Left" Height="80" MinWidth="250" Margin="5,5,0,5" Padding="0,0,2,0">
+                                <GroupBox.Header>
+                                    <StackPanel Name="LoopHeaderSP" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" Orientation="Horizontal">
+                                        <Label Content="{DynamicResource MW_Loop}" Margin="3,0,0,0"/>
+                                    </StackPanel>
+                                </GroupBox.Header>
+                                <StackPanel Name="LoopSP" Orientation="Horizontal">
+                                    <ContentPresenter Content="{DynamicResource Loop Start End}" VerticalAlignment="Top" Margin="0,5,0,0"/>
+                                    <StackPanel Orientation="Vertical" Margin="-10,0,0,0">
+                                        <StackPanel Name="LoopStartSP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="7,0,0,0">
+                                            <Label Content="{DynamicResource MW_LoopStart}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                            <TextBox Name="LoopStartTB" HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0" IsReadOnly="True"/>
+                                        </StackPanel>
+                                        <StackPanel Name="LoopEndSP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="7,0,0,0">
+                                            <Label Content="{DynamicResource MW_LoopEnd}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                            <TextBox Name="LoopEndTB" HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0" IsReadOnly="True"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                    <!--============================================================================================================-->
+                    <GridSplitter Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Height="1" Background="{StaticResource BorderBrush}"/>
+                    <!--================================================== Sortie ==================================================-->
+                    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FocusVisualStyle="{x:Null}">
+                        <StackPanel Orientation="Vertical" VerticalAlignment="Top">
+                            <DockPanel>
+                                <Label Content="{DynamicResource MW_Output}" FontSize="25" Margin="5,0,0,5"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0">
+                                    <Button Name="CopyButton" Height="18" Width="18" Margin="0,0,5,0" Content="{DynamicResource Copy}" Style="{StaticResource ButtonNoBoldFocus}" Click="CopyButton_Click" ToolTip="{DynamicResource MW_Copy}"/>
+                                    <Button Name="PasteButton" Height="18" Width="18" Margin="0,0,5,0" Content="{DynamicResource Paste}" Style="{StaticResource ButtonNoBoldFocus}" Click="PasteButton_Click" ToolTip="{DynamicResource MW_Paste}"/>
+                                    <Button Name="SetAsDefaultButton" Height="18" Width="18" Margin="0,0,12,0" Content="{DynamicResource Check}" Style="{StaticResource ButtonNoBoldFocus}" Click="SetAsDefaultButton_Click" ToolTip="{DynamicResource MW_SetAsDefault}"/>
+                                    <RadioButton Name="ALSRadioButton" GroupName="AudioPreview" Content="{DynamicResource MW_PreviewInPlayer}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <StackPanel Name="LoopCountSP" HorizontalAlignment="Left" Height="25" Orientation="Horizontal" Margin="5,0,0,0">
+                                <ContentPresenter Content="{DynamicResource Repeat}"/>
+                                <Label Name="LoopCountLabel" Content="{Binding Path=(local:Settings.DefaultOutDataLoopCount), UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                <benlib:SwitchableTextBox x:Name="LoopCountBox" ContentType="UnsignedIntegrer" CancelWhenEmpty="True" Height="20" LostFocus="SwitchableTextBox_LostFocus"/>
+                                <CheckBox Name="StartEndLoopCheckBox" Content="{DynamicResource MW_StartEndLoop}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5,0,0,0" Checked="CheckBox_CheckedUnchecked" Unchecked="CheckBox_CheckedUnchecked"/>
+                            </StackPanel>
+                            <GroupBox HorizontalAlignment="Left" Height="80" MinWidth="250" Margin="5,5,0,5" Padding="0,0,2,0">
+                                <GroupBox.Header>
+                                    <CheckBox Name="FadeOutCheckBox" Content="{DynamicResource MW_FadeOut}" Margin="3,0,0,0" Checked="CheckBox_CheckedUnchecked" Unchecked="CheckBox_CheckedUnchecked"/>
+                                </GroupBox.Header>
+                                <StackPanel Margin="3,5">
+                                    <StackPanel Name="FadeDelaySP" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0,2">
+                                        <ContentPresenter Content="{DynamicResource FadeOut}"/>
+                                        <Label Name="FadeDelayLabel" Content="{Binding Path=(local:Settings.DefaultOutDataFadeDelay), UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                        <benlib:SwitchableTextBox x:Name="FadeDelayBox" ContentType="UnsignedDouble" CancelWhenEmpty="True" Height="20" LostFocus="SwitchableTextBox_LostFocus"/>
+                                        <Label Content="{DynamicResource TT_seconds}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel Name="FadeTimeSP" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0,2">
+                                        <ContentPresenter Content="{DynamicResource Timer}"/>
+                                        <Label Name="FadeTimeLabel" Content="{Binding Path=(local:Settings.DefaultOutDataFadeTime), UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                        <benlib:SwitchableTextBox x:Name="FadeTimeBox" ContentType="UnsignedDouble" CancelWhenEmpty="True" Height="20" LostFocus="SwitchableTextBox_LostFocus"/>
+                                        <Label Content="{DynamicResource TT_seconds}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </GroupBox>
+                            <StackPanel Name="DestSP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="5,0,0,0">
+                                <ContentPresenter Content="{DynamicResource Open}"/>
+                                <Label Content="{DynamicResource MW_Dest}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                <ComboBox Name="DestCB" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="100" SelectionChanged="ComboBox_SelectionChanged">
+                                    <ComboBox.Items>
+                                        <ComboBoxItem Name="MultipleCBI" Content="{DynamicResource MW_Multiple}" Visibility="Collapsed" IsEnabled="False"/>
+                                        <ComboBoxItem Content="{DynamicResource DEST_Principal}"/>
+                                        <ComboBoxItem Content="{DynamicResource DEST_SourceFolder}"/>
+                                        <ComboBoxItem Name="SelectedTasksBrowse" Content="{DynamicResource DEST_Browse}" Selected="ComboBoxItem_Selected"/>
+                                        <ComboBoxItem Name="SelectedTasksCustom" Visibility="Collapsed"/>
+                                    </ComboBox.Items>
+                                </ComboBox>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                    <!--============================================================================================================-->
+                </Grid>
+            </Border>
+            <!--===========================================================================================================-->
+        </Grid>
+        <!--================================================== Bottom ==================================================-->
+        <DockPanel VerticalAlignment="Top" Margin="5,5,514,0" Grid.Row="1">
+            <Label Content="{DynamicResource MW_MainDest}" Grid.Row="1" VerticalAlignment="Center" Margin="0,0,4,0"/>
+            <ComboBox x:Name="MainDestCB" Height="25" Grid.Row="1" SelectedIndex="0" SelectionChanged="ComboBox_SelectionChanged" IsEditable="True" IsReadOnly="True">
+                <ComboBox.Items>
+                    <ComboBoxItem Content="{DynamicResource DEST_SourceFolder}"/>
+                    <ComboBoxItem Name="PrincipalBrowse" Content="{DynamicResource DEST_Browse}" Selected="ComboBoxItem_Selected"/>
+                </ComboBox.Items>
+            </ComboBox>
+        </DockPanel>
+        <TextBlock VerticalAlignment="Top" HorizontalAlignment="Right" Text="\" FontSize="18" Foreground="{StaticResource TextBrush}" Margin="0,4,501,0" Grid.Row="1" FontFamily="Segoe UI SemiLight"/>
+        <TextBox Name="MainDestTB" Height="25" VerticalAlignment="Top" HorizontalAlignment="Right" Width="280" Text="Converted" benlib:TypedTextBox.ForbiddenStrings="{x:Static bl:Literal.ForbiddenPathNameCharacters}" Margin="0,5,215,0" Grid.Row="1"/>
+        <Button x:Name="StartButton" Grid.Row="1" Content="{DynamicResource MW_StartConversion}" Margin="0,0,5,5" Height="55" VerticalAlignment="Bottom" Click="StartButton_Click" HorizontalAlignment="Right" Width="205" ToolTip="{DynamicResource MW_StartConversionToolTip}"/>
+        <ProgressBar Name="MainProgress" Margin="5,0,215,5" Grid.Row="1" Height="25" VerticalAlignment="Bottom" Maximum="100"/>
+    </Grid>
+</Window>

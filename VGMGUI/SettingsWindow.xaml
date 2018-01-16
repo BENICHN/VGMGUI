@@ -1,0 +1,128 @@
+﻿<Window x:Class="VGMGUI.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:VGMGUI"
+        xmlns:benlib="clr-namespace:BenLib.WPF;assembly=BenLib.WPF"
+        mc:Ignorable="d"
+        Title="{DynamicResource TITLE_SettingsWindow}" SizeToContent="WidthAndHeight" ResizeMode="CanMinimize" SnapsToDevicePixels="True" PreviewKeyDown="Window_PreviewKeyDown">
+    <Grid>
+        <StackPanel Margin="10">
+            <DockPanel>
+                <!--=================================== Searchdelay ===================================-->
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="{DynamicResource STGS_SearchDelay1}" Margin="0,0,4,0"/>
+                    <benlib:SwitchableTextBox Name="stbx_searchdelay" ContentType="UnsignedIntegrer" GotFocus="stbx_GotFocus" LostFocus="stbx_LostFocus"/>
+                    <Label Content="{DynamicResource STGS_SearchDelay2}"/>
+                </StackPanel>
+                <!--=================================== Lang ===================================-->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Label Content="{DynamicResource STGS_Language}" Margin="0,0,4,0"/>
+                    <ComboBox Name="cmbx_lang" SelectedIndex="0" SelectionChanged="ComboBox_SelectionChanged" MinWidth="100">
+                        <ComboBox.Items>
+                            <ComboBoxItem>Auto</ComboBoxItem>
+                            <ComboBoxItem>English</ComboBoxItem>
+                            <ComboBoxItem>Français</ComboBoxItem>
+                        </ComboBox.Items>
+                    </ComboBox>
+                </StackPanel>
+            </DockPanel>
+            <!--================================================== SamplesDisplay ==================================================-->
+            <GroupBox Margin="0,5,0,0">
+                <GroupBox.Header>
+                    <Label Content="{DynamicResource STGS_SPLDSP}"/>
+                </GroupBox.Header>
+                <StackPanel Orientation="Horizontal" Margin="5">
+                    <RadioButton Name="rbtn_samplesdisplay_s" Content="{DynamicResource STGS_SPLDSP_S}" Checked="rbtn_Checked"/>
+                    <RadioButton Name="rbtn_samplesdisplay_hms" Content="{DynamicResource STGS_SPLDSP_HMS}" Margin="20,0,0,0" Checked="rbtn_Checked"/>
+                    <Label Content="{DynamicResource STGS_SPLDSP_MAX1}" Margin="40,0,4,0"/>
+                    <benlib:SwitchableTextBox Name="stbx_maxdec" ContentType="UnsignedIntegrer" GotFocus="stbx_GotFocus" LostFocus="stbx_LostFocus"/>
+                    <Label Content="{DynamicResource STGS_SPLDSP_MAX2}" Margin="4,0,0,0"/>
+                </StackPanel>
+            </GroupBox>
+            <!--================================================== VGMStream ==================================================-->
+            <GroupBox Margin="0,5,0,0">
+                <GroupBox.Header>
+                    <Label Content="VGMStream"/>
+                </GroupBox.Header>
+                <StackPanel Margin="5">
+                    <CheckBox Name="chbx_preanalyse" Content="{DynamicResource STGS_PreAnalyse}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
+                    <Grid Margin="0,5,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="1.5*"/>
+                        </Grid.ColumnDefinitions>
+                        <CheckBox Name="chbx_multith_conversion" Content="{DynamicResource STGS_MTH_Conversion}" Checked="chbx_checked" Unchecked="chbx_unchecked"/>
+                        <StackPanel Orientation="Horizontal" Grid.Column="1">
+                            <Label Content="{DynamicResource STGS_MTH_MaxConversion1}" Margin="0,0,4,0"/>
+                            <benlib:SwitchableTextBox Name="stbx_max_conversion" ContentType="UnsignedIntegrer" CancelWhenEmpty="True" GotFocus="stbx_GotFocus" LostFocus="stbx_LostFocus"/>
+                            <Label Content="{DynamicResource STGS_MTH_MaxConversion2}" Margin="4,0,0,0"/>
+                        </StackPanel>
+                        <CheckBox Name="chbx_multith_adding" Content="{DynamicResource STGS_MTH_Adding}" Checked="chbx_checked" Unchecked="chbx_unchecked" Grid.Row="1" Margin="0,5,0,0"/>
+                        <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="0,5,0,0">
+                            <Label Content="{DynamicResource STGS_MTH_MaxAdding1}" Margin="0,0,4,0"/>
+                            <benlib:SwitchableTextBox Name="stbx_max_adding" ContentType="UnsignedIntegrer" CancelWhenEmpty="True" GotFocus="stbx_GotFocus" LostFocus="stbx_LostFocus"/>
+                            <Label Content="{DynamicResource STGS_MTH_MaxAdding2}" Margin="4,0,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </GroupBox>
+            <!--================================================== Playing ==================================================-->
+            <GroupBox Margin="0,5,0,0">
+                <GroupBox.Header>
+                    <Label Content="{DynamicResource STGS_Playback}"/>
+                </GroupBox.Header>
+                <StackPanel Margin="5">
+                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                        <Label Content="{DynamicResource STGS_DTPTH}" Margin="0,0,4,0"/>
+                        <RadioButton Name="rbtn_dtpth_file" Content="{DynamicResource STGS_DTPTH_File}" Margin="20,0,0,0" Checked="rbtn_Checked"/>
+                        <RadioButton Name="rbtn_dtpth_mem" Content="{DynamicResource STGS_DTPTH_Mem}" Margin="20,0,0,0" Checked="rbtn_Checked"/>
+                    </StackPanel>
+                    <CheckBox Name="chbx_stopwhendelete" Content="{DynamicResource STGS_StopWhenDelete}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                        <Label Content="{DynamicResource STGS_PRV}" Margin="0,0,4,0"/>
+                        <RadioButton Name="rbtn_preview_in" Content="{DynamicResource STGS_PRV_In}" Margin="20,0,0,0" Checked="rbtn_Checked"/>
+                        <RadioButton Name="rbtn_preview_out" Content="{DynamicResource STGS_PRV_Out}" Margin="20,0,0,0" Checked="rbtn_Checked"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+            <!--================================================== Colors ==================================================-->
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <Label Content="{DynamicResource STGS_CLRS_Foreground}" Margin="0,0,4,0"/>
+                    <ContentControl MouseDoubleClick="rect_MouseDoubleClick">
+                        <Rectangle Name="rect_foregroundcolor" Height="17" Width="35" Fill="{DynamicResource ForegroundBrush}" Stroke="{StaticResource BorderBrush}"/>
+                    </ContentControl>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
+                    <Label Content="{DynamicResource STGS_CLRS_Background}" Margin="0,0,4,0"/>
+                    <ContentControl MouseDoubleClick="rect_MouseDoubleClick">
+                        <Rectangle Name="rect_backgroundcolor" Height="17" Width="35" Fill="{DynamicResource BackgroundBrush}" Stroke="{StaticResource BorderBrush}"/>
+                    </ContentControl>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
+                    <Label Content="{DynamicResource STGS_CLRS_Error}" Margin="0,0,4,0"/>
+                    <ContentControl MouseDoubleClick="rect_MouseDoubleClick">
+                        <Rectangle Name="rect_errorcolor" Height="17" Width="35" Fill="{DynamicResource ErrorBrush}" Stroke="{StaticResource BorderBrush}"/>
+                    </ContentControl>
+                </StackPanel>
+            </StackPanel>
+            <!--================================================== Buttons ==================================================-->
+            <DockPanel Margin="0,15,0,0">
+                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                    <Button Name="btn_about" Content="{DynamicResource TT_About}" Width="75" Height="24" Click="Button_Click"/>
+                    <Button Name="btn_reset" Content="{DynamicResource TT_Reset}" Width="75" Height="24" Margin="11,0,0,0" Click="Button_Click"/>
+                    <Button Name="btn_ok" Content="{DynamicResource TT_OK}" Width="75" Height="24" Margin="11,0,0,0" Click="Button_Click"/>
+                    <Button Name="btn_cancel" Content="{DynamicResource TT_Cancel}" Width="75" Height="24" Margin="11,0,0,0" Click="Button_Click"/>
+                    <Button Name="btn_apply" Content="{DynamicResource TT_Apply}" Width="75" Height="24" Margin="11,0,0,0" Click="Button_Click"/>
+                </StackPanel>
+            </DockPanel>
+            <!--=============================================================================================================-->
+        </StackPanel>
+    </Grid>
+</Window>

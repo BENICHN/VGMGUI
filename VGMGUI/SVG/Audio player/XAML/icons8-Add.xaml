@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--This file is NOT compatible with Silverlight-->
+<Viewbox xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Stretch="Uniform">
+  <Canvas Name="Calque_1" Canvas.Left="0" Canvas.Top="0" Width="500" Height="500">
+    <Canvas.RenderTransform>
+      <TranslateTransform X="0" Y="0"/>
+    </Canvas.RenderTransform>
+    <Canvas.Resources/>
+    <!--Unknown tag: metadata-->
+    <!--Unknown tag: sodipodi:namedview-->
+    <Polygon xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Points="200,0 200,200 0,200 0,300 200,300 200,500 300,500 300,300 500,300 500,200 300,200 300,0 " Name="polygon134" FillRule="NonZero" Fill="#000000"/>
+  </Canvas>
+</Viewbox>

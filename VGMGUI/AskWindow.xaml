@@ -1,0 +1,61 @@
+﻿<Window x:Class="VGMGUI.AskWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:VGMGUI"
+        xmlns:benlib="clr-namespace:BenLib.WPF;assembly=BenLib.WPF"
+        mc:Ignorable="d"
+        Title="{DynamicResource TITLE_AskWindow}" SnapsToDevicePixels="True" SizeToContent="WidthAndHeight" ResizeMode="NoResize" PreviewKeyDown="Window_PreviewKeyDown">
+    <Window.Resources>
+        <Style x:Key="{x:Type ListViewItem}" TargetType="{x:Type ListViewItem}" BasedOn="{StaticResource {x:Type ListViewItem}}">
+            <Setter Property="ContextMenu" Value="{DynamicResource AskItemCM}"/>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <StackPanel Margin="5">
+            <StackPanel Orientation="Horizontal" Margin="5,0">
+                <ContentPresenter Content="{DynamicResource Question}" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                <StackPanel>
+                    <Label Content="{DynamicResource ASKW_H1}" FontSize="20" Margin="5,0"/>
+                    <Label Content="{DynamicResource ASKW_H2}" Margin="5,0"/>
+                </StackPanel>
+            </StackPanel>
+            <ListView Name="AskList" FocusVisualStyle="{x:Null}" ItemsSource="{Binding ListSource}" SelectionMode="Extended" benlib:ListBoxSelector.Enabled="True" Margin="0,5,0,0" GridViewColumnHeader.Click="AskListHeader_Click" >
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="{DynamicResource ASKW_COL_1}" Width="400" DisplayMemberBinding="{Binding Name}"/>
+                        <GridViewColumn Width="100">
+                            <GridViewColumn.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox Name="chbx_h_erase" VerticalAlignment="Center" Content="{DynamicResource ASKW_COL_2}" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox Name="chbx_erase" Width="13" HorizontalAlignment="Center" IsChecked="{Binding Overwrite}" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn Width="100">
+                            <GridViewColumn.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox Name="chbx_h_num" Content="{DynamicResource ASKW_COL_3}" VerticalAlignment="Center" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                                </StackPanel>
+                            </GridViewColumn.Header>
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox Name="chbx_num" Width="13" HorizontalAlignment="Center" IsChecked="{Binding Number}" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,0">
+                <Button Name="OKButton" Content="{DynamicResource TT_OK}" VerticalAlignment="Center" Width="75" Height="24" Click="OKButton_Click"/>
+                <Button Name="CancelButton" Content="{DynamicResource TT_Cancel}" VerticalAlignment="Center" Width="75" Height="24" Margin="11,0,0,0" Click="CancelButton_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -1,0 +1,66 @@
+﻿<Window x:Class="VGMGUI.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:VGMGUI"
+        mc:Ignorable="d"
+        Title="{DynamicResource TITLE_AboutWindow}" SizeToContent="WidthAndHeight" SnapsToDevicePixels="True" ResizeMode="NoResize">
+    <Grid Margin="10,0,10,10">
+        <StackPanel>
+            <Label Content="VGMGUI" FontSize="50" FontFamily="Calibri" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,5,0,0"/>
+            <Label Name="lb_version" Content="{x:Static local:App.VersionString}" HorizontalAlignment="Center"/>
+            <GroupBox>
+                <GroupBox.Header>
+                    <Label Content="{DynamicResource ABOUT_Credits}"/>
+                </GroupBox.Header>
+                <StackPanel Margin="5">
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="{DynamicResource ABOUT_Icons}" Margin="0,0,4,0"/>
+                        <StackPanel>
+                            <Label>
+                                <Hyperlink NavigateUri="https://icons8.com" RequestNavigate="Hyperlink_RequestNavigate">Icons8</Hyperlink>
+                            </Label>
+                            <StackPanel Orientation="Horizontal">
+                                <Label>
+                                    <Hyperlink NavigateUri="https://www.flaticon.com" RequestNavigate="Hyperlink_RequestNavigate">Flaticon</Hyperlink>
+                                </Label>
+                                <Label Content=" ("/>
+                                <Label>
+                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/cancel_291202#term=error&amp;page=1&amp;position=11" RequestNavigate="Hyperlink_RequestNavigate">1</Hyperlink>
+                                </Label>
+                                <Label Content=", "/>
+                                <Label>
+                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/bricks-layout_43703#term=layout&amp;page=1&amp;position=47" RequestNavigate="Hyperlink_RequestNavigate">2</Hyperlink>
+                                </Label>
+                                <Label Content=", "/>
+                                <Label>
+                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/couple-of-arrows-changing-places_25344#term=random&amp;page=1&amp;position=7" RequestNavigate="Hyperlink_RequestNavigate">3</Hyperlink>
+                                </Label>
+                                <Label Content=", "/>
+                                <Label>
+                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/update-arrows_1064#term=loop&amp;page=1&amp;position=54" RequestNavigate="Hyperlink_RequestNavigate">4</Hyperlink>
+                                </Label>
+                                <Label Content=", "/>
+                                <Label>
+                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/shuffle-mode-arrows_61171#term=random&amp;page=1&amp;position=21" RequestNavigate="Hyperlink_RequestNavigate">5</Hyperlink>
+                                </Label>
+                                <Label Content=")"/>
+                            </StackPanel>
+                            <Label>
+                                <Hyperlink NavigateUri="https://www.office.com" RequestNavigate="Hyperlink_RequestNavigate">Microsoft Office 2016</Hyperlink>
+                            </Label>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="{DynamicResource ABOUT_LoadingCircle}" Margin="0,0,4,0"/>
+                        <Label>
+                            <Hyperlink NavigateUri="https://www.vecteezy.com/vector-art/108319-loading-circles-shape-set" RequestNavigate="Hyperlink_RequestNavigate">Vecteezy</Hyperlink>
+                        </Label>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+            <Label Content="{x:Static local:AboutWindow.Copyright}" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+        </StackPanel>
+    </Grid>
+</Window>
