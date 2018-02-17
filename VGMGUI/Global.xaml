@@ -328,6 +328,28 @@
             </Canvas>
         </Canvas>
     </Viewbox>
+    <Viewbox x:Key="Bitrate" x:Shared="False" Stretch="Uniform" Height="20">
+        <Canvas Name="BitrateLayer" Canvas.Left="0" Canvas.Top="0" Width="500" Height="500">
+            <Canvas.RenderTransform>
+                <TranslateTransform X="0" Y="0"/>
+            </Canvas.RenderTransform>
+            <Canvas.Resources/>
+            <!--Unknown tag: metadata-->
+            <!--Unknown tag: sodipodi:namedview-->
+            <Canvas Name="surface18000">
+                <Path Name="path4569" Fill="{DynamicResource ForegroundBrush}">
+                    <Path.Data>
+                        <PathGeometry Figures="M295.6 261.4v34.1h-45.4v45.4h-45.4v45.4h-45.4v34.1h-45.4v-34.1H68.4v-45.4H0.3v45.4H23v45.4h45.4v34.1h136.3   v-34.1h45.4v-45.4h45.4v-45.4H341v-34.1h45.4v34.1h45.4v45.4H500v-45.4h-22.7v-45.4h-45.4v-34.1H295.6z" FillRule="NonZero"/>
+                    </Path.Data>
+                </Path>
+            </Canvas>
+            <Path Name="path700000" Fill="{DynamicResource BackgroundBrush}">
+                <Path.Data>
+                    <PathGeometry Figures="M363.6 34.2c-63.2 0-93.6 39.4-120.5 74.2c-3.5 4.6-7.1 9.2-10.8 13.8c-3.4 4.3-6.8 8.7-10.3 13.2  c-22.9 29.7-44.5 57.8-85.5 57.8s-62.6-28.1-85.5-57.8c-3.5-4.5-6.9-9-10.3-13.2c-3.6-4.5-7.2-9.1-10.8-13.8  c-9.1-11.8-18.6-24-29.6-35.1v71c1.7 2.1 3.3 4.3 5 6.4c3.2 4 6.5 8.2 9.8 12.5c24.6 31.9 58.2 75.5 121.5 75.5s97-43.6 121.5-75.5  c3.3-4.3 6.5-8.5 9.8-12.5c3.8-4.7 7.6-9.6 11.4-14.5c24.4-31.6 43.7-56.6 84.5-56.6s60.2 25 84.5 56.6c3.8 4.8 7.5 9.7 11.4 14.5  c12.7 15.7 25.6 29.1 40.4 39.7v-62.2c-1.7-2-3.3-3.8-5-5.9c-3.6-4.5-7.2-9.1-10.8-13.8C457.2 73.7 426.7 34.2 363.6 34.2z" FillRule="NonZero"/>
+                </Path.Data>
+            </Path>
+        </Canvas>
+    </Viewbox>
     <Viewbox x:Key="Loop Start End" x:Shared="false" Stretch="Uniform" Height="40">
         <Canvas Name="LoopStartEndLayer" Canvas.Left="0" Canvas.Top="0" Width="500" Height="780">
             <Canvas.RenderTransform>
@@ -439,7 +461,7 @@
                 <TranslateTransform X="0" Y="0"/>
             </Canvas.RenderTransform>
             <Canvas.Resources/>
-            <Path Name="path4" Fill="{DynamicResource ErrorBrush}">
+            <Path Name="path484848488484848484" Fill="{DynamicResource ErrorBrush}">
                 <Path.Data>
                     <PathGeometry Figures="M250 0C111.9 0 0 111.9 0 250s111.9 250 250 250s250-111.9 250-250S388.1 0 250 0z M387.9 324.2l-63.6 63.6  L250 313.6l-74.3 74.3l-63.6-63.6l74.2-74.2l-74.2-74.3l63.6-63.6l74.3 74.2l74.3-74.2l63.6 63.6L313.6 250L387.9 324.2z" FillRule="NonZero"/>
                 </Path.Data>
@@ -1480,6 +1502,11 @@
                 <Image Height="16" Width="16" Source="../Images/FileListItemCM/Copy.png"/>
             </MenuItem.Icon>
         </MenuItem>
+        <MenuItem Name="PropertiesMI" Header="{DynamicResource CM_Properties}">
+            <MenuItem.Icon>
+                <Image Height="16" Width="16" Source="../Images/FileListItemCM/Properties.png"/>
+            </MenuItem.Icon>
+        </MenuItem>
         <Separator/>
         <MenuItem Name="CheckMI" Header="{DynamicResource CM_Check}">
             <MenuItem.Icon>
@@ -1527,6 +1554,11 @@
                 <Image Height="16" Width="16" Source="../Images/FileListItemCM/Copy.png"/>
             </MenuItem.Icon>
         </MenuItem>
+        <MenuItem Name="A_PropertiesMI" Header="{DynamicResource CM_Properties}">
+            <MenuItem.Icon>
+                <Image Height="16" Width="16" Source="../Images/FileListItemCM/Properties.png"/>
+            </MenuItem.Icon>
+        </MenuItem>
         <Separator/>
         <MenuItem Name="A_OverwriteMI" Header="{DynamicResource CM_Overwrite}">
             <MenuItem.Icon>
@@ -1554,6 +1586,11 @@
         <MenuItem Name="E_CopyFPMI" Header="{DynamicResource TT_Copy}">
             <MenuItem.Icon>
                 <Image Height="16" Width="16" Source="../Images/FileListItemCM/Copy.png"/>
+            </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Name="E_PropertiesMI" Header="{DynamicResource CM_Properties}">
+            <MenuItem.Icon>
+                <Image Height="16" Width="16" Source="../Images/FileListItemCM/Properties.png"/>
             </MenuItem.Icon>
         </MenuItem>
     </ContextMenu>
@@ -2781,4 +2818,54 @@
         </Setter>
     </Style>
     <!--===================================================-->
+
+    <Style x:Key="{x:Type StatusBar}" TargetType="{x:Type StatusBar}">
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="ToolTipService.InitialShowDelay" Value="1000"/>
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type StatusBar}">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" Padding="{TemplateBinding Padding}" BorderThickness="{TemplateBinding BorderThickness}">
+                        <ItemsPresenter/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="{x:Static StatusBar.SeparatorStyleKey}" TargetType="{x:Type Separator}">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="ToolTipService.InitialShowDelay" Value="1000"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Separator}">
+                    <Rectangle Fill="{TemplateBinding BorderBrush}" Stroke="{TemplateBinding BorderBrush}" StrokeThickness="{TemplateBinding BorderThickness}" Width="1" Margin="3"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="{x:Type StatusBarItem}" TargetType="{x:Type StatusBarItem}">
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="ToolTipService.InitialShowDelay" Value="1000"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type StatusBarItem}">
+                    <ContentPresenter Margin="3"/>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="false">
+                            <Setter Property="Opacity" Value="0.313"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

@@ -7,7 +7,7 @@
         xmlns:bl="clr-namespace:BenLib;assembly=BenLib"
         xmlns:benlib="clr-namespace:BenLib.WPF;assembly=BenLib.WPF"
         mc:Ignorable="d"
-        Title="VGMGUI" Height="600" Width="1100" PreviewKeyDown="Window_PreviewKeyDown" PreviewKeyUp="Window_PreviewKeyUp" Loaded="Window_Loaded" Closing="Window_Closing" Activated="Window_Activated">
+        Title="VGMGUI" Height="660" Width="1100" PreviewKeyDown="Window_PreviewKeyDown" PreviewKeyUp="Window_PreviewKeyUp" Loaded="Window_Loaded" Closing="Window_Closing" Activated="Window_Activated">
 
     <Window.TaskbarItemInfo>
         <TaskbarItemInfo x:Name="tii_main" ProgressState="None">
@@ -20,10 +20,10 @@
         </TaskbarItemInfo>
     </Window.TaskbarItemInfo>
 
-    <Grid>
+    <Grid Name="grid">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="65"/>
+            <RowDefinition Height="90"/>
         </Grid.RowDefinitions>
         <!--================================================== Top ==================================================-->
         <Grid Name="TopGrid" Grid.Row="0">
@@ -43,7 +43,7 @@
                 <Grid Name="RightGrid">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="2*"/>
-                        <RowDefinition Height="1.2*"/>
+                        <RowDefinition Height="1.12*"/>
                     </Grid.RowDefinitions>
                     <!--================================================== Entrée ==================================================-->
                     <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FocusVisualStyle="{x:Null}">
@@ -76,6 +76,11 @@
                                 <ContentPresenter Content="{DynamicResource Interleave}"/>
                                 <Label Content="{DynamicResource MW_Interleave}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
                                 <TextBox Name="InterleaveTB" HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0" IsReadOnly="True"/>
+                            </StackPanel>
+                            <StackPanel Name="BitrateSP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="5,0,0,0">
+                                <ContentPresenter Content="{DynamicResource Bitrate}"/>
+                                <Label Content="{DynamicResource MW_Bitrate}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                <TextBox Name="BitrateTB" HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0" IsReadOnly="True"/>
                             </StackPanel>
                             <StackPanel Name="SampleRateSP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="5,0,0,0">
                                 <ContentPresenter Content="{DynamicResource Sample Rate}"/>
@@ -178,9 +183,16 @@
                 </ComboBox.Items>
             </ComboBox>
         </DockPanel>
+        <Grid Grid.Row="1" Height="65" VerticalAlignment="Top">
         <TextBlock VerticalAlignment="Top" HorizontalAlignment="Right" Text="\" FontSize="18" Foreground="{StaticResource TextBrush}" Margin="0,4,501,0" Grid.Row="1" FontFamily="Segoe UI SemiLight"/>
         <TextBox Name="MainDestTB" Height="25" VerticalAlignment="Top" HorizontalAlignment="Right" Width="280" Text="Converted" benlib:TypedTextBox.ForbiddenStrings="{x:Static bl:Literal.ForbiddenPathNameCharacters}" Margin="0,5,215,0" Grid.Row="1"/>
         <Button x:Name="StartButton" Grid.Row="1" Content="{DynamicResource MW_StartConversion}" Margin="0,0,5,5" Height="55" VerticalAlignment="Bottom" Click="StartButton_Click" HorizontalAlignment="Right" Width="205" ToolTip="{DynamicResource MW_StartConversionToolTip}"/>
         <ProgressBar Name="MainProgress" Margin="5,0,215,5" Grid.Row="1" Height="25" VerticalAlignment="Bottom" Maximum="100"/>
+        </Grid>
+        <StatusBar Name="statusBar" Height="25" Grid.Row="1" VerticalAlignment="Bottom" Visibility="{Binding Path=(local:Settings.DisplayVisibility), UpdateSourceTrigger=PropertyChanged}" IsVisibleChanged="statusBar_IsVisibleChanged">
+            <Label Name="listCountLabel" Visibility="{Binding Path=(local:Settings.CounterVisibility), UpdateSourceTrigger=PropertyChanged}"/>
+            <Separator Visibility="{Binding Path=(local:Settings.CounterVisibility), UpdateSourceTrigger=PropertyChanged}"/>
+            <Label Name="RAMUsageLabel" HorizontalAlignment="Right" Visibility="{Binding Path=(local:Settings.RAMVisibility), UpdateSourceTrigger=PropertyChanged}"/>
+        </StatusBar>
     </Grid>
 </Window>

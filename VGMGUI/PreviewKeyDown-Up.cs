@@ -1,13 +1,14 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
-using CSCore.SoundOut;
+using Vlc.DotNet.Core.Interops.Signatures;
 
 namespace VGMGUI
 {
     public partial class MainWindow
     {
-        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        private async void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             Key key = (e.Key == Key.System ? e.SystemKey : e.Key);
 
@@ -20,12 +21,13 @@ namespace VGMGUI
                     switch (key)
                     {
                         case Key.Space:
-                            if (AP.PlaybackState == PlaybackState.Stopped) PlayFile(tasklist.FILEList.SelectedItem as Fichier);
+                            if (AP.State == MediaStates.Stopped || AP.State == MediaStates.NothingSpecial) PlayFile(tasklist.FILEList.SelectedItem as Fichier);
                             else AP.PlayPause();
                             e.Handled = true;
                             break;
                         case Key.S:
-                            CancelAndStop();
+                            if (Keyboard.Modifiers == ModifierKeys.Shift) App.FreeMemory();
+                            else CancelAndStop();
                             break;
                         case Key.PageDown:
                             NextWithRandom();
@@ -67,12 +69,13 @@ namespace VGMGUI
                     switch (key)
                     {
                         case Key.Space:
-                            if (AP.PlaybackState == PlaybackState.Stopped) PlayFile(tasklist.FILEList.SelectedItem as Fichier, null);
+                            if (AP.State == MediaStates.Stopped || AP.State == MediaStates.NothingSpecial) PlayFile(tasklist.FILEList.SelectedItem as Fichier, null);
                             else AP.PlayPause();
                             e.Handled = true;
                             break;
                         case Key.S:
-                            CancelAndStop();
+                            if (Keyboard.Modifiers == ModifierKeys.Shift) App.FreeMemory();
+                            else CancelAndStop();
                             break;
                         case Key.PageDown:
                             NextWithRandom();
@@ -90,42 +93,51 @@ namespace VGMGUI
                                 e.Handled = true;
                             }
                             break;
+                        case Key.B:
+                            if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift))
+                            {
+                                Settings.StatusBar.Display = !Settings.StatusBar.Display;
+                                Settings.SettingsData["StatusBar"]["Display"] = Settings.StatusBar.Display.ToString();
+                                e.Handled = true;
+                            }
+                            break;
                     }
 
                     if (!tasklist.IsKeyboardFocusWithin) tasklist.FILEList_PreviewKeyDown(sender, e);
                 }
             }
             NoMouseOver:
-            switch (Keyboard.Modifiers)
-            {
-                case ModifierKeys.Control:
-                    switch (key)
-                    {
-                        case Key.O:
-                            tasklist.OpenFileDialog(false);
-                            break;
-                        case Key.P:
-                            OpenSettingsWindow();
-                            break;
-                        case Key.D:
-                            VGMStream.DownloadVGMStream();
-                            break;
-                    }
-
-                    break;
-                case (ModifierKeys.Control | ModifierKeys.Shift):
-                    switch (key)
-                    {
-                        case Key.O:
-                            tasklist.OpenFileDialog(true);
-                            break;
-                    }
-
-                    break;
-            }
 
             switch (key)
             {
+                case Key.P:
+                    if (Keyboard.Modifiers == ModifierKeys.Control) OpenSettingsWindow();
+                    break;
+                case Key.O:
+                    switch (Keyboard.Modifiers)
+                    {
+                        case ModifierKeys.Control | ModifierKeys.Shift:
+                            tasklist.OpenFileDialog(true);
+                            break;
+                        case ModifierKeys.Control:
+                            tasklist.OpenFileDialog(false);
+                            break;
+                    }
+                    break;
+                case Key.D:
+                    switch (Keyboard.Modifiers)
+                    {
+                        case ModifierKeys.Control | ModifierKeys.Shift:
+                            await VGMStream.DownloadFFmpeg();
+                            break;
+                        case ModifierKeys.Control | ModifierKeys.Alt:
+                            if (await VGMStream.DownloadVLC()) MessageBox.Show(App.Str("WW_VLCDownloaded"), String.Empty, MessageBoxButton.OK, MessageBoxImage.Information);
+                            break;
+                        case ModifierKeys.Control:
+                            await VGMStream.DownloadVGMStream();
+                            break;
+                    }
+                    break;
                 case Key.F5:
                     StartButton_Click(StartButton, new RoutedEventArgs());
                     break;
@@ -143,15 +155,12 @@ namespace VGMGUI
                             case "en-US":
                                 App.SetLanguage("fr-FR");
                                 break;
-
                         }*/
                     }
                     break;
 
                     #endif
             }
-
-
         }
 
         private void Window_PreviewKeyUp(object sender, KeyEventArgs e) => ApplyKeyboardModifiers();

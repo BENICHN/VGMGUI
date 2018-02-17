@@ -81,6 +81,14 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
+                    <GridViewColumn Header="{DynamicResource FL_COL_Bitrate}" Width="70">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding BitrateString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Bitrate}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
                     <GridViewColumn Header="{DynamicResource FL_COL_Channels}" Width="60">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>

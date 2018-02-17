@@ -2,59 +2,28 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Threading;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using CSCore;
-using CSCore.SoundOut;
-using CSCore.Codecs.WAV;
 using BenLib;
 using System.Collections.Generic;
+using Vlc.DotNet.Core;
+using Vlc.DotNet.Core.Interops.Signatures;
+using System.ComponentModel;
 
 namespace VGMGUI
 {
     /// <summary>
     /// Logique d'interaction pour AudioPlayer.xaml
     /// </summary>
-    public partial class AudioPlayer : UserControl
+    public partial class AudioPlayer : UserControl, INotifyPropertyChanged
     {
         #region Champs & Propriétés
 
         /// <summary>
-        /// Valeur temporaire du volume de la sortie audio.
+        /// Indique si <see cref="Play"/> est en cours.
         /// </summary>
-        float m_volumeTMP;
-
-        /// <summary>
-        /// Volume de la sortie audio.
-        /// </summary>
-        float m_volume;
-
-        /// <summary>
-        /// Volume de la sortie audio.
-        /// </summary>
-        public float Volume
-        {
-            get => m_volume;
-            set
-            {
-                if (value > 1) value = 1;
-                else if (value < 0) value = 0;
-
-                volumeslider.Value = value * 100;
-            }
-        }
-
-        /// <summary>
-        /// Indique si <see cref="PlayAsync"/> est en cours.
-        /// </summary>
-        bool Loading { get; set; }
-
-        /// <summary>
-        /// À chaque Tick, modifie la valeur de <see cref="positionslider"/> en fonction de l'avancement de la lecture.
-        /// </summary>
-        DispatcherTimer dt = new DispatcherTimer() { Interval = new TimeSpan(0, 0, 0, 0, 250) };
+        public bool Loading { get; set; }
 
         /// <summary>
         /// Fichier au format WAV contenant les données audio.
@@ -79,24 +48,14 @@ namespace VGMGUI
         /// <summary>
         /// Statut de la lecture.
         /// </summary>
-        public PlaybackState PlaybackState => audioOutput.PlaybackState;
+        public MediaStates State => m_player.State;
 
         /// <summary>
         /// Se produit qunad la lecture est arrêtée.
         /// </summary>
-        public event EventHandler<PlaybackStoppedEventArgs> PlaybackStopped { add => audioOutput.Stopped += value; remove => audioOutput.Stopped -= value; }
+        public event EventHandler<VlcMediaPlayerEndReachedEventArgs> EndReached { add => m_player.EndReached += value; remove => m_player.EndReached -= value; }
 
         public event EventHandler<AudioPlayerStopEventArgs> Stopped;
-
-        /// <summary>
-        /// Se produit quand la lecture est terminée.
-        /// </summary>
-        public event EventHandler StreamFinished;
-
-        /// <summary>
-        /// La fenêtre hôte de ce lecteur.
-        /// </summary>
-        MainWindow MainWin => Window.GetWindow(this) as MainWindow;
 
         /// <summary>
         /// Le fichier qui est actuellement lu ou décodé pour la lecture.
@@ -109,6 +68,7 @@ namespace VGMGUI
         /// Se produit quand <see cref="LoopType"/> change de valeur.
         /// </summary>
         public event PropertyChangedExtendedEventHandler<LoopTypes> LoopTypeChanged;
+        public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
         /// Action à effectuer à la fin de la lecture d'un fichier.
@@ -132,20 +92,54 @@ namespace VGMGUI
             }
         }
 
-        /// <summary>
-        /// Contient les données de la lecture.
-        /// </summary>
-        public IWaveSource WaveSource => wfr;
+        private VlcMediaPlayer m_player;
+        public VlcMediaPlayer Player => m_player;
 
-        /// <summary>
-        /// Contient les données de la lecture.
-        /// </summary>
-        IWaveSource wfr;
+        public double Position => positionslider.IsEnabled && !positionslider.IsMouseCaptureWithin ? m_player.Position : positionslider.Value;
 
-        /// <summary>
-        /// Sortie audio utilisée pour la lecture.
-        /// </summary>
-        public ISoundOut audioOutput;
+        private bool m_mute;
+        public bool Mute
+        {
+            get => m_mute;
+            set
+            {
+                m_player.Audio.IsMute = m_mute = value;
+                volumeslider.Opacity = value ? 0.313 : 1;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("VolumeIcon"));
+                Settings.SettingsData.Global["Mute"] = value.ToString();
+            }
+        }
+
+        private int m_volume = 100;
+        public int Volume
+        {
+            get => m_volume;
+            set
+            {
+                if (value < 0) value = 0;
+                if (value > 100) value = 100;
+                Mute = false;
+                m_player.Audio.Volume = m_volume = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Volume"));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("VolumeIcon"));
+                Settings.SettingsData.Global["Volume"] = Volume.ToString();
+            }
+        }
+
+        public object VolumeIcon
+        {
+            get
+            {
+                if (Mute) return Application.Current.Resources["Mute"];
+                if (Volume > 66) return Application.Current.Resources["High Volume"];
+                else if (Volume >= 33 && Volume <= 66) return Application.Current.Resources["Medium Volume"];
+                else if (Volume < 33 && Volume > 0) return Application.Current.Resources["Low Volume"];
+                else return Application.Current.Resources["Mute"];
+            }
+        }
+
+        public string PositionString => new Time(m_player.Length * positionslider.Value / 1000).ToString("hh:mm:ss");
+        public string LengthString => m_player.LengthTime().ToString("hh:mm:ss");
 
         #endregion
 
@@ -156,16 +150,13 @@ namespace VGMGUI
         /// </summary>
         public AudioPlayer()
         {
+            try { m_player = new VlcMediaPlayer(new DirectoryInfo(App.VLCFolder)); }
+            catch (Exception ex) { throw new VLCException("Impossible de créer un objet de type VlcMediaPlayer.", ex) { Source = App.VLCFolder }; }
             InitializeComponent();
-            audioOutput = GetSoundOut();
-            dt.Tick += Dt_Tick;
+            DataContext = this;
             LoopTypeChanged += AudioPlayer_LoopTypeChanged;
-        }
-
-        ~AudioPlayer()
-        {
-            Settings.SettingsData.Global["Volume"] = Volume.ToString();
-            Settings.TryWriteSettings();
+            m_player.PositionChanged += (sender, e) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Position"));
+            m_player.LengthChanged += (sender, e) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("LengthString"));
         }
 
         #endregion
@@ -175,202 +166,144 @@ namespace VGMGUI
         #region AudioControl
 
         /// <summary>
-        /// Arrête la lecture.
+        /// Lit <see cref="FileName"/> pu <see cref="Stream"/>.
         /// </summary>
-        public void Stop(bool end = false)
+        /// <param name="cancellationToken"/>
+        /// <returns>true si la lecture est bien en cours; null si un chargement est déjà en cours; sinon false.</returns>
+        public async Task<bool?> Play(CancellationToken cancellationToken = default)
         {
-            audioOutput.Stop();
-            dt.Stop();
-            if (m_stream is FileStream fs)
-            {
-                fs.Close();
-                Threading.MultipleAttempts(() => File.Delete(fs.Name), throwEx: false);
-            }
-            m_stream = null;
-            m_filename = null;
-            if (!Loading) wfr.TryDispose();
-            positionslider.Value = 0;
-            positionslider.IsEnabled = false;
-            totaltimelabel.Content = "00:00:00";
-            currenttimelabel.Content = "00:00:00";
-            positionslider.IsEnabled = false;
-            PlayButtonSetPlay(false);
-            MainWin.TBISetPlay(false);
-            if (CurrentPlaying != null) CurrentPlaying.FontWeight = FontWeights.Normal;
-            if (end)
-            {
-                CurrentPlaying = null;
-                Playlist = null;
-            }
-            GC.Collect();
-            Stopped?.Invoke(this, new AudioPlayerStopEventArgs(end));
-        }
+            if (Loading) return null;
 
-        /// <summary>
-        /// Démarre la lecture ou la reprend là où elle en était.
-        /// </summary>
-        public void Play()
-        {
-            if (audioOutput.PlaybackState == PlaybackState.Paused)
+            bool result = false;
+            Loading = true;
+
+            switch (m_player.State)
             {
-                audioOutput.Play();
-            }
-            else if (audioOutput.PlaybackState == PlaybackState.Stopped)
-            {
-                if (SetWFR())
-                {
-                    try
+                case MediaStates.NothingSpecial:
+                case MediaStates.Stopped:
                     {
-                        audioOutput.Initialize(wfr);
-                        try { audioOutput.Volume = Volume; }
-                        catch { }
-                        audioOutput.Play();
-                        positionslider.IsEnabled = true;
-                        totaltimelabel.Content = wfr.GetLength().ToString(@"hh\:mm\:ss");
-                        if (CurrentPlaying != null) CurrentPlaying.FontWeight = FontWeights.Bold;
+                        if (await SetMedia(cancellationToken))
+                        {
+                            try
+                            {
+                                await m_player.PlayAsync(cancellationToken);
+                                positionslider.IsEnabled = true;
+                                m_player.Audio.Volume = m_volume;
+                                m_player.Audio.IsMute = m_mute;
+                                if (CurrentPlaying != null) CurrentPlaying.FontWeight = FontWeights.Bold;
+                            }
+                            catch { Stop(true); }
+                        }
                     }
-                    catch { Stop(true); }
-                }
+                    break;
+                case MediaStates.Paused:
+                    await m_player.PlayAsync();
+                    break;
             }
 
-            if (audioOutput.PlaybackState == PlaybackState.Playing)
+            if (m_player.State == MediaStates.Playing)
             {
                 PlayButtonSetPause();
-                MainWin.TBISetPause();
-                dt.Start();
+                App.MainWindow.TBISetPause();
+                result = true;
             }
+            else result = false;
+
+            Loading = false;
+            return result;
         }
 
         /// <summary>
-        /// Démarre la lecture ou la reprend là où elle en était.
+        /// Arrête la lecture.
         /// </summary>
-        /// <param name="cancellationToken">Jeton d'annulation qui peut être utilisé par d'autres objets ou threads pour être informés de l'annulation.</param>
-        /// <returns>Tâche qui représente l'opération de lecture asynchrone.</returns>
-        public async Task PlayAsync(CancellationToken cancellationToken = default)
+        /// <param name="end">false pour adopter le comportement défini par <see cref="LoopType"/>; sinon true.</param>
+        /// <returns>true si la lecture est bien arrêtée; sinon false.</returns>
+        public async Task<bool> Stop(bool end = false)
         {
-            if (!Loading)
+            try
             {
-                try
+                await m_player.StopAsync();
+
+                m_stream = null;
+                m_filename = null;
+
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Position"));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("LengthString"));
+
+                positionslider.IsEnabled = false;
+
+                PlayButtonSetPlay(false);
+                App.MainWindow.TBISetPlay(false);
+
+                if (CurrentPlaying != null) CurrentPlaying.FontWeight = FontWeights.Normal;
+                if (end)
                 {
-                    Loading = true;
-
-                    await Task.Run(() =>
-                    {
-                        if (audioOutput.PlaybackState == PlaybackState.Paused)
-                        {
-                            audioOutput.Play();
-                        }
-                        else if (audioOutput.PlaybackState == PlaybackState.Stopped)
-                        {
-                            if (SetWFR())
-                            {
-                                try
-                                {
-                                    audioOutput.Initialize(wfr);
-                                    try { audioOutput.Volume = Volume; }
-                                    catch { }
-                                    audioOutput.Play();
-                                    Dispatcher.Invoke(() =>
-                                    {
-                                        positionslider.IsEnabled = true;
-                                        totaltimelabel.Content = wfr.GetLength().ToString(@"hh\:mm\:ss");
-                                        if (CurrentPlaying != null) CurrentPlaying.FontWeight = FontWeights.Bold;
-                                    });
-                                }
-                                catch { Dispatcher.Invoke(() => Stop(true)); }
-                            }
-                        }
-
-                        if (audioOutput.PlaybackState == PlaybackState.Playing)
-                        {
-                            Dispatcher.Invoke(() =>
-                            {
-                                PlayButtonSetPause();
-                                MainWin.TBISetPause();
-                            });
-                            dt.Start();
-                        }
-                    }, cancellationToken);
-
-                    Loading = false;
+                    CurrentPlaying = null;
+                    Playlist = null;
                 }
-                finally
-                {
-                    if (cancellationToken.IsCancellationRequested) Loading = false;
-                }
+
+                GC.Collect();
+
+                Stopped?.Invoke(this, new AudioPlayerStopEventArgs(end));
+
+                return m_player.State == MediaStates.Stopped;
             }
-        }
-
-        /// <summary>
-        /// Met la lecture en pause ou la démarre.
-        /// </summary>
-        public void PlayPause()
-        {
-            if (audioOutput.PlaybackState == PlaybackState.Playing) Pause();
-            else Play();
+            finally { if (end) { await VGMStream.DeleteTMPFiles(); } }
         }
 
         /// <summary>
         /// Met la lecture en pause.
         /// </summary>
-        public void Pause()
+        public async Task<bool> Pause()
         {
-            audioOutput.Pause();
+            await m_player.PauseAsync();
             PlayButtonSetPlay(true);
-            MainWin.TBISetPlay(true);
+            App.MainWindow.TBISetPlay(true);
+            return m_player.State == MediaStates.Paused;
+        }
+
+        /// <summary>
+        /// Met la lecture en pause ou la démarre.
+        /// </summary>
+        public async Task PlayPause()
+        {
+            if (m_player.State == MediaStates.Playing) await Pause();
+            else await Play();
         }
 
         /// <summary>
         /// Modifie la position de la lecture.
         /// </summary>
         /// <param name="value">La valeur à soustraire (%).</param>
-        public void PositionPlus(int value = 5)
+        public async Task PositionPlus(float value = 5)
         {
-            if (positionslider.IsEnabled)
+            await Task.Run(() =>
             {
-                positionslider.Value += value;
-                try { wfr?.SetPosition(new TimeSpan(0, 0, 0, 0, (int)(positionslider.Value * wfr.GetLength().TotalMilliseconds / 100))); }
-                catch (ArgumentOutOfRangeException) { Stop(LoopType == LoopTypes.None); }
-            }
+                var postPosition = m_player.Position + value / 100;
+                if (postPosition > 1) postPosition = 1;
+                m_player.Position = postPosition;
+            });
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Position"));
         }
 
         /// <summary>
         /// Modifie la position de la lecture.
         /// </summary>
         /// <param name="value">La valeur à additionner (%).</param>
-        public void PositionMinus(int value = 5)
+        public async Task PositionMinus(float value = 5)
         {
-            if (positionslider.IsEnabled)
+            await Task.Run(() =>
             {
-                positionslider.Value -= value;
-                wfr?.SetPosition(new TimeSpan(0, 0, 0, 0, (int)(positionslider.Value * wfr.GetLength().TotalMilliseconds / 100)));
-            }
+                var postPosition = m_player.Position - value / 100;
+                if (postPosition < 0) postPosition = 0;
+                m_player.Position = postPosition;
+            });
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Position"));
         }
-
-        /// <summary>
-        /// Modifie la valeur de "volumeslider" pour ainsi augmenter le volume.
-        /// </summary>
-        /// <param name="value">La valeur à additionner (%).</param>
-        public void VolumePlus(int value = 5) => Volume += (float)value / 100;
-
-        /// <summary>
-        /// Modifie la valeur de "volumeslider" pour ainsi diminuer le volume.
-        /// </summary>
-        /// <param name="value">La valeur à soustraire (%).</param>
-        public void VolumeMinus(int value = 5) => Volume -= (float)value / 100;
 
         #endregion
 
         #region Audio
-
-        /// <summary>
-        /// Obtient un objet de type <see cref="ISoundOut"/> adapté au système.
-        /// </summary>
-        private ISoundOut GetSoundOut()
-        {
-            if (WasapiOut.IsSupportedOnCurrentPlatform) return new WasapiOut();
-            else return new WaveOut();
-        }
 
         /// <summary>
         /// Définit les données audio lues par le lecteur à partir d'un fichier audio.
@@ -402,22 +335,24 @@ namespace VGMGUI
         /// <summary>
         /// Définit wfr à partir du stream ou du nom de fichier contenu dans la mémoire.
         /// </summary>
+        /// <param name="cancellationToken"/>
         /// <returns>true si wfr a été défini; sinon, false.</returns>
-        private bool SetWFR()
+        private async Task<bool> SetMedia(CancellationToken cancellationToken = default)
         {
             try
             {
                 if (m_filename != null)
                 {
-                    wfr = new WaveFileReader(m_filename);
-                    return true;
+                    await Task.Run(() => m_player.SetMedia(new FileInfo(m_filename)), cancellationToken);
                 }
                 else if (m_stream != null)
                 {
-                    wfr = new WaveFileReader(m_stream);
-                    return true;
+                    if (m_stream is FileStream fs) await Task.Run(() => m_player.SetMedia(new FileInfo(fs.Name)), cancellationToken);
+                    else await Task.Run(() => m_player.SetMedia(m_stream), cancellationToken);
                 }
                 else return false;
+
+                return true;
             }
             catch { return false; }
         }
@@ -450,99 +385,39 @@ namespace VGMGUI
 
         #region Events
 
-        private void PlayButton_Click(object sender, RoutedEventArgs e) => PlayPause();
+        private async void PlayButton_Click(object sender, RoutedEventArgs e) => await PlayPause();
 
-        private void StopButton_Click(object sender, RoutedEventArgs e) => Stop(true);
-
-        private void Dt_Tick(object sender, EventArgs e)
+        private async void StopButton_Click(object sender, RoutedEventArgs e)
         {
-            try
+            switch (Keyboard.Modifiers)
             {
-                if (wfr != null && wfr.Length > 0 && positionslider.IsEnabled && !positionslider.IsMouseCaptureWithin)
-                {
-                    positionslider.Value = wfr.GetPosition().TotalMilliseconds / wfr.GetLength().TotalMilliseconds * 100;
-                    if (wfr.GetPosition().TotalMilliseconds == wfr.GetLength().TotalMilliseconds)
-                    {
-                        Stop(LoopType == LoopTypes.None);
-                        StreamFinished?.Invoke(this, EventArgs.Empty);
-                    }
-                }
-            }
-            catch { }
-        }
-
-        private void positionslider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (positionslider.IsEnabled)
-            {
-                if (wfr != null)
-                {
-                    TimeSpan t = new TimeSpan(0, 0, (int)(positionslider.Value * wfr.GetLength().TotalSeconds / 100));
-                    currenttimelabel.Content = t.ToString(@"hh\:mm\:ss");
-                }
-            }
-            else
-            {
-                positionslider.ValueChanged -= positionslider_ValueChanged;
-                positionslider.Value = e.OldValue;
-                positionslider.ValueChanged += positionslider_ValueChanged;
+                case ModifierKeys.Shift:
+                    App.FreeMemory();
+                    break;
+                default:
+                    await Stop(true);
+                    break;
             }
         }
 
         private void positionslider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
-            try { wfr?.SetPosition(new TimeSpan(0, 0, 0, 0, (int)(positionslider.Value * wfr.GetLength().TotalMilliseconds / 100))); }
-            catch (ArgumentOutOfRangeException)
-            {
-                if (positionslider.Value * wfr.GetLength().TotalMilliseconds / 100 > 0) wfr.Position = wfr.Length;
-                else wfr.Position = 0;
-            }
+            if (positionslider.Value < 0) positionslider.Value = 0;
+            else if (positionslider.Value > 1) positionslider.Value = 1;
+            m_player.Position = (float)positionslider.Value;
         }
 
-        private void positionslider_MouseWheel(object sender, MouseWheelEventArgs e)
+        private void positionslider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("PositionString"));
+
+        private async void positionslider_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            try
-            {
-                if (e.Delta < 0)
-                {
-                    positionslider.Value--;
-                    wfr?.SetPosition(new TimeSpan(0, 0, 0, 0, (int)(positionslider.Value * wfr.GetLength().TotalMilliseconds / 100)));
-                }
-                else
-                {
-                    positionslider.Value++;
-                    wfr?.SetPosition(new TimeSpan(0, 0, 0, 0, (int)(positionslider.Value * wfr.GetLength().TotalMilliseconds / 100)));
-                }
-            }
-            catch { }
+            if (e.Delta < 0) await PositionMinus();
+            else await PositionPlus();
         }
 
-        private void volumeslider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            try { audioOutput.Volume = m_volume = (float)volumeslider.Value / 100; }
-            catch { }
+        private void volumeslider_MouseWheel(object sender, MouseWheelEventArgs e) => Volume += e.Delta > 0 ? 5 : -5;
 
-            if (volumeslider.Value > 66) VolumeIcon.Content = Application.Current.Resources["High Volume"];
-            else if (volumeslider.Value >= 33 && volumeslider.Value <= 66) VolumeIcon.Content = Application.Current.Resources["Medium Volume"];
-            else if (volumeslider.Value < 33 && volumeslider.Value > 0) VolumeIcon.Content = Application.Current.Resources["Low Volume"];
-            else VolumeIcon.Content = Application.Current.Resources["Mute"];
-        }
-
-        private void volumeslider_MouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            if (e.Delta > 0) VolumePlus();
-            else VolumeMinus();
-        }
-
-        private void VolumeIcon_PreviewMouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (Volume > 0)
-            {
-                m_volumeTMP = Volume;
-                Volume = 0;
-            }
-            else Volume = m_volumeTMP > 0 ? m_volumeTMP : 1;
-        }
+        private void VolumeIcon_PreviewMouseUp(object sender, MouseButtonEventArgs e) => Mute = !Mute;
 
         private async void AudioPlayer_LoopTypeChanged(object sender, PropertyChangedExtendedEventArgs<LoopTypes> e)
         {
@@ -598,4 +473,34 @@ namespace VGMGUI
     }
 
     public enum LoopTypes { None, All, Random }
+
+    public static class VLCExtensions
+    {
+        public static async Task StopAsync(this VlcMediaPlayer player, CancellationToken cancellationToken = default)
+        {
+            await Task.Run(() =>
+            {
+                player.Stop();
+                while (player.State != MediaStates.Stopped && player.State != MediaStates.Error) continue;
+            }, cancellationToken);
+            await Task.Delay(1);
+        }
+        public static async Task PlayAsync(this VlcMediaPlayer player, CancellationToken cancellationToken = default)
+        {
+            await Task.Run(() =>
+            {
+                player.Play();
+                while (player.State != MediaStates.Playing && player.State != MediaStates.Error) continue;
+            }, cancellationToken);
+            await Task.Delay(1);
+        }
+        public static Task PauseAsync(this VlcMediaPlayer player, CancellationToken cancellationToken = default) => Task.Run(() => player.Pause(), cancellationToken);
+        public static Time PositionTime(this VlcMediaPlayer player) => new Time(player.Position * player.Length / 1000);
+        public static Time LengthTime(this VlcMediaPlayer player) => new Time(player.Length / 1000);
+    }
+
+    public class VLCException : Exception
+    {
+        public VLCException(string message, Exception innerException) : base(message, innerException) { }
+    }
 }

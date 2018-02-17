@@ -39,6 +39,7 @@ namespace VGMGUI
             App.AskItemCMItems.FindCollectionItem<MenuItem>("A_IgnoreMI").Click += IgnoreMI;
             App.AskItemCMItems.FindCollectionItem<MenuItem>("A_OpenFPMI").Click += OpenFPMI;
             App.AskItemCMItems.FindCollectionItem<MenuItem>("A_CopyFPMI").Click += CopyFPMI;
+            App.AskItemCMItems.FindCollectionItem<MenuItem>("A_PropertiesMI").Click += PropertiesMI;
         }
 
         public new ObservableCollection<AskingFile> ShowDialog()

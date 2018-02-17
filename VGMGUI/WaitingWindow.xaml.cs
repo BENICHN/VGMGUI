@@ -19,11 +19,32 @@ namespace VGMGUI
     /// </summary>
     public partial class WaitingWindow : Window
     {
-        public double Value { get => Bar.Value; set => Bar.Value = value; }
+        public double Value
+        {
+            get => Bar.Value;
+            set
+            {
+                //tii_ww.ProgressState = value <= 0 ? System.Windows.Shell.TaskbarItemProgressState.None : System.Windows.Shell.TaskbarItemProgressState.Normal;
+                Bar.Value = value;
+                tii_ww.ProgressValue = value / Maximum;
+            }
+        }
         public double Maximum { get => Bar.Maximum; set => Bar.Maximum = value; }
+        public bool IsIndeterminate
+        {
+            get => Bar.IsIndeterminate;
+            set
+            {
+                Bar.IsIndeterminate = value;
+                tii_ww.ProgressState = value ? System.Windows.Shell.TaskbarItemProgressState.Indeterminate : System.Windows.Shell.TaskbarItemProgressState.Normal;//Value <= 0 ? System.Windows.Shell.TaskbarItemProgressState.None : System.Windows.Shell.TaskbarItemProgressState.Normal;
+            }
+        }
 
         public static readonly DependencyProperty TextProperty = DependencyProperty.Register("Text", typeof(string), typeof(WaitingWindow));
         public string Text { get => (string)GetValue(TextProperty); set => SetValue(TextProperty, value); }
+
+        public static readonly DependencyProperty StateProperty = DependencyProperty.Register("State", typeof(string), typeof(WaitingWindow));
+        public string State { get => (string)GetValue(StateProperty); set => SetValue(StateProperty, value); }
 
         public WaitingWindow()
         {

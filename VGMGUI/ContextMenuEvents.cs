@@ -1,34 +1,34 @@
 ﻿using System.IO;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Diagnostics;
 using BenLib;
 using Clipboard = System.Windows.Forms.Clipboard;
+using static VGMGUI.Settings;
 
 namespace VGMGUI
 {
     public partial class MainWindow
     {
-        private void PlayInMI(object sender, RoutedEventArgs e)
+        private async void PlayInMI(object sender, RoutedEventArgs e)
         {
             Fichier fsender = (((ContextMenu)(sender as MenuItem).Parent).PlacementTarget as ListViewItem).Content as Fichier;
-            CancelAndStop();
-            PlayFile(fsender, false, true);
+            await CancelAndStop();
+            await PlayFile(fsender, false, true);
         }
 
-        private void PlayOutMI(object sender, RoutedEventArgs e)
+        private async void PlayOutMI(object sender, RoutedEventArgs e)
         {
             Fichier fsender = (((ContextMenu)(sender as MenuItem).Parent).PlacementTarget as ListViewItem).Content as Fichier;
-            CancelAndStop();
-            PlayFile(fsender, true, true);
+            await CancelAndStop();
+            await PlayFile(fsender, true, true);
         }
 
         private async void ConvertMI(object sender, RoutedEventArgs e)
         {
             Preconversion = true;
 
-            if (File.Exists(App.VGMStreamPath) || await App.AskVGMStream())
+            if ((File.Exists(App.VGMStreamPath) || await App.AskVGMStream()) && (!AdditionalFormats.Any || File.Exists(App.FFmpegPath) || await App.AskFFmepg()))
             {
                 if (!MainDestTB.Text.ContainsAny(Literal.ForbiddenPathNameCharacters))
                 {
@@ -61,6 +61,12 @@ namespace VGMGUI
         {
             AskingFile fsender = (((ContextMenu)(sender as MenuItem).Parent).PlacementTarget as ListViewItem).Content as AskingFile;
             Process.Start("explorer.exe", "/select, \"" + fsender.Name + "\"");
+        }
+
+        private void PropertiesMI(object sender, RoutedEventArgs e)
+        {
+            AskingFile fsender = (((ContextMenu)(sender as MenuItem).Parent).PlacementTarget as ListViewItem).Content as AskingFile;
+            IO.ShowFileProperties(fsender.Name);
         }
 
         private void OverwriteMI(object sender, RoutedEventArgs e)
@@ -106,6 +112,12 @@ namespace VGMGUI
             Fichier fsender = (((ContextMenu)(sender as MenuItem).Parent).PlacementTarget as ListViewItem).Content as Fichier;
             Threading.MultipleAttempts(() => { Clipboard.SetText("\"" + fsender.Path + "\""); }, throwEx: false);
         }
+
+        private void PropertiesMI(object sender, RoutedEventArgs e)
+        {
+            Fichier fsender = (((ContextMenu)(sender as MenuItem).Parent).PlacementTarget as ListViewItem).Content as Fichier;
+            IO.ShowFileProperties(fsender.Path);
+        }
     }
 
     public partial class ErrorWindow
@@ -120,6 +132,12 @@ namespace VGMGUI
         {
             string ssender = (((ContextMenu)(sender as MenuItem).Parent).PlacementTarget as ListBoxItem).Content as string;
             Process.Start("explorer.exe", "/select, \"" + ssender + "\"");
+        }
+
+        private void PropertiesMI(object sender, RoutedEventArgs e)
+        {
+            string ssender = (((ContextMenu)(sender as MenuItem).Parent).PlacementTarget as ListBoxItem).Content as string;
+            IO.ShowFileProperties(ssender);
         }
     }
 }

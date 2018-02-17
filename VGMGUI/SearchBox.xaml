@@ -60,6 +60,7 @@
                             <ComboBoxItem Content="{DynamicResource FL_COL_Format}"/>
                             <ComboBoxItem Content="{DynamicResource FL_COL_Encoding}"/>
                             <ComboBoxItem Content="{DynamicResource FL_COL_SampleRate}"/>
+                            <ComboBoxItem Content="{DynamicResource FL_COL_Bitrate}"/>
                             <ComboBoxItem Content="{DynamicResource FL_COL_Channels}"/>
                             <ComboBoxItem Content="{DynamicResource FL_COL_Loop}"/>
                             <ComboBoxItem Content="{DynamicResource FL_COL_Layout}"/>

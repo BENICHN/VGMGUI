@@ -62,13 +62,15 @@
     <LangVersion>latest</LangVersion>
     <ShouldCreateLogs>True</ShouldCreateLogs>
     <AdvancedSettingsExpanded>False</AdvancedSettingsExpanded>
-    <UpdateAssemblyVersion>True</UpdateAssemblyVersion>
-    <UpdateAssemblyFileVersion>True</UpdateAssemblyFileVersion>
-    <UpdateAssemblyInfoVersion>True</UpdateAssemblyInfoVersion>
+    <UpdateAssemblyVersion>False</UpdateAssemblyVersion>
+    <UpdateAssemblyFileVersion>False</UpdateAssemblyFileVersion>
+    <UpdateAssemblyInfoVersion>False</UpdateAssemblyInfoVersion>
     <AssemblyVersionSettings>None.IncrementOnDemandWithReset.Increment.None</AssemblyVersionSettings>
     <AssemblyFileVersionSettings>None.IncrementOnDemandWithReset.Increment.None</AssemblyFileVersionSettings>
     <AssemblyInfoVersionSettings>None.IncrementOnDemandWithReset.Increment.None</AssemblyInfoVersionSettings>
     <PrimaryVersionType>AssemblyInfoVersionAttribute</PrimaryVersionType>
+    <UpdatePackageVersion>False</UpdatePackageVersion>
+    <AssemblyInfoVersionType>SettingsVersion</AssemblyInfoVersionType>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -89,16 +91,16 @@
     <ApplicationIcon>Icon\VGMGUI.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BenLib, Version=2018.1.14.1136, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="AsyncIO, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\AsyncIO.DotNet.1.3\lib\net45\AsyncIO.dll</HintPath>
+    </Reference>
+    <Reference Include="BenLib, Version=2018.2.17.1516, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\BenLib\BenLib\bin\Debug\BenLib.dll</HintPath>
     </Reference>
-    <Reference Include="BenLib.WPF, Version=2018.1.14.1136, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="BenLib.WPF, Version=2018.2.17.1516, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\BenLib\BenLib.WPF\bin\Debug\BenLib.WPF.dll</HintPath>
-    </Reference>
-    <Reference Include="CSCore, Version=1.2.1.2, Culture=neutral, PublicKeyToken=5a08f2b6f4415dea, processorArchitecture=MSIL">
-      <HintPath>..\packages\CSCore.1.2.1.2\lib\net35-client\CSCore.dll</HintPath>
     </Reference>
     <Reference Include="INIFileParser, Version=2.5.2.0, Culture=neutral, PublicKeyToken=79af7b307b65cf3c, processorArchitecture=MSIL">
       <HintPath>..\packages\ini-parser.2.5.2\lib\net20\INIFileParser.dll</HintPath>
@@ -127,9 +129,18 @@
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
+    <Reference Include="Vlc.DotNet.Core, Version=3.0.0.0, Culture=neutral, PublicKeyToken=84529da31f4eb963, processorArchitecture=MSIL">
+      <HintPath>..\packages\Vlc.DotNet.Core.3.0.0-develop252\lib\net45\Vlc.DotNet.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Vlc.DotNet.Core.Interops, Version=3.0.0.0, Culture=neutral, PublicKeyToken=84529da31f4eb963, processorArchitecture=MSIL">
+      <HintPath>..\packages\Vlc.DotNet.Core.Interops.3.0.0-develop252\lib\net45\Vlc.DotNet.Core.Interops.dll</HintPath>
+    </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="Z.Linq.Async, Version=1.0.1.0, Culture=neutral, PublicKeyToken=59b66d028979105b, processorArchitecture=MSIL">
+      <HintPath>..\packages\Z.Linq.Async.1.0.2\lib\Z.Linq.Async.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -144,6 +155,7 @@
     </Compile>
     <Compile Include="ContextMenuEvents.cs" />
     <Compile Include="DisplayInfos.cs" />
+    <Compile Include="DKCTFCSMP.cs" />
     <Compile Include="Fichier.cs" />
     <Compile Include="Global.xaml.cs">
       <DependentUpon>Global.xaml</DependentUpon>
@@ -263,6 +275,7 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <None Include="README.md" />
     <None Include="vgmstream\COPYING">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -307,22 +320,14 @@
     <Resource Include="Images\AskItemCM\FNum.png" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="vgmstream\at3plusdecoder.dll">
+    <Content Include="ffmpeg\ffmpeg.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="vgmstream\avcodec-vgmstream-57.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Resource Include="Images\FileListItemCM\Properties.png" />
     <Content Include="vgmstream\avcodec-vgmstream-58.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="vgmstream\avformat-vgmstream-57.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="vgmstream\avformat-vgmstream-58.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="vgmstream\avutil-vgmstream-55.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="vgmstream\avutil-vgmstream-56.dll">
@@ -346,9 +351,6 @@
     <Content Include="vgmstream\libvorbis.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="vgmstream\swresample-vgmstream-2.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="vgmstream\swresample-vgmstream-3.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -359,5 +361,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

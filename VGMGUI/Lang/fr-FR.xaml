@@ -7,6 +7,7 @@
     <sys:String x:Key="MW_Encoding">Encodage :</sys:String>
     <sys:String x:Key="MW_Channels">Cannaux :</sys:String>
     <sys:String x:Key="MW_SampleRate">Taux d'échantillonnage :</sys:String>
+    <sys:String x:Key="MW_Bitrate">Débit binaire :</sys:String>
     <sys:String x:Key="MW_TotalSamples">Nombre total d'échantillons :</sys:String>
     <sys:String x:Key="MW_Layout">Structure :</sys:String>
     <sys:String x:Key="MW_Interleave">Entrelacement :</sys:String>
@@ -31,6 +32,12 @@
     <sys:String x:Key="MW_ResumeToolTip">Reprendre la conversion (F5)</sys:String>
     <sys:String x:Key="MW_CancelToolTip">Annuler la conversion (Ctrl+F5)</sys:String>
     <sys:String x:Key="MW_Multiple">&lt;Multiple&gt;</sys:String>
+    
+    <sys:String x:Key="ST_object">objet</sys:String>
+    <sys:String x:Key="ST_objects">objets</sys:String>
+    <sys:String x:Key="ST_objectsSelectedOutOf">objets sélectionnés sur</sys:String>
+    <sys:String x:Key="ST_objectSelectedOutOf">objet sélectionné sur</sys:String>
+    <sys:String x:Key="ST_RAMUsage">Utilisation de la RAM :</sys:String>
 
     <sys:String x:Key="ERR_UnauthorizedChars">La destination principale contient des caractères non autorisés.</sys:String>
     <sys:String x:Key="ERR_UnauthorizedAccess1">L'accès au chemin d'accès '</sys:String>
@@ -38,6 +45,8 @@
     <sys:String x:Key="ERR_AccessDenied">Accèss refusé</sys:String>
     <sys:String x:Key="ERR_TryAdmin">Essayez d'exécuter VGMGUI en tant qu'administrateur.</sys:String>
     <sys:String x:Key="ERR_VGMStreamNotFound">Impossible de trouver le fichier "vgmstream\test.exe".&#xD;&#xA;Voulez-vous le télécharger ?</sys:String>
+    <sys:String x:Key="ERR_FFNotFound">Impossible de trouver le fichier "ffmpeg\ffmpeg.exe".&#xD;&#xA;Voulez-vous le télécharger ?</sys:String>
+    <sys:String x:Key="ERR_VLCNotFound">VLC ne se trouve pas dans le dossier "vlc".&#xD;&#xA;Voulez-vous le télécharger ?</sys:String>
     <sys:String x:Key="ERR_FileNotFound">Fichier introuvable</sys:String>
     <sys:String x:Key="ERR_SameSourceAndDest">La destination est identique à la source.</sys:String>
 
@@ -47,6 +56,14 @@
     <sys:String x:Key="WW_Running">Opération en cours</sys:String>
     <sys:String x:Key="WW_DownloadOf">Téléchargement de</sys:String>
     <sys:String x:Key="WW_Decompression">Décompression...</sys:String>
+    <sys:String x:Key="WW_Search">Recherche...</sys:String>
+    <sys:String x:Key="WW_VLCDownloaded">VLC Téléchargé.&#xD;&#xA;Il sera extrait à la fermeture de l'application.</sys:String>
+    <sys:String x:Key="WW_DownloadVLC">Téléchargement de VLC</sys:String>
+    <sys:String x:Key="WW_VLCExtraction">Extracion de VLC</sys:String>
+    <sys:String x:Key="WW_DownloadFFmpeg">Téléchargement de FFmpeg</sys:String>
+    <sys:String x:Key="WW_DownloadVGMStream">Téléchargement de VGMStream</sys:String>
+    <sys:String x:Key="WW_FilesAdding">Ajout de fichiers</sys:String>
+    <sys:String x:Key="WW_FilesAnalyze">Analyse de fichiers</sys:String>
 
     <sys:String x:Key="INFO_ConversionCompleted">Conversion terminée</sys:String>
     <sys:String x:Key="INFO_Info">Info</sys:String>
@@ -63,6 +80,7 @@
     <sys:String x:Key="CM_Overwrite">Écraser</sys:String>
     <sys:String x:Key="CM_Number">Numéroter</sys:String>
     <sys:String x:Key="CM_Ignore">Ignorer</sys:String>
+    <sys:String x:Key="CM_Properties">Propriétés</sys:String>
 
     <sys:String x:Key="SRCH_Case">Respecter la case</sys:String>
 
@@ -79,9 +97,12 @@
     <sys:String x:Key="AP_Previous">Précédent (PageUp)</sys:String>
     <sys:String x:Key="AP_Next">Suivant (PageDown)</sys:String>
     <sys:String x:Key="AP_Stop">Stop (S)</sys:String>
+    <sys:String x:Key="AP_DeleteTempFiles">Supprimer les fichiers temporaires et libérer de la mémoire (mais continuer la lecture) (Maj+S)</sys:String>
     <sys:String x:Key="AP_Volume">Volume</sys:String>
     <sys:String x:Key="AP_Settings">Paramètres (Ctrl+P)</sys:String>
-    <sys:String x:Key="AP_Download">Télécharger la dernière version de VGMStream (Ctrl+D)</sys:String>
+    <sys:String x:Key="AP_DownloadVGMStream">Télécharger la dernière version de VGMStream (Ctrl+D)</sys:String>
+    <sys:String x:Key="AP_DownloadFFmpeg">Télécharger la dernière version de FFmpeg (Ctrl+Maj+D)</sys:String>
+    <sys:String x:Key="AP_DownloadVLC">Télécharger la dernière version stable de VLC (Ctrl+Alt+D)</sys:String>
     <sys:String x:Key="AP_LOOP_None">Lire une fois</sys:String>
     <sys:String x:Key="AP_LOOP_All">Lire tout</sys:String>
     <sys:String x:Key="AP_LOOP_Random">Aléatoire</sys:String>
@@ -165,6 +186,7 @@
     <sys:String x:Key="FL_COL_Size">Taille</sys:String>
     <sys:String x:Key="FL_COL_Duration">Durée</sys:String>
     <sys:String x:Key="FL_COL_SampleRate">Taux d'échantillonnage</sys:String>
+    <sys:String x:Key="FL_COL_Bitrate">Débit binaire</sys:String>
     <sys:String x:Key="FL_COL_Format">Format</sys:String>
     <sys:String x:Key="FL_COL_Encoding">Encodage</sys:String>
     <sys:String x:Key="FL_COL_Channels">Cannaux</sys:String>
@@ -183,11 +205,9 @@
     <sys:String x:Key="STGS_MTH_MaxAdding2">processus simultanés (Illimité : 0)</sys:String>
     <sys:String x:Key="STGS_SearchDelay1">Délai de la recherche :</sys:String>
     <sys:String x:Key="STGS_SearchDelay2">millisecondes</sys:String>
+    <sys:String x:Key="STGS_AdditionalFormats">Formats additionnels</sys:String>
     <sys:String x:Key="STGS_Playback">Lecture</sys:String>
     <sys:String x:Key="STGS_StopWhenDelete">Arrêter la lecture à la suppression du fichier</sys:String>
-    <sys:String x:Key="STGS_DTPTH">Emplacement des données audio lors de la lecture :</sys:String>
-    <sys:String x:Key="STGS_DTPTH_File">Dans un fichier temporaire</sys:String>
-    <sys:String x:Key="STGS_DTPTH_Mem">Dans la mémoire</sys:String>
     <sys:String x:Key="STGS_PRV">Apperçu par défaut :</sys:String>
     <sys:String x:Key="STGS_PRV_In">Entrée</sys:String>
     <sys:String x:Key="STGS_PRV_Out">Sortie</sys:String>
@@ -199,6 +219,9 @@
     <sys:String x:Key="STGS_CLRS_Foreground">Couleur de premier plan :</sys:String>
     <sys:String x:Key="STGS_CLRS_Background">Couleur d'arrière plan :</sys:String>
     <sys:String x:Key="STGS_CLRS_Error">Couleur d'erreur :</sys:String>
+    <sys:String x:Key="STGS_STSBAR">Barre de statut (Ctrl+Maj+B)</sys:String>
+    <sys:String x:Key="STGS_STSBAR_Count">Compteur d'éléments</sys:String>
+    <sys:String x:Key="STGS_STSBAR_RAM">Utilisation de la RAM</sys:String>
 
     <sys:String x:Key="FMT_FFmpeg">Foramt supporté par FFmpeg</sys:String>
 

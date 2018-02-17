@@ -20,6 +20,7 @@ namespace VGMGUI
             DataContext = this;
             App.ErrorItemCMItems.FindCollectionItem<MenuItem>("E_OpenFPMI").Click += OpenFPMI;
             App.ErrorItemCMItems.FindCollectionItem<MenuItem>("E_CopyFPMI").Click += CopyFPMI;
+            App.ErrorItemCMItems.FindCollectionItem<MenuItem>("E_PropertiesMI").Click += PropertiesMI;
         }
 
         public static void ShowErrors(string resTitle = "TITLE_ErrorWindow")

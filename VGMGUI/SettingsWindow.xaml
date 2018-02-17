@@ -72,23 +72,36 @@
                     </Grid>
                 </StackPanel>
             </GroupBox>
+            <!--================================================== VGMStream ==================================================-->
+            <GroupBox Margin="0,5,0,0">
+                <GroupBox.Header>
+                    <Label Content="{DynamicResource STGS_AdditionalFormats}"/>
+                </GroupBox.Header>
+                <StackPanel Margin="5">
+                    <CheckBox Name="chbx_additionalformats_dkctfcsmp" Content="DKCTF CSMP" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
+                </StackPanel>
+            </GroupBox>
             <!--================================================== Playing ==================================================-->
             <GroupBox Margin="0,5,0,0">
                 <GroupBox.Header>
                     <Label Content="{DynamicResource STGS_Playback}"/>
                 </GroupBox.Header>
                 <StackPanel Margin="5">
-                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                        <Label Content="{DynamicResource STGS_DTPTH}" Margin="0,0,4,0"/>
-                        <RadioButton Name="rbtn_dtpth_file" Content="{DynamicResource STGS_DTPTH_File}" Margin="20,0,0,0" Checked="rbtn_Checked"/>
-                        <RadioButton Name="rbtn_dtpth_mem" Content="{DynamicResource STGS_DTPTH_Mem}" Margin="20,0,0,0" Checked="rbtn_Checked"/>
-                    </StackPanel>
                     <CheckBox Name="chbx_stopwhendelete" Content="{DynamicResource STGS_StopWhenDelete}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked"/>
                     <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                         <Label Content="{DynamicResource STGS_PRV}" Margin="0,0,4,0"/>
                         <RadioButton Name="rbtn_preview_in" Content="{DynamicResource STGS_PRV_In}" Margin="20,0,0,0" Checked="rbtn_Checked"/>
                         <RadioButton Name="rbtn_preview_out" Content="{DynamicResource STGS_PRV_Out}" Margin="20,0,0,0" Checked="rbtn_Checked"/>
                     </StackPanel>
+                </StackPanel>
+            </GroupBox>
+            <GroupBox Margin="0,5,0,0">
+                <GroupBox.Header>
+                    <CheckBox Name="chbx_stsbar" Content="{DynamicResource STGS_STSBAR}" Checked="chbx_checked" Unchecked="chbx_unchecked"/>
+                </GroupBox.Header>
+                <StackPanel Margin="5">
+                    <CheckBox Name="chbx_stsbar_count" Content="{DynamicResource STGS_STSBAR_Count}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
+                    <CheckBox Name="chbx_stsbar_RAM" Content="{DynamicResource STGS_STSBAR_RAM}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
                 </StackPanel>
             </GroupBox>
             <!--================================================== Colors ==================================================-->

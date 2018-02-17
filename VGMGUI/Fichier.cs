@@ -289,6 +289,37 @@ namespace VGMGUI
         }
         private string m_layout = String.Empty;
 
+        #region Bitrate
+
+        /// <summary>
+        /// Débit binaire du fichier.
+        /// </summary>
+        public int Bitrate
+        {
+            get => m_bitrate;
+            set
+            {
+                if (value != Bitrate)
+                {
+                    var tmp = Bitrate;
+                    var strtmp = BitrateString;
+
+                    m_bitrate = value;
+
+                    NotifyPropertyChanged("Bitrate", tmp, Bitrate);
+                    NotifyPropertyChanged("BitrateString", strtmp, BitrateString);
+                }
+            }
+        }
+        private int m_bitrate;
+
+        /// <summary>
+        /// Débit binaire du fichier.
+        /// </summary>
+        public string BitrateString => $"{Bitrate} kbps";
+
+        #endregion
+
         #region Format
 
         /// <summary>

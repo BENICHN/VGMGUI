@@ -80,20 +80,6 @@ namespace VGMGUI
             if ((o = m_data.Global["PreAnalyse"].ToBool()) != null) chbx_preanalyse.IsChecked = (bool)o;
             else chbx_preanalyse.IsChecked = true;
 
-            if ((o = m_data.Global["AudioDataPath"]) != null)
-            {
-                switch (o)
-                {
-                    case "File":
-                        rbtn_dtpth_file.IsChecked = true;
-                        break;
-                    case "Memory":
-                        rbtn_dtpth_mem.IsChecked = true;
-                        break;
-                }
-            }
-            else rbtn_dtpth_file.IsChecked = true;
-
             if ((o = m_data.Global["Preview"]) != null)
             {
                 switch (o)
@@ -140,6 +126,18 @@ namespace VGMGUI
             if ((o = m_data["Multithreading"]["MaxAdding"].ToInt()) != null) stbx_max_adding.Text = ((int)o).ToString();
             else stbx_max_adding.Text = "5";
 
+            if ((o = m_data["AdditionalFormats"]["DKCTFCSMP"].ToBool()) != null) chbx_additionalformats_dkctfcsmp.IsChecked = (bool)o;
+            else chbx_additionalformats_dkctfcsmp.IsChecked = true;
+
+            if ((o = m_data["StatusBar"]["Display"].ToBool()) != null) chbx_stsbar.IsChecked = (bool)o;
+            else chbx_stsbar.IsChecked = true;
+
+            if ((o = m_data["StatusBar"]["Counter"].ToBool()) != null) chbx_stsbar_count.IsChecked = (bool)o;
+            else chbx_stsbar_count.IsChecked = true;
+
+            if ((o = m_data["StatusBar"]["RAM"].ToBool()) != null) chbx_stsbar_RAM.IsChecked = (bool)o;
+            else chbx_stsbar_RAM.IsChecked = true;
+
             if ((o = m_data["Colors"]["Foreground"].ToColor()) != null) rect_foregroundcolor.Fill = new SolidColorBrush((Color)o);
             if ((o = m_data["Colors"]["Background"].ToColor()) != null) rect_backgroundcolor.Fill = new SolidColorBrush((Color)o);
             if ((o = m_data["Colors"]["Error"].ToColor()) != null) rect_errorcolor.Fill = new SolidColorBrush((Color)o);
@@ -153,7 +151,6 @@ namespace VGMGUI
             m_data.Global["Language"] = "Auto";
             m_data.Global["StopWhenDelete"] = "True";
             m_data.Global["PreAnalyse"] = "True";
-            m_data.Global["AudioDataPath"] = "File";
             m_data.Global["Preview"] = "In";
             m_data.Global["SamplesDisplay"] = "S";
             m_data.Global["SamplesDisplayMaxDec"] = "4";
@@ -163,6 +160,12 @@ namespace VGMGUI
             m_data["Multithreading"]["MaxConversion"] = "5";
             m_data["Multithreading"]["Adding"] = "True";
             m_data["Multithreading"]["MaxAdding"] = "5";
+
+            m_data["AdditionalFormats"]["DKCTFCSMP"] = "True";
+
+            m_data["StatusBar"]["Display"] = "True";
+            m_data["StatusBar"]["Counter"] = "True";
+            m_data["StatusBar"]["RAM"] = "True";
 
             m_data["Colors"]["Foreground"] = "#16A085";
             m_data["Colors"]["Background"] = "#727272";
@@ -219,6 +222,8 @@ namespace VGMGUI
 
         private void chbx_checked(object sender, RoutedEventArgs e)
         {
+            if (m_data == null) return;
+
             switch ((sender as CheckBox).Name)
             {
                 case "chbx_preanalyse":
@@ -233,12 +238,25 @@ namespace VGMGUI
                 case "chbx_stopwhendelete":
                     m_data.Global["StopWhenDelete"] = "True";
                     break;
-                default: return;
+                case "chbx_additionalformats_dkctfcsmp":
+                    m_data["AdditionalFormats"]["DKCTFCSMP"] = "True";
+                    break;
+                case "chbx_stsbar":
+                    m_data["StatusBar"]["Display"] = "True";
+                    break;
+                case "chbx_stsbar_count":
+                    m_data["StatusBar"]["Counter"] = "True";
+                    break;
+                case "chbx_stsbar_RAM":
+                    m_data["StatusBar"]["RAM"] = "True";
+                    break;
             }
         }
 
         private void chbx_unchecked(object sender, RoutedEventArgs e)
         {
+            if (m_data == null) return;
+
             switch ((sender as CheckBox).Name)
             {
                 case "chbx_preanalyse":
@@ -253,7 +271,18 @@ namespace VGMGUI
                 case "chbx_stopwhendelete":
                     m_data.Global["StopWhenDelete"] = "False";
                     break;
-                default: return;
+                case "chbx_additionalformats_dkctfcsmp":
+                    m_data["AdditionalFormats"]["DKCTFCSMP"] = "False";
+                    break;
+                case "chbx_stsbar":
+                    m_data["StatusBar"]["Display"] = "False";
+                    break;
+                case "chbx_stsbar_count":
+                    m_data["StatusBar"]["Counter"] = "False";
+                    break;
+                case "chbx_stsbar_RAM":
+                    m_data["StatusBar"]["RAM"] = "False";
+                    break;
             }
         }
 
@@ -261,22 +290,25 @@ namespace VGMGUI
 
         private void stbx_LostFocus(object sender, RoutedEventArgs e)
         {
-            SwitchableTextBox ssender = sender as SwitchableTextBox;
-
-            switch (ssender.Name)
+            if (m_data != null)
             {
-                case "stbx_max_conversion":
-                    m_data["Multithreading"]["MaxConversion"] = ssender.Text;
-                    break;
-                case "stbx_max_adding":
-                    m_data["Multithreading"]["MaxAdding"] = ssender.Text;
-                    break;
-                case "stbx_searchdelay":
-                    m_data["Search"]["SearchDelay"] = ssender.Text;
-                    break;
-                case "stbx_maxdec":
-                    m_data.Global["SamplesDisplayMaxDec"] = ssender.Text;
-                    break;
+                SwitchableTextBox ssender = sender as SwitchableTextBox;
+
+                switch (ssender.Name)
+                {
+                    case "stbx_max_conversion":
+                        m_data["Multithreading"]["MaxConversion"] = ssender.Text;
+                        break;
+                    case "stbx_max_adding":
+                        m_data["Multithreading"]["MaxAdding"] = ssender.Text;
+                        break;
+                    case "stbx_searchdelay":
+                        m_data["Search"]["SearchDelay"] = ssender.Text;
+                        break;
+                    case "stbx_maxdec":
+                        m_data.Global["SamplesDisplayMaxDec"] = ssender.Text;
+                        break;
+                }
             }
 
             m_valid = true;
@@ -284,6 +316,8 @@ namespace VGMGUI
 
         private void rect_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            if (m_data == null) return;
+
             using (System.Windows.Forms.ColorDialog colorDialog = new System.Windows.Forms.ColorDialog())
             {
                 switch (((sender as ContentControl)?.Content as Rectangle)?.Name)
@@ -312,7 +346,6 @@ namespace VGMGUI
                             rect_errorcolor.Fill = new SolidColorBrush(colorDialog.Color.ToMediaColor());
                         }
                         break;
-                    default: return;
                 }
             }
 
@@ -320,15 +353,10 @@ namespace VGMGUI
 
         private void rbtn_Checked(object sender, RoutedEventArgs e)
         {
+            if (m_data == null) return;
+
             switch ((sender as RadioButton).Name)
             {
-                case "rbtn_dtpth_file":
-                    m_data.Global["AudioDataPath"] = "File";
-                    break;
-                case "rbtn_dtpth_mem":
-                    m_data.Global["AudioDataPath"] = "Memory";
-                    break;
-
                 case "rbtn_preview_in":
                     m_data.Global["Preview"] = "In";
                     break;
@@ -347,6 +375,8 @@ namespace VGMGUI
 
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (m_data == null) return;
+
             if (sender is ComboBox cbx && m_data != null)
             {
                 switch (cbx.Name)
@@ -410,18 +440,6 @@ namespace VGMGUI
             if ((o = data.Global["Language"]) != null) App.SetLanguage(o as string);
             if ((o = data.Global["StopWhenDelete"].ToBool()) != null) StopPlayingWhenDeleteFile = (bool)o;
             if ((o = data.Global["PreAnalyse"].ToBool()) != null) PreAnalyse = (bool)o;
-            if ((o = data.Global["AudioDataPath"]) != null)
-            {
-                switch (o)
-                {
-                    case "File":
-                        UseFileForPlaying = true;
-                        break;
-                    case "Memory":
-                        UseFileForPlaying = false;
-                        break;
-                }
-            }
             if (startup && (o = data.Global["Preview"]) != null)
             {
                 switch (o)
@@ -467,7 +485,10 @@ namespace VGMGUI
                             break;
                     }
                 }
-                if ((o = data.Global["Volume"].ToFloat()) != null) AP.Volume = (float)o;
+
+                if ((o = data.Global["Volume"].ToInt()) != null) AP.Volume = (int)o;
+                if ((o = data.Global["Mute"].ToBool()) != null) AP.Mute = (bool)o;
+
                 if ((o = data.Global["ConversionFolderName"]) != null) MainDestTB.Text = o as string;
                 if ((o = (SettingsData.Global["DefaultOutData"]?.Replace("\"", String.Empty).Split(new[] { " | " }, StringSplitOptions.None))?.ToList()) != null)
                 {
@@ -538,6 +559,12 @@ namespace VGMGUI
 
             if ((o = data["Multithreading"]["Adding"].ToBool()) != null) AddingMultithreading = (bool)o;
             if ((o = data["Multithreading"]["MaxAdding"].ToInt()) != null) AddingMaxProcessCount = (int)o;
+
+            if ((o = data["StatusBar"]["Display"].ToBool()) != null) StatusBar.Display = (bool)o;
+            if ((o = data["StatusBar"]["Counter"].ToBool()) != null) StatusBar.Counter = (bool)o;
+            if ((o = data["StatusBar"]["RAM"].ToBool()) != null) StatusBar.RAM = (bool)o;
+
+            if ((o = data["AdditionalFormats"]["DKCTFCSMP"].ToBool()) != null) AdditionalFormats.DKCTFCSMP = (bool)o;
 
             if ((o = data["Colors"]["Foreground"].ToColor()) != null)
             {

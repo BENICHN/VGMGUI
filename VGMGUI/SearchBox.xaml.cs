@@ -42,9 +42,9 @@ namespace VGMGUI
 
         private void UserControl_GotFocus(object sender, RoutedEventArgs e) => Opacity = 1;
 
-        private void cbx_column_SelectionChanged(object sender, SelectionChangedEventArgs e) => SearchColumn = FileList.FLCOLToFileListColumn(App.Res((cbx_column.SelectedItem as ComboBoxItem).Content.ToString())) ?? FileListColumn.Name;
+        private void cbx_column_SelectionChanged(object sender, SelectionChangedEventArgs e) => SearchColumn = FileList.FLCOLToFileListColumn(App.Res((cbx_column.SelectedItem as ComboBoxItem).Content.ToString(), indice: "FL_COL_")) ?? FileListColumn.Name;
 
-        private void cbx_column_Loaded(object sender, RoutedEventArgs e) => cbx_column.SelectedItem = (from ComboBoxItem item in cbx_column.Items select item).FirstOrDefault(item => App.Res(item.Content.ToString()) == FileList.FileListColumnToFLCOL(SearchColumn)) ?? cbx_column.Items[0];
+        private void cbx_column_Loaded(object sender, RoutedEventArgs e) => cbx_column.SelectedItem = (from ComboBoxItem item in cbx_column.Items select item).FirstOrDefault(item => App.Res(item.Content.ToString(), indice: "FL_COL_") == FileList.FileListColumnToFLCOL(SearchColumn)) ?? cbx_column.Items[0];
 
         private void btn_case_CheckedUnchecked(object sender, RoutedEventArgs e) => SearchCaseSensitive = btn_case.IsChecked ?? false;
     }

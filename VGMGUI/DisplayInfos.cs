@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using Microsoft.WindowsAPICodePack.Dialogs;
 using BenLib;
 using BenLib.WPF;
 using System.Text;
-using System.Threading;
 using System.IO;
 
 namespace VGMGUI
@@ -28,7 +25,7 @@ namespace VGMGUI
         /// <summary>
         /// Dictionnaires contennant le nombre d'instances de toutes les propriétés des fichiers sélectionnés.
         /// </summary>
-        public Dictionary<object, int>[] Infos { get; set; } = new Dictionary<object, int>[16];
+        public Dictionary<object, int>[] Infos { get; set; } = new Dictionary<object, int>[17];
 
         #endregion
 
@@ -65,6 +62,7 @@ namespace VGMGUI
             ChannelsTB.Text = String.Empty;
             LayoutTB.Text = String.Empty;
             InterleaveTB.Text = String.Empty;
+            BitrateTB.Text = String.Empty;
             DestCB.Text = String.Empty;
         }
 
@@ -164,6 +162,11 @@ namespace VGMGUI
                     else if (Infos[15].Count == 1) InterleaveTB.Text = Infos[15].Keys.First().ToString();
                     else InterleaveTB.Text = App.Str("MW_Multiple");
                     break;
+                case MediaInfos.Bitrate:
+                    if (Infos[16].Count == 0) BitrateTB.Text = String.Empty;
+                    else if (Infos[16].Count == 1) BitrateTB.Text = Infos[16].Keys.First().ToString();
+                    else BitrateTB.Text = App.Str("MW_Multiple");
+                    break;
                 case MediaInfos.All:
                     {
                         //Format=====================================================================
@@ -238,6 +241,10 @@ namespace VGMGUI
                         if (Infos[15].Count == 0) InterleaveTB.Text = String.Empty;
                         else if (Infos[15].Count == 1) InterleaveTB.Text = Infos[15].Keys.First().ToString();
                         else InterleaveTB.Text = App.Str("MW_Multiple");
+                        //Bitrate=====================================================================
+                        if (Infos[16].Count == 0) BitrateTB.Text = String.Empty;
+                        else if (Infos[16].Count == 1) BitrateTB.Text = Infos[16].Keys.First().ToString();
+                        else BitrateTB.Text = App.Str("MW_Multiple");
                         //=====================================================================
                     }
                     break;
@@ -391,6 +398,7 @@ namespace VGMGUI
             RegisterInfo(13, fichier.FadeOut);
             RegisterInfo(14, fichier.Layout);
             RegisterInfo(15, fichier.InterleaveString);
+            RegisterInfo(16, fichier.BitrateString);
         }
 
         /// <summary>
@@ -416,6 +424,7 @@ namespace VGMGUI
             UnRegisterInfo(13, fichier.FadeOut);
             UnRegisterInfo(14, fichier.Layout);
             UnRegisterInfo(15, fichier.InterleaveString);
+            UnRegisterInfo(16, fichier.BitrateString);
         }
 
         /// <summary>
@@ -460,6 +469,8 @@ namespace VGMGUI
 
         private void FILEList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            UpdateStatusBar();
+
             CanEditFichier = false;
 
             foreach (Fichier fichier in e.AddedItems) RegisterAllInfos(fichier);
@@ -585,6 +596,13 @@ namespace VGMGUI
                             UnRegisterInfo(15, e.OldValue);
                             RegisterInfo(15, e.NewValue);
                             DisplayInfo(MediaInfos.Interleave);
+                            break;
+                        }
+                    case "BitrateString":
+                        {
+                            UnRegisterInfo(16, e.OldValue);
+                            RegisterInfo(16, e.NewValue);
+                            DisplayInfo(MediaInfos.Bitrate);
                             break;
                         }
                 }
@@ -719,5 +737,5 @@ namespace VGMGUI
         #endregion
     }
 
-    public enum MediaInfos { Format, Encoding, Channels, Layout, Interleave, SampleRate, TotalSamples, LoopFlag, LoopStartString, LoopEndString, LoopCount, StartEndLoop, FadeOut, FadeDelay, FadeTime, Destination, All }
+    public enum MediaInfos { Format, Encoding, Channels, Layout, Interleave, Bitrate, SampleRate, TotalSamples, LoopFlag, LoopStartString, LoopEndString, LoopCount, StartEndLoop, FadeOut, FadeDelay, FadeTime, Destination, All }
 }

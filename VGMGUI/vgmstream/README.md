@@ -1,5 +1,8 @@
 # vgmstream
 
+[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/kode54/vgmstream?branch=master&svg=true "Build Status")](https://ci.appveyor.com/project/kode54/vgmstream/branch/master/artifacts)
+
+
 This is vgmstream, a library for playing streamed (pre-recorded) audio
 from video games.
 
@@ -24,8 +27,8 @@ or you can get them here: https://github.com/kode54/vgmstream/tree/master/ext_li
 (bundled here: https://f.losno.co/vgmstream-win32-deps.zip, may not be latest).
 
 Put ```libvorbis.dll```, ```libmpg123-0.dll```, ```libg7221_decode.dll```, ```libg719_decode.dll```,
-```at3plusdecoder.dll```, ```avcodec-vgmstream-58.dll```, ```avformat-vgmstream-58.dll```, 
-```avutil-vgmstream-56.dll``` and ```swresample-vgmstream-3.dll``` somewhere Windows can
+```avcodec-vgmstream-58.dll```, ```avformat-vgmstream-58.dll```, ```avutil-vgmstream-56.dll```
+and ```swresample-vgmstream-3.dll``` somewhere Windows can
 find them.
 
 For Winamp/XMPlay/command line this means in the directory with the main .exe,
@@ -148,6 +151,7 @@ a companion file:
 - .adx: .adxkey (derived 6 byte key, in start/mult/add format)
 - .ahx: .ahxkey (derived 6 byte key, in start/mult/add format)
 - .hca: .hcakey (8 byte decryption key, a 64-bit number)
+- .fsb: .fsbkey (decryption key, in hex)
 
 The key file can be ".(ext)key" (for the whole folder), or "(name).(ext)key"
 (for a single file). The format is made up to suit vgmstream.
@@ -468,7 +472,8 @@ This list is not complete and many other files are supported.
 - other:
 	- .adxkey (decryption key for .adx, in start/mult/add format)
 	- .ahxkey (decryption key for .ahx, in start/mult/add format)
-	- .hcakey (decryption key for .hca, in HCA Decoder format)
+    - .hcakey (decryption key for .hca, in HCA Decoder format)
+    - .fsbkey (decryption key for .fsb, in hex)
 	- .vgmstream + .pos (FFmpeg formats + loop assist)
 
 Enjoy! *hcs*

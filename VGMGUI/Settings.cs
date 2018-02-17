@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace VGMGUI
 {
@@ -26,11 +27,6 @@ namespace VGMGUI
         /// Nombre maximal de processus vgmstream en cours d'exécution lors de la conversion.
         /// </summary>
         public static int ConversionMaxProcessCount { get; set; } = 5;
-
-        /// <summary>
-        /// Indique si <see cref="VGFileToStream"/> doit retourner un <see cref="MemoryStream"/> ou un <see cref="FileStream"/>.
-        /// </summary>
-        public static bool UseFileForPlaying { get; set; } = true;
 
         /// <summary>
         /// Indique si l'affichage des échantillons doit se faire sous la forme "x secondes" ou sous la forme "xx:xx:xx"
@@ -66,6 +62,54 @@ namespace VGMGUI
         /// Indique si les fichiers doivent être analysés à l'ajout.
         /// </summary>
         public static bool PreAnalyse { get; set; } = true;
+
+        public class AdditionalFormats
+        {
+            public static bool DKCTFCSMP { get; set; } = true;
+            public static bool Any => DKCTFCSMP;
+        }
+
+        public class StatusBar
+        {
+            private static bool s_display = true;
+            private static bool s_counter = true;
+            private static bool s_RAM = true;
+
+            public static bool Display
+            {
+                get => s_display;
+                set
+                {
+                    s_display = value;
+                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("Display"));
+                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("DisplayVisibility"));
+                }
+            }
+            public static bool Counter
+            {
+                get => s_counter;
+                set
+                {
+                    s_counter = value;
+                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("Counter"));
+                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("CounterVisibility"));
+                }
+            }
+            public static bool RAM
+            {
+                get => s_RAM;
+                set
+                {
+                    s_RAM = value;
+                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("RAM"));
+                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("RAMVisibility"));
+                }
+            }
+        }
+
+        public static Visibility DisplayVisibility => StatusBar.Display ? Visibility.Visible : Visibility.Collapsed;
+        public static Visibility CounterVisibility => StatusBar.Counter ? Visibility.Visible : Visibility.Collapsed;
+        public static Visibility RAMVisibility => StatusBar.RAM ? Visibility.Visible : Visibility.Collapsed;
 
         private static FichierOutData m_defaultOutData;
         private static string s_searchFilter;

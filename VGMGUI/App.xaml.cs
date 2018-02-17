@@ -28,12 +28,19 @@ namespace VGMGUI
     /// </summary>
     public partial class App : Application
     {
+        public new static MainWindow MainWindow { get; private set; }
+        private static bool ShowMainWindow { get; set; }
+
         public static string AppPath => AppDomain.CurrentDomain.BaseDirectory;
         public static string VGMStreamPath => Path.Combine(AppPath, "vgmstream\\test.exe");
         public static string VGMStreamFolder => Path.Combine(AppPath, "vgmstream");
+        public static string FFmpegPath => Path.Combine(AppPath, "ffmpeg\\ffmpeg.exe");
+        public static string FFmpegFolder => Path.Combine(AppPath, "ffmpeg");
+        public static string VLCFolder => Path.Combine(AppPath, "vlc");
         public static string VersionString => Version.ToString(3);
         public static Version Version => Assembly.GetName().Version;
         public static Assembly Assembly => Assembly.GetExecutingAssembly();
+        public static Process Process => Process.GetCurrentProcess();
 
         public static bool AutoCulture { get; set; }
         public static CultureInfo CurrentCulture { get; set; } = new CultureInfo("fr-FR");
@@ -55,11 +62,22 @@ namespace VGMGUI
             #if DEBUG
             DispatcherUnhandledException += (sender, e) => throw e.Exception;
             #else
-            DispatcherUnhandledException += (sender, e) =>
+            DispatcherUnhandledException += async (sender, e) =>
             {
-                MessageBox.Show(e.Exception.Message, e.Exception.GetType().Name, MessageBoxButton.OK, MessageBoxImage.Error);
-                MainWindow.Close();
-                Environment.Exit(1);
+                await VGMStream.DeleteTMPFiles();
+                MainWindow?.Close();
+
+                if (e.Exception.InnerException is VLCException vlcEx)
+                {
+                    if (MessageBox.Show(Str("ERR_VLCNotFound"), Str("TT_Error"), MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes)
+                    {
+                        var path = Assembly.Location;
+                        Process.Start(path, "vlc");
+                    }
+                }
+                else MessageBox.Show(e.Exception.Message, e.Exception.GetType().Name, MessageBoxButton.OK, MessageBoxImage.Error);
+
+                Shutdown(1);
             };
             #endif
 
@@ -72,6 +90,15 @@ namespace VGMGUI
             if (MessageBox.Show(Str("ERR_VGMStreamNotFound"), Str("TT_Error"), MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes)
             {
                 return await VGMStream.DownloadVGMStream();
+            }
+            else return false;
+        }
+
+        public static async Task<bool> AskFFmepg()
+        {
+            if (MessageBox.Show(Str("ERR_FFNotFound"), Str("TT_Error"), MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes)
+            {
+                return await VGMStream.DownloadFFmpeg();
             }
             else return false;
         }
@@ -131,6 +158,43 @@ namespace VGMGUI
             return res.Count == 1 ? res[0].Key as String : null;
         }
 
-        private void Application_Startup(object sender, StartupEventArgs e) => Args = e.Args;
+        public static async Task FreeMemory()
+        {
+            await VGMStream.DeleteTMPFiles();
+            GC.Collect();
+        }
+
+        private async void Application_Startup(object sender, StartupEventArgs e)
+        {
+            Args = e.Args;
+
+            switch (Args.Length)
+            {
+                case 1:
+                    if (Args[0] == "vlc") await VGMStream.DownloadVLC(true);
+                    else ShowMainWindow = true;
+                    break;
+                case 2:
+                    if (Args[0] == "vlc" && File.Exists(Args[1])) await VGMStream.DownloadVLC(true, Args[1]);
+                    else ShowMainWindow = true;
+                    break;
+                default:
+                    ShowMainWindow = true;
+                    break;
+            }
+
+            if (ShowMainWindow)
+            {
+                MainWindow = new MainWindow();
+                MainWindow.Closed += (sndr, args) => Shutdown();
+                MainWindow.Show();
+            }
+        }
+
+        private void Application_Exit(object sender, ExitEventArgs e)
+        {
+            var path = Assembly.Location;
+            if (ShowMainWindow && File.Exists(VGMStream.VLCArcPath)) Process.Start(path, $"vlc {VGMStream.VLCArcPath}");
+        }
     }
 }

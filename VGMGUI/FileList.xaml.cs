@@ -207,6 +207,9 @@ namespace VGMGUI
                         case FileListColumn.SampleRate:
                             property = fichier.SampleRateString;
                             break;
+                        case FileListColumn.Bitrate:
+                            property = fichier.BitrateString;
+                            break;
                         case FileListColumn.Channels:
                             property = fichier.Channels.ToString();
                             break;
@@ -244,6 +247,7 @@ namespace VGMGUI
             App.FileListItemCMItems.FindCollectionItem<MenuItem>("AnalyseMI").Click += AnalyzeMI;
             App.FileListItemCMItems.FindCollectionItem<MenuItem>("OpenFPMI").Click += OpenFPMI;
             App.FileListItemCMItems.FindCollectionItem<MenuItem>("CopyFPMI").Click += CopyFPMI;
+            App.FileListItemCMItems.FindCollectionItem<MenuItem>("PropertiesMI").Click += PropertiesMI;
 
             StaticPropertyChanged += Settings_StaticPropertyChanged;
 
@@ -292,6 +296,7 @@ namespace VGMGUI
 
                         WaitingWindow = new WaitingWindow { Maximum = AddingCount };
                         WaitingWindow.SetResourceReference(WaitingWindow.TextProperty, "WW_Running");
+                        WaitingWindow.SetResourceReference(Window.TitleProperty, "WW_FilesAdding");
                         WaitingWindow.CancelButton.Click += CancelAdding;
                         WaitingWindow.Closing += CancelAdding;
                         Task.Run(() => Dispatcher.Invoke(() =>
@@ -337,7 +342,7 @@ namespace VGMGUI
 
                 if (PreAnalyse) //Analyser et ajouter
                 {
-                    Fichier f = await VGMStream.GetFile(fileName, outData, AddingCTS.Token).WithCancellation(AddingCTS.Token);
+                    Fichier f = await VGMStream.GetFileWithOtherFormats(fileName, outData, AddingCTS.Token).WithCancellation(AddingCTS.Token);
 
                     if (f != null)
                     {
@@ -371,6 +376,7 @@ namespace VGMGUI
                 CurrentAdding--;
 
                 WaitingWindow.Value = AddingProgress;
+                WaitingWindow.State = $"{AddingProgress} / {AddingCount} - {(100 * (double)AddingProgress / AddingCount).ToString("00.00")} %";
 
                 if (CurrentAdding == 0 && (AddingCTS.IsCancellationRequested || FilesToAdd.Count == 0)) //S'exécute à la toute fin de l'ajout
                 {
@@ -412,6 +418,7 @@ namespace VGMGUI
                         {
                             WaitingWindow = new WaitingWindow { Maximum = AnalyzingCount };
                             WaitingWindow.SetResourceReference(WaitingWindow.TextProperty, "WW_Running");
+                            WaitingWindow.SetResourceReference(Window.TitleProperty, "WW_FilesAnalyze");
                             WaitingWindow.CancelButton.Click += CancelAdding;
                             WaitingWindow.Closing += CancelAdding;
                             Task.Run(() => Dispatcher.Invoke(() =>
@@ -478,7 +485,7 @@ namespace VGMGUI
             {
                 CurrentAnalyzing++;
 
-                Fichier f = data == null ? await VGMStream.GetFile(file.Path, cancellationToken: AddingCTS.Token).WithCancellation(AddingCTS.Token) : VGMStream.GetFile(data, needMetadataFor: false);
+                Fichier f = data == null ? await VGMStream.GetFileWithOtherFormats(file.Path, cancellationToken: AddingCTS.Token).WithCancellation(AddingCTS.Token) : VGMStream.GetFile(data, needMetadataFor: false);
                 Fichier fc = filesCollection[filesCollection.IndexOf(file)];
 
                 if (f != null)
@@ -519,6 +526,7 @@ namespace VGMGUI
                 CurrentAnalyzing--;
 
                 WaitingWindow.Value = AnalyzeProgress;
+                WaitingWindow.State = $"{AnalyzeProgress} / {AnalyzingCount} - {(100 * (double)AnalyzeProgress / AnalyzingCount).ToString("00.00")} %";
 
                 if (CurrentAnalyzing == 0 && (AddingCTS.IsCancellationRequested || FilesToAnalyze.Count == 0)) //S'exécute à la toute fin de l'analyse
                 {
@@ -890,6 +898,8 @@ namespace VGMGUI
                     return "FL_COL_Encoding";
                 case FileListColumn.SampleRate:
                     return "FL_COL_SampleRate";
+                case FileListColumn.Bitrate:
+                    return "FL_COL_Bitrate";
                 case FileListColumn.Channels:
                     return "FL_COL_Channels";
                 case FileListColumn.Loop:
@@ -924,6 +934,8 @@ namespace VGMGUI
                     return FileListColumn.Duration;
                 case "FL_COL_SampleRate":
                     return FileListColumn.SampleRate;
+                case "FL_COL_Bitrate":
+                    return FileListColumn.Bitrate;
                 case "FL_COL_Format":
                     return FileListColumn.Format;
                 case "FL_COL_Encoding":
@@ -1136,6 +1148,15 @@ namespace VGMGUI
                                     else filesCollection.OrderByDescendingVoid(f => f.Channels);
                                 }
                                 break;
+                            case "FL_COL_Bitrate":
+                                {
+                                    if (filesCollection.IsOrderedByDescending(f => f.Bitrate))
+                                    {
+                                        filesCollection.OrderByVoid(f => f.Bitrate);
+                                    }
+                                    else filesCollection.OrderByDescendingVoid(f => f.Bitrate);
+                                }
+                                break;
                             case "FL_COL_Loop":
                                 {
                                     if (filesCollection.IsOrderedByDescending(f => f.LoopFlag))
@@ -1239,5 +1260,5 @@ namespace VGMGUI
 
     public enum MoveDirection { Up, Down, First, Last, CustomUp, CustomDown, MashUp, MashDown, FirstMash, LastMash, CustomUpMash, CustomDownMash }
 
-    public enum FileListColumn { Check, Name, State, Duration, Format, Encoding, SampleRate, Channels, Loop, Layout, Interleave, Folder, Size, Date }
+    public enum FileListColumn { Check, Name, State, Duration, Format, Encoding, SampleRate, Bitrate, Channels, Loop, Layout, Interleave, Folder, Size, Date }
 }
