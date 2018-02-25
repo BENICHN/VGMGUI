@@ -14,9 +14,9 @@ using System.Windows.Threading;
 using System.Windows.Shell;
 using System.IO;
 using BenLib;
+using Vlc.DotNet.Core.Interops.Signatures;
 using Clipboard = System.Windows.Forms.Clipboard;
 using static VGMGUI.Settings;
-using Vlc.DotNet.Core.Interops.Signatures;
 
 namespace VGMGUI
 {

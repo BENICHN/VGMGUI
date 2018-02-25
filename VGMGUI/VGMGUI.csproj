@@ -94,11 +94,11 @@
     <Reference Include="AsyncIO, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\AsyncIO.DotNet.1.3\lib\net45\AsyncIO.dll</HintPath>
     </Reference>
-    <Reference Include="BenLib, Version=2018.2.17.1516, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="BenLib, Version=2018.2.24.1759, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\BenLib\BenLib\bin\Debug\BenLib.dll</HintPath>
     </Reference>
-    <Reference Include="BenLib.WPF, Version=2018.2.17.1516, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="BenLib.WPF, Version=2018.2.24.1759, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\BenLib\BenLib.WPF\bin\Debug\BenLib.WPF.dll</HintPath>
     </Reference>

@@ -15,9 +15,9 @@ namespace VGMGUI
 {
     public class DKCTFCSMP
     {
-        public static byte[] RFRM = new byte[] { 82, 70, 82, 77 };
-        public static byte[] CSMP = new byte[] { 67, 83, 77, 80 };
-        public static byte[] DATA = new byte[] { 68, 65, 84, 65 };
+        public static readonly byte[] RFRM = { 82, 70, 82, 77 };
+        public static readonly byte[] CSMP = { 67, 83, 77, 80 };
+        public static readonly byte[] DATA = { 68, 65, 84, 65 };
 
         /// <summary>
         /// À partir d'un nom de fichier, obtient un fichier analysé uniquement s'il possède l'en-tête RFRM CSMP.
@@ -55,8 +55,7 @@ namespace VGMGUI
                 }
                 if (dspCount == 0) return null;
 
-                ProcessStartInfo vgmstreaminfo = new ProcessStartInfo(App.VGMStreamPath, "-m \"" + dspFile + "\"") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
-                Process vgmstreamprocess = new Process() { StartInfo = vgmstreaminfo };
+                Process vgmstreamprocess = new Process() { StartInfo = VGMStream.StartInfo(dspFile, VGMStreamProcessTypes.Metadata) };
                 VGMStream.RunningProcess.Add(vgmstreamprocess, VGMStreamProcessTypes.Metadata);
 
                 try
@@ -109,7 +108,7 @@ namespace VGMGUI
         }
 
         /// <summary>
-        /// À l'aide de vgmstream, obtient un Stream contenant des données audio au format WAV à partir d'un fichier.
+        /// Obtient le nom du fichier audio au format WAV à partir d'un fichier RFRM CSMP.
         /// </summary>
         /// <param name="fichier">Le fichier à décoder.</param>
         /// <param name="Out">true si la sortie doit être lue; false si l'entrée doit être lue.</param>
@@ -172,17 +171,7 @@ namespace VGMGUI
                 {
                     for (int i = 0; i < dspCount; i++)
                     {
-                        vgmstreamTmpInfos[i] = new ProcessStartInfo(App.VGMStreamPath)
-                        {
-                            WorkingDirectory = Path.GetDirectoryName(wavFiles[i]),
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            CreateNoWindow = true,
-                            UseShellExecute = false,
-                            Arguments = !Out ?
-                            $"-o \"{Path.GetFileName(wavFiles[i])}\" -i \"{dspFiles[i]}\"" :
-                            $"-o \"{Path.GetFileName(wavFiles[i])}\"" + (fichier.StartEndLoop ? " -E" : "") + " -l " + fichier.LoopCount + (fichier.FadeOut ? " -f " + fichier.FadeTime.ToString(Literal.DecimalSeparatorPoint) + " -d " + fichier.FadeDelay.ToString(Literal.DecimalSeparatorPoint) : " -F") + $" \"{dspFiles[i]}\""
-                        };
+                        vgmstreamTmpInfos[i] = Out ? VGMStream.StartInfo(dspFiles[i], wavFiles[i], fichier.LoopCount, fichier.FadeOut, fichier.FadeDelay, fichier.FadeTime, fichier.StartEndLoop) : VGMStream.StartInfo(dspFiles[i], wavFiles[i], 1, false);
                         vgmstreamTmpProcess[i] = Process.Start(vgmstreamTmpInfos[i]);
                         VGMStream.RunningProcess.Add(vgmstreamTmpProcess[i], VGMStreamProcessTypes.Streaming);
                     }
@@ -318,15 +307,7 @@ namespace VGMGUI
             {
                 await Task.Run(() =>
                 {
-                    vgmstreamTmpInfos[i] = new ProcessStartInfo(App.VGMStreamPath)
-                    {
-                        WorkingDirectory = Path.GetDirectoryName(wavFiles[i]),
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true,
-                        UseShellExecute = false,
-                        Arguments = $"-o \"{Path.GetFileName(wavFiles[i])}\"" + (fichier.StartEndLoop ? " -E" : "") + " -l " + fichier.LoopCount + (fichier.FadeOut ? " -f " + fichier.FadeTime.ToString(Literal.DecimalSeparatorPoint) + " -d " + fichier.FadeDelay.ToString(Literal.DecimalSeparatorPoint) : " -F") + $" \"{dspFiles[i]}\""
-                    };
+                    vgmstreamTmpInfos[i] = VGMStream.StartInfo(dspFiles[i], wavFiles[i], fichier.LoopCount, fichier.FadeOut, fichier.FadeDelay, fichier.FadeTime, fichier.StartEndLoop);
                     vgmstreamTmpProcess[i] = Process.Start(vgmstreamTmpInfos[i]);
                     VGMStream.RunningProcess.Add(vgmstreamTmpProcess[i], VGMStreamProcessTypes.Conversion);
                 });

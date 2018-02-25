@@ -19,13 +19,23 @@ namespace VGMGUI
 {
     public class VGMStream
     {
-        public static byte[] RIFF = new byte[] { 82, 73, 70, 70 };
-        public static byte[] WAVE = new byte[] { 87, 65, 86, 69 };
+        public static readonly byte[] RIFF = { 82, 73, 70, 70 };
+        public static readonly byte[] WAVE = { 87, 65, 86, 69 };
 
+        /// <summary>
+        /// Liste des fichiers temporaires.
+        /// </summary>
         public static Queue<string> TempFiles { get; set; } = new Queue<string>();
 
+        /// <summary>
+        /// Emplacement de l'archive zip où se trouve VLC.
+        /// </summary>
         public static string VLCArcPath { get; set; }
 
+        /// <summary>
+        /// Supprime les fichiers de <see cref="TempFiles"/> si possible. En cas d'erreur, le fichier est remis dans la file.
+        /// </summary>
+        /// <returns></returns>
         public static async Task DeleteTMPFiles()
         {
             var filesToEnqueue = new List<string>();
@@ -44,7 +54,7 @@ namespace VGMGUI
         public static Dictionary<Process, VGMStreamProcessTypes> RunningProcess { get; set; } = new Dictionary<Process, VGMStreamProcessTypes>();
 
         /// <summary>
-        /// À l'aide de vgmstream, obtient un Stream contenant des données audio au format WAV à partir d'un fichier.
+        /// À l'aide de vgmstream, obtient le nom du fichier audio au format WAV à partir d'un fichier.
         /// </summary>
         /// <param name="fichier">Le fichier à décoder.</param>
         /// <param name="Out">true si la sortie doit être lue; false si l'entrée doit être lue.</param>
@@ -55,18 +65,8 @@ namespace VGMGUI
             if (File.Exists(fichier.Path))
             {
                 string fn = Path.ChangeExtension(Path.GetTempFileName(), ".wav"); //Nom du fichier temporaire
-                ProcessStartInfo vgmstreaminfo = new ProcessStartInfo(App.VGMStreamPath)
-                {
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    Arguments = !Out ?
-                    $"-o {fn} -i \"{fichier.Path}\"" :
-                    $"-o {fn}" + (fichier.StartEndLoop ? " -E" : "") + " -l " + fichier.LoopCount + (fichier.FadeOut ? " -f " + fichier.FadeTime.ToString(Literal.DecimalSeparatorPoint) + " -d " + fichier.FadeDelay.ToString(Literal.DecimalSeparatorPoint) : " -F") + $" \"{fichier.Path}\""
-                };
 
-                Process vgmstreamprocess = new Process() { StartInfo = vgmstreaminfo };
+                Process vgmstreamprocess = new Process() { StartInfo = Out ? StartInfo(fichier.Path, fn, fichier.LoopCount, fichier.FadeOut, fichier.FadeDelay, fichier.FadeTime, fichier.StartEndLoop) : StartInfo(fichier.Path, fn, 1, false) };
                 RunningProcess.Add(vgmstreamprocess, VGMStreamProcessTypes.Streaming);
 
                 if (File.Exists(App.VGMStreamPath) || await App.AskVGMStream())
@@ -120,23 +120,7 @@ namespace VGMGUI
             {
                 bool success = false;
 
-                ProcessStartInfo vgmstreaminfo = new ProcessStartInfo(App.VGMStreamPath)
-                {
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    Arguments =
-                    "-o \"" + fichier.FinalDestination + "\"" +
-                    (fichier.StartEndLoop ? " -E" : String.Empty) +
-                    " -l " + fichier.LoopCount +
-                    (fichier.FadeOut ?
-                    " -f " + fichier.FadeTime.ToString(Literal.DecimalSeparatorPoint) + " -d " + fichier.FadeDelay.ToString(Literal.DecimalSeparatorPoint) :
-                    " -F") +
-                    " \"" + fichier.Path + "\""
-                };
-
-                Process vgmstreamprocess = new Process() { StartInfo = vgmstreaminfo };
+                Process vgmstreamprocess = new Process() { StartInfo = StartInfo(fichier.Path, fichier.FinalDestination, fichier.LoopCount, fichier.FadeOut, fichier.FadeDelay, fichier.FadeTime, fichier.StartEndLoop) };
                 RunningProcess.Add(vgmstreamprocess, VGMStreamProcessTypes.Conversion);
 
                 try
@@ -216,12 +200,10 @@ namespace VGMGUI
         public static async Task<Fichier> GetFile(string fileName, FichierOutData outData = default, CancellationToken cancellationToken = default)
         {
             if (!File.Exists(fileName)) return new Fichier(null) { Invalid = true, OriginalState = "ERR_FileNotFound" };
-            ProcessStartInfo vgmstreaminfo = new ProcessStartInfo(App.VGMStreamPath) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
 
-            if (fileName != null) vgmstreaminfo.Arguments = "-m \"" + fileName + "\"";
-            else return null;
+            if (fileName == null) return null;
 
-            Process vgmstreamprocess = new Process() { StartInfo = vgmstreaminfo };
+            Process vgmstreamprocess = new Process() { StartInfo = StartInfo(fileName, VGMStreamProcessTypes.Metadata) };
             RunningProcess.Add(vgmstreamprocess, VGMStreamProcessTypes.Metadata);
 
             try
@@ -523,8 +505,10 @@ namespace VGMGUI
         }
 
         /// <summary>
-        /// Télécharge et applique la dernière version de VLC.
+        /// Télécharge et applique la dernière version stable de VLC.
         /// </summary>
+        /// <param name="extract">Indique si VLC doit être extrait.</param>
+        /// <param name="path">Emplacement de l'archive zip où se trouve VLC. Si null, VLC sera téléchargé.</param>
         /// <returns>true s'il n'y a pas eu d'erreur; sinon false.</returns>
         public static async Task<bool> DownloadVLC(bool extract = false, string path = null)
         {
@@ -642,6 +626,49 @@ namespace VGMGUI
             waitingWindow.Close();
 
             return extract ? extractResult : downloadResult;
+        }
+
+        /// <summary>
+        /// VGMStream wrapper method.
+        /// </summary>
+        public static ProcessStartInfo StartInfo(string inFile, string outFile = null, int loopCount = 2, bool fadeOut = true, double fadeDelay = 0, double fadeTime = 10, bool startEndLoop = false) => new ProcessStartInfo(App.VGMStreamPath)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+            UseShellExecute = false,
+            Arguments = $"-o {(Uri.IsWellFormedUriString(new Uri(outFile).AbsoluteUri, UriKind.RelativeOrAbsolute) ? outFile : Path.ChangeExtension(inFile, "wav"))}{(startEndLoop ? " -E" : "")} -l {loopCount} {(fadeOut ? $"-f {fadeTime.ToString(Literal.DecimalSeparatorPoint)} -d {fadeDelay.ToString(Literal.DecimalSeparatorPoint)}" : "-F")} \"{inFile}\""
+        };
+
+        /// <summary>
+        /// VGMStream wrapper method.
+        /// </summary>
+        public static ProcessStartInfo StartInfo(string inFile, VGMStreamProcessTypes processType, int loopCount = 2, bool fadeOut = true, double fadeDelay = 0, double fadeTime = 10, bool startEndLoop = false)
+        {
+            switch (processType)
+            {
+                case VGMStreamProcessTypes.Conversion:
+                    return StartInfo(inFile, null, loopCount, fadeOut, fadeDelay, fadeTime, startEndLoop);
+                case VGMStreamProcessTypes.Streaming:
+                    return new ProcessStartInfo(App.VGMStreamPath)
+                    {
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        Arguments = $"-P {(startEndLoop ? " -E" : String.Empty)} -l {loopCount} {(fadeOut ? $"-f {fadeTime.ToString(Literal.DecimalSeparatorPoint)} -d {fadeDelay.ToString(Literal.DecimalSeparatorPoint)}" : "-F")} \"{inFile}\""
+                    };
+                case VGMStreamProcessTypes.Metadata:
+                    return new ProcessStartInfo(App.VGMStreamPath)
+                    {
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true,
+                        UseShellExecute = false,
+                        Arguments = $"-m \"{inFile}\""
+                    };
+                default: return null;
+            }
         }
     }
 
