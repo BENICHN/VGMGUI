@@ -4,10 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VGMGUI"
-        xmlns:bl="clr-namespace:BenLib;assembly=BenLib"
         xmlns:benlib="clr-namespace:BenLib.WPF;assembly=BenLib.WPF"
         mc:Ignorable="d"
-        Title="VGMGUI" Height="660" Width="1100" PreviewKeyDown="Window_PreviewKeyDown" PreviewKeyUp="Window_PreviewKeyUp" Loaded="Window_Loaded" Closing="Window_Closing" Activated="Window_Activated">
+        Title="VGMGUI" Height="675" Width="1100" PreviewKeyDown="Window_PreviewKeyDown" PreviewKeyUp="Window_PreviewKeyUp" Loaded="Window_Loaded" Closing="Window_Closing" Activated="Window_Activated">
 
     <Window.TaskbarItemInfo>
         <TaskbarItemInfo x:Name="tii_main" ProgressState="None">
@@ -43,7 +42,7 @@
                 <Grid Name="RightGrid">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="2*"/>
-                        <RowDefinition Height="1.12*"/>
+                        <RowDefinition Height="1.27*"/>
                     </Grid.RowDefinitions>
                     <!--================================================== Entrée ==================================================-->
                     <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" FocusVisualStyle="{x:Null}">
@@ -153,7 +152,12 @@
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
-                            <StackPanel Name="DestSP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="5,0,0,0">
+                            <StackPanel Name="SamplesToPlaySP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="5,-2,0,0">
+                                <ContentPresenter Content="{DynamicResource Sample Rate + Sigma}"/>
+                                <Label Content="{DynamicResource MW_TotalSamples}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
+                                <TextBox Name="SamplesToPlayTB" HorizontalAlignment="Center" VerticalAlignment="Center" BorderThickness="0" IsReadOnly="True"/>
+                            </StackPanel>
+                            <StackPanel Name="DestSP" HorizontalAlignment="Left" Orientation="Horizontal" Height="25" Margin="5,3,0,0">
                                 <ContentPresenter Content="{DynamicResource Open}"/>
                                 <Label Content="{DynamicResource MW_Dest}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
                                 <ComboBox Name="DestCB" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="100" SelectionChanged="ComboBox_SelectionChanged">
@@ -185,14 +189,52 @@
         </DockPanel>
         <Grid Grid.Row="1" Height="65" VerticalAlignment="Top">
         <TextBlock VerticalAlignment="Top" HorizontalAlignment="Right" Text="\" FontSize="18" Foreground="{StaticResource TextBrush}" Margin="0,4,501,0" Grid.Row="1" FontFamily="Segoe UI SemiLight"/>
-        <TextBox Name="MainDestTB" Height="25" VerticalAlignment="Top" HorizontalAlignment="Right" Width="280" Text="Converted" benlib:TypedTextBox.ForbiddenStrings="{x:Static bl:Literal.ForbiddenPathNameCharacters}" Margin="0,5,215,0" Grid.Row="1"/>
+        <TextBox Name="MainDestTB" Height="25" VerticalAlignment="Top" HorizontalAlignment="Right" Width="280" Text="Converted" benlib:TypedTextBox.ForbiddenStrings="{x:Static local:App.InvalidFileNameChars}" Margin="0,5,215,0" Grid.Row="1"/>
         <Button x:Name="StartButton" Grid.Row="1" Content="{DynamicResource MW_StartConversion}" Margin="0,0,5,5" Height="55" VerticalAlignment="Bottom" Click="StartButton_Click" HorizontalAlignment="Right" Width="205" ToolTip="{DynamicResource MW_StartConversionToolTip}"/>
         <ProgressBar Name="MainProgress" Margin="5,0,215,5" Grid.Row="1" Height="25" VerticalAlignment="Bottom" Maximum="100"/>
         </Grid>
-        <StatusBar Name="statusBar" Height="25" Grid.Row="1" VerticalAlignment="Bottom" Visibility="{Binding Path=(local:Settings.DisplayVisibility), UpdateSourceTrigger=PropertyChanged}" IsVisibleChanged="statusBar_IsVisibleChanged">
-            <Label Name="listCountLabel" Visibility="{Binding Path=(local:Settings.CounterVisibility), UpdateSourceTrigger=PropertyChanged}"/>
-            <Separator Visibility="{Binding Path=(local:Settings.CounterVisibility), UpdateSourceTrigger=PropertyChanged}"/>
-            <Label Name="RAMUsageLabel" HorizontalAlignment="Right" Visibility="{Binding Path=(local:Settings.RAMVisibility), UpdateSourceTrigger=PropertyChanged}"/>
+        <StatusBar Name="statusBar" Height="25" Grid.Row="1" VerticalAlignment="Bottom" Visibility="{Binding Path=(local:StatusBar.Display), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" IsVisibleChanged="statusBar_IsVisibleChanged">
+            <!--================================================== Counter ==================================================-->
+            <Label Margin="1,0,0,-1" Content="⬤" FontSize="8" Foreground="{StaticResource StatusBarIconBrush}"  Visibility="{Binding Path=(local:StatusBar.Counter), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+            <Label Name="listCountLabel" Margin="-3,0,0,0"  Visibility="{Binding Path=(local:StatusBar.Counter), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+            <!--=============================================================================================================-->
+            <DockPanel HorizontalAlignment="Right" Margin="0,-3">
+                <!--================================================== StreamingType ==================================================-->
+                <Button Name="StreamingTypeButton" Style="{StaticResource StatusBarButton}" Visibility="{Binding Path=(local:StatusBar.StreamingType), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" Click="StreamingTypeButton_Click">
+                    <Binding Path="(local:Settings.StreamingType)" Mode="OneWay">
+                        <Binding.Converter>
+                            <local:StreamingTypeConverter/>
+                        </Binding.Converter>
+                    </Binding>
+                </Button>
+                <!--================================================== PreAnalyse ==================================================-->
+                <ContentControl Margin="5,0,0,0" Content="{DynamicResource Scan}"  Visibility="{Binding Path=(local:StatusBar.PreAnalyse), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" ToolTip="{DynamicResource STGS_PreAnalyse}"/>
+                <CheckBox Name="PreAnalyseCB" Margin="5,0,0,0" Width="13" VerticalAlignment="Center" ToolTip="{DynamicResource STGS_PreAnalyse}"  Visibility="{Binding Path=(local:StatusBar.PreAnalyse), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" IsChecked="{Binding Path=(local:Settings.PreAnalyse), UpdateSourceTrigger=PropertyChanged}"/>
+                <!--================================================== SearchDelay ==================================================-->
+                <ContentControl Margin="7,0,0,0" Content="{DynamicResource Search}"  Visibility="{Binding Path=(local:StatusBar.SearchDelay), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" ToolTip="{DynamicResource STGS_SearchDelay0}"/>
+                <benlib:SwitchableTextBox Margin="0,-1,0,0" Name="SearchDelaySTBox"  Visibility="{Binding Path=(local:StatusBar.SearchDelay), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" CancelWhenEmpty="True" ContentType="UnsignedIntegrer" FinalText="{Binding Path=(local:Settings.SearchDelayString), Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="{DynamicResource STGS_SearchDelay0}"/>
+                <!--================================================== SamplesDisplay ==================================================-->
+                <Button Margin="1,0,0,0" Style="{StaticResource StatusBarButton}" Name="samplesDisplayButton" ToolTip="{DynamicResource STGS_SPLDSP}"  Visibility="{Binding Path=(local:StatusBar.SamplesDisplay), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" Click="SamplesDisplayButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <ContentControl Content="{DynamicResource Clock}"/>
+                        <Label Name="samplesDisplayLabel" Margin="5,-2,0,0"/>
+                    </StackPanel>
+                </Button>
+                <!--================================================== RAM ==================================================-->
+                <ContentControl Margin="3,0,2,0" Content="{DynamicResource RAM}"  Visibility="{Binding Path=(local:StatusBar.RAM), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+                <Label Name="RAMUsageLabel"  Visibility="{Binding Path=(local:StatusBar.RAM), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+                <!--=========================================================================================================-->
+            </DockPanel>
+            <StatusBar.ContextMenu>
+                <ContextMenu Name="StatusBarCM">
+                    <MenuItem Header="{DynamicResource STGS_STSBAR_Count}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.Counter), UpdateSourceTrigger=PropertyChanged}"/>
+                    <MenuItem Header="{DynamicResource STGS_STSBAR_StreamingType}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.StreamingType), UpdateSourceTrigger=PropertyChanged}"/>
+                    <MenuItem Header="{DynamicResource STGS_PreAnalyse}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.PreAnalyse), UpdateSourceTrigger=PropertyChanged}"/>
+                    <MenuItem Header="{DynamicResource STGS_SearchDelay0}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.SearchDelay), UpdateSourceTrigger=PropertyChanged}"/>
+                    <MenuItem Header="{DynamicResource STGS_SPLDSP}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.SamplesDisplay), UpdateSourceTrigger=PropertyChanged}"/>
+                    <MenuItem Header="{DynamicResource STGS_STSBAR_RAM}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.RAM), UpdateSourceTrigger=PropertyChanged}"/>
+                </ContextMenu>
+            </StatusBar.ContextMenu>
         </StatusBar>
     </Grid>
 </Window>

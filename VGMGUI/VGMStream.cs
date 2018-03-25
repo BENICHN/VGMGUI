@@ -14,6 +14,7 @@ using System.Windows.Controls;
 using Z.Linq;
 using AsyncIO.FileSystem.Extensions;
 using static VGMGUI.Settings;
+using Vlc.DotNet.Core;
 
 namespace VGMGUI
 {
@@ -22,31 +23,153 @@ namespace VGMGUI
         public static readonly byte[] RIFF = { 82, 73, 70, 70 };
         public static readonly byte[] WAVE = { 87, 65, 86, 69 };
 
+        public static int ScanningCount { get; private set; }
+        public static int StreamingCount { get; private set; }
+        public static int ConversionCount { get; private set; }
+        public static int DownloadCount { get; private set; }
+
+        public static bool IsScanning => ScanningCount + DKCTFCSMP.ScanningCount > 0;
+        public static bool IsStreaming => StreamingCount + DKCTFCSMP.StreamingCount > 0;
+        public static bool IsConverting => ConversionCount + DKCTFCSMP.ConversionCount > 0;
+        public static bool IsDownloading => DownloadCount > 0;
+
+        public static CancellationTokenSource VLCCTS { get; private set; }
+        public static CancellationTokenSource VGMStreamCTS { get; private set; }
+
         /// <summary>
         /// Liste des fichiers temporaires.
         /// </summary>
-        public static Queue<string> TempFiles { get; set; } = new Queue<string>();
+        public static Queue<KeyValuePair<string, VGMStreamProcessTypes?>> TempFiles { get; private set; } = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>();
 
-        /// <summary>
-        /// Emplacement de l'archive zip où se trouve VLC.
-        /// </summary>
-        public static string VLCArcPath { get; set; }
+        public static string CreateTempFile(string extension, VGMStreamProcessTypes? type)
+        {
+            string fn;
+            while (File.Exists(fn = Path.ChangeExtension(Path.GetTempFileName(), extension))) continue;
+            TempFiles.Enqueue(new KeyValuePair<string, VGMStreamProcessTypes?>(fn, type));
+            return fn;
+        }
 
         /// <summary>
         /// Supprime les fichiers de <see cref="TempFiles"/> si possible. En cas d'erreur, le fichier est remis dans la file.
         /// </summary>
         /// <returns></returns>
-        public static async Task DeleteTMPFiles()
+        public static async Task<bool> DeleteTempFiles(bool cache)
         {
-            var filesToEnqueue = new List<string>();
-            while (TempFiles.Count > 0)
+            var filesToEnqueue = new List<KeyValuePair<string, VGMStreamProcessTypes?>>();
+            var baseQueue = cache ? new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(TempFiles) : TempFiles;
+            var queue = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(baseQueue);
+
+            while (queue.Count > 0)
             {
-                string fileName = null;
-                try { await FileAsync.TryAndRetryDeleteAsync(fileName = TempFiles.Dequeue()); }
-                catch { filesToEnqueue.Add(fileName); }
+                KeyValuePair<string, VGMStreamProcessTypes?> kvp = default;
+                if (!(await FileAsync.TryDeleteAsync((kvp = queue.Dequeue()).Key)).Result) filesToEnqueue.Add(kvp);
             }
-            foreach (string file in filesToEnqueue) TempFiles.Enqueue(file);
+
+            if (cache) TempFiles = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(kvp => baseQueue.Contains(kvp) == filesToEnqueue.Contains(kvp)));
+            else foreach (var file in filesToEnqueue) queue.Enqueue(file);
+
+            return filesToEnqueue.IsNullOrEmpty();
         }
+
+        public static Task<bool> DeleteTempFilesIfNotUsed() => DeleteTempFilesByTypeIfNotUsed(VGMStreamProcessTypes.Conversion, VGMStreamProcessTypes.Streaming, VGMStreamProcessTypes.Metadata, null);
+
+        public static async Task<bool> DeleteTempFilesByName(params string[] files)
+        {
+            bool result = true;
+            var filesToEnqueue = new List<string>();
+
+            foreach (string file in files)
+            {
+                if (!(await FileAsync.TryDeleteAsync(file)).Result)
+                {
+                    filesToEnqueue.Add(file);
+                    result = false;
+                }
+            }
+
+            TempFiles = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(kvp => files.Contains(kvp.Key) == filesToEnqueue.Contains(kvp.Key)));
+
+            return result;
+        }
+
+        /// <summary>
+        /// Supprime les fichiers de <see cref="TempFiles"/> si possible. En cas d'erreur, le fichier est remis dans la file.
+        /// </summary>
+        /// <returns></returns>
+        public static async Task<bool> DeleteTempFilesByExtension(params string[] extensions)
+        {
+            var filesToEnqueue = new List<KeyValuePair<string, VGMStreamProcessTypes?>>();
+            var baseQueue = extensions.IsNullOrEmpty() ? new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(TempFiles) : new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(async kvp => await extensions.AnyAsync(extension => Path.GetExtension(kvp.Key).TrimStart('.').Equals(extension.TrimStart('.')))));
+            var queue = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(baseQueue);
+
+            while (queue.Count > 0)
+            {
+                KeyValuePair<string, VGMStreamProcessTypes?> kvp = default;
+                if (!(await FileAsync.TryDeleteAsync((kvp = queue.Dequeue()).Key)).Result) filesToEnqueue.Add(kvp);
+            }
+
+            TempFiles = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(kvp => baseQueue.Contains(kvp) == filesToEnqueue.Contains(kvp)));
+
+            return filesToEnqueue.IsNullOrEmpty();
+        }
+
+        public static async Task<bool> DeleteTempFilesByType(params VGMStreamProcessTypes?[] types)
+        {
+            var filesToEnqueue = new List<KeyValuePair<string, VGMStreamProcessTypes?>>();
+            var baseQueue = types.IsNullOrEmpty() ? new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(TempFiles) : new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(async kvp => await types.AnyAsync(type => kvp.Value.Equals(type))));
+            var queue = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(baseQueue);
+
+            while (queue.Count > 0)
+            {
+                KeyValuePair<string, VGMStreamProcessTypes?> kvp = default;
+                if (!(await FileAsync.TryDeleteAsync((kvp = queue.Dequeue()).Key)).Result) filesToEnqueue.Add(kvp);
+            }
+
+            TempFiles = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(kvp => baseQueue.Contains(kvp) == filesToEnqueue.Contains(kvp)));
+
+            return filesToEnqueue.IsNullOrEmpty();
+        }
+
+        public static async Task<bool> DeleteTempFilesByTypeIfNotUsed(params VGMStreamProcessTypes?[] types)
+        {
+            var filesToEnqueue = new List<KeyValuePair<string, VGMStreamProcessTypes?>>();
+            var baseQueue = types.IsNullOrEmpty() ?
+                new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(TempFiles) :
+                new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(async kvp => await types.AnyAsync(type =>
+            {
+                if (kvp.Value.Equals(type))
+                {
+                    switch (type)
+                    {
+                        case VGMStreamProcessTypes.Conversion:
+                            return !IsConverting;
+                        case VGMStreamProcessTypes.Metadata:
+                            return !IsScanning;
+                        case VGMStreamProcessTypes.Streaming:
+                            return !IsStreaming;
+                        case null:
+                            return !IsDownloading;
+                    }
+                }
+                return false;
+            })));
+            var queue = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(baseQueue);
+
+            while (queue.Count > 0)
+            {
+                KeyValuePair<string, VGMStreamProcessTypes?> kvp = default;
+                if (!(await FileAsync.TryDeleteAsync((kvp = queue.Dequeue()).Key)).Result) filesToEnqueue.Add(kvp);
+            }
+
+            TempFiles = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(kvp => baseQueue.Contains(kvp) == filesToEnqueue.Contains(kvp)));
+
+            return filesToEnqueue.IsNullOrEmpty();
+        }
+
+        /// <summary>
+        /// Emplacement de l'archive zip où se trouve VLC.
+        /// </summary>
+        public static string VLCArcPath { get; set; }
 
         /// <summary>
         /// Contient les processus VGMStream en cours d'exécution ainsi que leur type.
@@ -60,52 +183,55 @@ namespace VGMGUI
         /// <param name="Out">true si la sortie doit être lue; false si l'entrée doit être lue.</param>
         /// <param name="cancellationToken">Jeton d'annulation qui peut être utilisé par d'autres objets ou threads pour être informés de l'annulation.</param>
         /// <returns>Le Stream contenant les données audio.</returns>
-        public static async Task<string> GetStream(Fichier fichier, bool Out = false, CancellationToken cancellationToken = default)
+        public static async Task<Stream> GetStream(Fichier fichier, bool useFile, bool Out = false, CancellationToken cancellationToken = default)
         {
-            if (File.Exists(fichier.Path))
-            {
-                string fn = Path.ChangeExtension(Path.GetTempFileName(), ".wav"); //Nom du fichier temporaire
+            if (cancellationToken.IsCancellationRequested || !File.Exists(fichier.Path)) return null;
 
-                Process vgmstreamprocess = new Process() { StartInfo = Out ? StartInfo(fichier.Path, fn, fichier.LoopCount, fichier.FadeOut, fichier.FadeDelay, fichier.FadeTime, fichier.StartEndLoop) : StartInfo(fichier.Path, fn, 1, false) };
+            string fn = useFile ? CreateTempFile("wav", VGMStreamProcessTypes.Streaming) : null; //Nom du fichier temporaire
+
+            try
+            {
+                StreamingCount++;
+                Process vgmstreamprocess = new Process() { StartInfo = useFile ? (Out ? StartInfo(fichier.Path, fn, fichier.LoopCount, fichier.FadeOut, fichier.FadeDelay, fichier.FadeTime, fichier.StartEndLoop) : StartInfo(fichier.Path, fn, 1, false)) : (Out ? StartInfo(fichier.Path, VGMStreamProcessTypes.Streaming, fichier.LoopCount, fichier.FadeOut, fichier.FadeDelay, fichier.FadeTime, fichier.StartEndLoop) : StartInfo(fichier.Path, VGMStreamProcessTypes.Streaming, 1, false)) };
                 RunningProcess.Add(vgmstreamprocess, VGMStreamProcessTypes.Streaming);
 
-                if (File.Exists(App.VGMStreamPath) || await App.AskVGMStream())
+                if (cancellationToken.IsCancellationRequested || !File.Exists(App.VGMStreamPath) && !await App.AskVGMStream()) return null;
+
+                cancellationToken.Register(() =>
                 {
-                    TryResult StartResult = await vgmstreamprocess.TryStartAsync(cancellationToken); //Start
+                    vgmstreamprocess.TryKill();
+                    if (RunningProcess.ContainsKey(vgmstreamprocess)) RunningProcess.Remove(vgmstreamprocess);
+                });
 
-                    if (!StartResult.Result) //N'a pas pu être démarré
-                    {
-                        if (!(StartResult.Exception is OperationCanceledException)) MessageBox.Show(StartResult.Exception.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-                        return null;
-                    }
-                }
-                else return null;
+                var StartResult = await vgmstreamprocess.TryStartAsync(cancellationToken); //Start
 
-                try
+                if (!StartResult.Result) //N'a pas pu être démarré
                 {
-                    await vgmstreamprocess.WaitForExitAsync(cancellationToken); //WaitForExit
-
-                    RunningProcess.Remove(vgmstreamprocess);
-
-                    string s = await vgmstreamprocess.StandardError.ReadToEndAsync().WithCancellation(cancellationToken);
-
-                    if (s.IsEmpty())
-                    {
-                        TempFiles.Enqueue(fn);
-                        return fn;
-                    }
-                    else
-                    {
-                        fichier.SetInvalid();
-                        return null;
-                    }
+                    if (!(StartResult.Exception is OperationCanceledException)) MessageBox.Show(StartResult.Exception.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+                    return null;
                 }
-                catch (OperationCanceledException) { vgmstreamprocess.TryKill(); }
-                finally { if (RunningProcess.ContainsKey(vgmstreamprocess)) RunningProcess.Remove(vgmstreamprocess); }
 
+                if (useFile) await vgmstreamprocess.WaitForExitAsync(cancellationToken); //WaitForExit
+
+                if (RunningProcess.ContainsKey(vgmstreamprocess)) RunningProcess.Remove(vgmstreamprocess);
+
+                if (cancellationToken.IsCancellationRequested) return null;
+
+                if (!useFile) return vgmstreamprocess.StandardOutput.BaseStream;
+                else if (vgmstreamprocess.ExitCode == 0) return File.OpenRead(fn);
+                else
+                {
+                    fichier.SetInvalid();
+                    return null;
+                }
+            }
+            catch (OperationCanceledException) { return null; }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
-            else return null;
+            finally { StreamingCount--; }
         }
 
         /// <summary>
@@ -114,58 +240,59 @@ namespace VGMGUI
         /// <param name="fichier">Le fichier à convertir.</param>
         /// <param name="cancellationToken">Jeton d'annulation qui peut être utilisé par d'autres objets ou threads pour être informés de l'annulation.</param>
         /// <returns>true si la conversion a réussi; sinon false.</returns>
-        public static async Task<IEnumerable<string>> ConvertFile(Fichier fichier, CancellationToken cancellationToken = default)
+        public static async Task<string[]> ConvertFile(Fichier fichier, CancellationToken cancellationToken = default, PauseToken pauseToken = default)
         {
-            if (File.Exists(fichier.Path))
+            await pauseToken.WaitWhilePausedAsync();
+
+            if (cancellationToken.IsCancellationRequested || !File.Exists(fichier.Path)) return null;
+
+            bool success = false;
+
+            Process vgmstreamprocess = new Process() { StartInfo = StartInfo(fichier.Path, fichier.FinalDestination, fichier.LoopCount, fichier.FadeOut, fichier.FadeDelay, fichier.FadeTime, fichier.StartEndLoop) };
+            RunningProcess.Add(vgmstreamprocess, VGMStreamProcessTypes.Conversion);
+
+            try
             {
-                bool success = false;
+                ConversionCount++;
+                fichier.OriginalState = "FSTATE_Conversion";
 
-                Process vgmstreamprocess = new Process() { StartInfo = StartInfo(fichier.Path, fichier.FinalDestination, fichier.LoopCount, fichier.FadeOut, fichier.FadeDelay, fichier.FadeTime, fichier.StartEndLoop) };
-                RunningProcess.Add(vgmstreamprocess, VGMStreamProcessTypes.Conversion);
+                await pauseToken.WaitWhilePausedAsync();
 
-                try
+                TryResult StartResult = await vgmstreamprocess.TryStartAsync(cancellationToken); //Start
+
+                if (!StartResult.Result) //N'a pas pu être démarré
                 {
-                    fichier.OriginalState = "FSTATE_Conversion";
-
-                    TryResult StartResult = await vgmstreamprocess.TryStartAsync(cancellationToken); //Start
-
-                    if (!StartResult.Result) //N'a pas pu être démarré
-                    {
-                        if (!(StartResult.Exception is OperationCanceledException)) MessageBox.Show(StartResult.Exception.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-                        return null;
-                    }
-
-                    await vgmstreamprocess.WaitForExitAsync(cancellationToken); //WaitForExit
-
-                    RunningProcess.Remove(vgmstreamprocess);
-
-                    string err = await vgmstreamprocess.StandardError.ReadToEndAsync().WithCancellation(cancellationToken);
-
-                    if (err.IsEmpty())
-                    {
-                        success = true;
-                        return await vgmstreamprocess.StandardOutput.ReadAllLinesAsync().WithCancellation(cancellationToken);
-                    }
-                    else return null;
-                }
-                catch (OperationCanceledException)
-                {
-                    vgmstreamprocess.TryKill();
+                    if (!(StartResult.Exception is OperationCanceledException)) MessageBox.Show(StartResult.Exception.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
                     return null;
                 }
-                finally
-                {
-                    if (RunningProcess.ContainsKey(vgmstreamprocess)) RunningProcess.Remove(vgmstreamprocess);
 
-                    if (!cancellationToken.IsCancellationRequested)
-                    {
-                        if (success) fichier.OriginalState = "FSTATE_Completed";
-                        else fichier.SetInvalid();
-                    }
-                    else if (!success) fichier.OriginalState = "FSTATE_Canceled";
+                await vgmstreamprocess.WaitForExitAsync(cancellationToken); //WaitForExit
+
+                RunningProcess.Remove(vgmstreamprocess);
+
+                await pauseToken.WaitWhilePausedAsync();
+
+                if (!cancellationToken.IsCancellationRequested && vgmstreamprocess.ExitCode == 0)
+                {
+                    success = true;
+                    return await vgmstreamprocess.StandardOutput.ReadAllLinesAsync().WithCancellation(cancellationToken);
                 }
+                else return null;
             }
-            else return null;
+            catch (OperationCanceledException)
+            {
+                vgmstreamprocess.TryKill();
+                return null;
+            }
+            finally
+            {
+                if (RunningProcess.ContainsKey(vgmstreamprocess)) RunningProcess.Remove(vgmstreamprocess);
+
+                if (success) fichier.OriginalState = "FSTATE_Completed";
+                else if (!cancellationToken.IsCancellationRequested) fichier.SetInvalid();
+
+                ConversionCount--;
+            }
         }
 
         public static async Task<Fichier> GetFileWithOtherFormats(string fileName, FichierOutData outData = default, CancellationToken cancellationToken = default)
@@ -175,19 +302,30 @@ namespace VGMGUI
             else return await GetFile(fileName, outData, cancellationToken);
         }
 
-        public static async Task<string> GetStreamWithOtherFormats(Fichier fichier, bool Out = false, CancellationToken cancellationToken = default)
+        public static async Task<Stream> GetStreamWithOtherFormats(Fichier fichier, bool useFile, bool Out = false, CancellationToken cancellationToken = default)
         {
-            string result = null;
-            if (IO.ReadBytes(fichier.Path, 0, 4).SequenceEqual(RIFF) && IO.ReadBytes(fichier.Path, 8, 4).SequenceEqual(WAVE)) return fichier.Path;
-            else if (AdditionalFormats.DKCTFCSMP && (result = await DKCTFCSMP.GetStream(fichier, Out, cancellationToken)) != null || cancellationToken.IsCancellationRequested) return result;
-            else return await GetStream(fichier, Out, cancellationToken);
+            Stream result = null;
+            if (AdditionalFormats.DKCTFCSMP && (result = await DKCTFCSMP.GetStream(fichier, Out, cancellationToken)) != null || cancellationToken.IsCancellationRequested) return result;
+            else return await GetStream(fichier, useFile, Out, cancellationToken);
         }
 
-        public static async Task<IEnumerable<string>> ConvertFileWithOtherFormats(Fichier fichier, CancellationToken cancellationToken = default)
+        public static async Task<IEnumerable<string>> ConvertFileWithOtherFormats(Fichier fichier, CancellationToken cancellationToken = default, PauseToken pauseToken = default)
         {
-            IEnumerable<string> result = null;
-            if (AdditionalFormats.DKCTFCSMP && (result = await DKCTFCSMP.ConvertFile(fichier, cancellationToken)) != null || cancellationToken.IsCancellationRequested) return result;
-            else return await ConvertFile(fichier, cancellationToken);
+            CancellationTokenRegistration registration = cancellationToken.Register(fichier.Cancel);
+
+            try
+            {
+                IEnumerable<string> result = null;
+                if (AdditionalFormats.DKCTFCSMP && (result = await DKCTFCSMP.ConvertFile(fichier, false, fichier.CancellationToken, pauseToken)) != null || fichier.CancellationToken.IsCancellationRequested) return result;
+                else return await ConvertFile(fichier, fichier.CancellationToken, pauseToken);
+            }
+            finally
+            {
+                if (cancellationToken.IsCancellationRequested) fichier.OriginalState = "FSTATE_Canceled";
+                else if (fichier.CancellationToken.IsCancellationRequested) fichier.OriginalState = "FSTATE_Skipped";
+                fichier.ResetCancellation();
+                registration.TryDispose();
+            }
         }
 
         /// <summary>
@@ -208,6 +346,7 @@ namespace VGMGUI
 
             try
             {
+                ScanningCount++;
                 TryResult StartResult = await vgmstreamprocess.TryStartAsync(cancellationToken); //Start
 
                 if (!StartResult.Result) //N'a pas pu être démarré
@@ -234,7 +373,11 @@ namespace VGMGUI
                 MessageBox.Show(ex.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
-            finally { if (RunningProcess.ContainsKey(vgmstreamprocess)) RunningProcess.Remove(vgmstreamprocess); }
+            finally
+            {
+                if (RunningProcess.ContainsKey(vgmstreamprocess)) RunningProcess.Remove(vgmstreamprocess);
+                ScanningCount--;
+            }
         }
 
         /// <summary>
@@ -353,10 +496,10 @@ namespace VGMGUI
         /// <returns>true s'il n'y a pas eu d'erreur; sinon false.</returns>
         public static async Task<bool> DownloadVGMStream()
         {
-            var cts = new CancellationTokenSource();
+            VGMStreamCTS = new CancellationTokenSource();
             var result = false;
             var tempPath = IO.GetTempDirectory();
-            var arcFile = Path.GetTempFileName();
+            var arcFile = CreateTempFile("zip", null);
             var address = @"https://raw.githubusercontent.com/bnnm/vgmstream-builds/master/bin/vgmstream-latest-test-u.zip";
             var waitingWindow = new WaitingWindow();
             var client = new WebClient();
@@ -365,19 +508,20 @@ namespace VGMGUI
             {
                 waitingWindow.IsIndeterminate = false;
                 waitingWindow.Value = args.ProgressPercentage;
-                waitingWindow.State = $"{IO.GetFileSize(args.BytesReceived)} / {IO.GetFileSize(args.TotalBytesToReceive)} - {(100 * (double)args.BytesReceived / args.TotalBytesToReceive).ToString("00.00")} %";
+                waitingWindow.State = $"{IO.GetFileSize(args.BytesReceived, "0.00")} / {IO.GetFileSize(args.TotalBytesToReceive, "0.00")} - {(100 * (double)args.BytesReceived / args.TotalBytesToReceive).ToString("00.00")} %";
             };
 
             waitingWindow.SetResourceReference(Window.TitleProperty, "WW_DownloadVGMStream");
             waitingWindow.SetResourceReference(WaitingWindow.TextProperty, "WW_DownloadOf");
             waitingWindow.Labels.Children.Add(new TextBox() { IsReadOnly = true, BorderThickness = new Thickness(0), Text = address });
             waitingWindow.IsIndeterminate = true;
-            waitingWindow.Closing += (sndr, args) => cts.Cancel();
+            waitingWindow.Closing += (sndr, args) => VGMStreamCTS.Cancel();
             Task.Run(() => waitingWindow.Dispatcher.Invoke(waitingWindow.ShowDialog));
 
             try
             {
-                await client.DownloadFileTaskAsync(address, arcFile).WithCancellation(cts.Token);
+                DownloadCount++;
+                await client.DownloadFileTaskAsync(address, arcFile).WithCancellation(VGMStreamCTS.Token);
 
                 waitingWindow.Labels.Children.RemoveAt(1);
                 waitingWindow.SetResourceReference(WaitingWindow.TextProperty, "WW_Decompression");
@@ -392,8 +536,8 @@ namespace VGMGUI
                     {
                         using (var arc = ZipFile.OpenRead(arcFile))
                         {
-                            await arc.ExtractToDirectoryAsync(tempPath, true, cts.Token);
-                            await DirectoryAsync.CopyAsync(tempPath, App.VGMStreamFolder, true, cts.Token);
+                            await arc.ExtractToDirectoryAsync(tempPath, true, VGMStreamCTS.Token);
+                            await DirectoryAsync.CopyAsync(tempPath, App.VGMStreamFolder, true, VGMStreamCTS.Token);
                             ok = result = true;
                         }
                     }
@@ -416,87 +560,9 @@ namespace VGMGUI
             }
             finally
             {
-                await FileAsync.TryAndRetryDeleteAsync(arcFile, throwEx: false);
+                await DeleteTempFilesByName(arcFile);
                 await DirectoryAsync.TryAndRetryDeleteAsync(tempPath, throwEx: false);
-            }
-
-            waitingWindow.Close();
-
-            return result;
-        }
-
-        /// <summary>
-        /// Télécharge et applique la dernière version de ffmpeg.
-        /// </summary>
-        /// <returns>true s'il n'y a pas eu d'erreur; sinon false.</returns>
-        public static async Task<bool> DownloadFFmpeg()
-        {
-            var cts = new CancellationTokenSource();
-            var result = false;
-            var tempFile = Path.GetTempFileName();
-            var arcFile = Path.GetTempFileName();
-            var address = Environment.Is64BitOperatingSystem ? @"https://ffmpeg.zeranoe.com/builds/win64/static/ffmpeg-latest-win64-static.zip" : @"https://ffmpeg.zeranoe.com/builds/win32/static/ffmpeg-latest-win32-static.zip";
-            var waitingWindow = new WaitingWindow();
-            var client = new WebClient();
-
-            client.DownloadProgressChanged += (sndr, args) =>
-            {
-                waitingWindow.IsIndeterminate = false;
-                waitingWindow.Value = args.ProgressPercentage;
-                waitingWindow.State = $"{IO.GetFileSize(args.BytesReceived)} / {IO.GetFileSize(args.TotalBytesToReceive)} - {(100 * (double)args.BytesReceived / args.TotalBytesToReceive).ToString("00.00")} %";
-            };
-
-            waitingWindow.SetResourceReference(Window.TitleProperty, "WW_DownloadFFmpeg");
-            waitingWindow.SetResourceReference(WaitingWindow.TextProperty, "WW_DownloadOf");
-            waitingWindow.Labels.Children.Add(new TextBox() { IsReadOnly = true, BorderThickness = new Thickness(0), Text = address });
-            waitingWindow.IsIndeterminate = true;
-            waitingWindow.Closing += (sndr, args) => cts.Cancel();
-            Task.Run(() => waitingWindow.Dispatcher.Invoke(waitingWindow.ShowDialog));
-
-            try
-            {
-                await client.DownloadFileTaskAsync(address, arcFile).WithCancellation(cts.Token);
-
-                waitingWindow.Labels.Children.RemoveAt(1);
-                waitingWindow.SetResourceReference(WaitingWindow.TextProperty, "WW_Decompression");
-                waitingWindow.IsIndeterminate = true;
-
-                bool ok = false;
-                Exception exception = null;
-                do
-                {
-                    try
-                    {
-                        using (var arc = ZipFile.OpenRead(arcFile))
-                        {
-                            var ffFile = await arc.Entries.FirstOrDefaultAsync(entry => entry.FullName == "ffmpeg-latest-win64-static/bin/ffmpeg.exe", cts.Token);
-                            Directory.CreateDirectory(App.FFmpegFolder);
-                            await ffFile.ExtractToFileAsync(tempFile, true, cts.Token);
-                            await FileAsync.CopyAsync(tempFile, App.FFmpegPath, true, cts.Token);
-                            ok = result = true;
-                        }
-                    }
-                    catch (Exception ex) when (!(ex is OperationCanceledException))
-                    {
-                        exception = ex;
-                        result = false;
-                    }
-                } while (!ok && System.Windows.Forms.MessageBox.Show(exception.Message, App.Str("TT_Error"), System.Windows.Forms.MessageBoxButtons.RetryCancel, System.Windows.Forms.MessageBoxIcon.Error) == System.Windows.Forms.DialogResult.Retry);
-            }
-            catch (OperationCanceledException)
-            {
-                client.CancelAsync();
-                result = false;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-                result = false;
-            }
-            finally
-            {
-                await FileAsync.TryAndRetryDeleteAsync(arcFile, throwEx: false);
-                await FileAsync.TryAndRetryDeleteAsync(tempFile, throwEx: false);
+                DownloadCount--;
             }
 
             waitingWindow.Close();
@@ -513,16 +579,16 @@ namespace VGMGUI
         public static async Task<bool> DownloadVLC(bool extract = false, string path = null)
         {
             var download = !File.Exists(path);
-            var cts = new CancellationTokenSource();
+            VLCCTS = new CancellationTokenSource();
             var downloadResult = false;
             var extractResult = false;
             var tempPath = IO.GetTempDirectory();
-            var arcFile = Path.GetTempFileName();
+            var arcFile = CreateTempFile("zip", null);
             var dirAddress = Environment.Is64BitProcess ? @"http://download.videolan.org/vlc/last/win64/" : @"http://download.videolan.org/vlc/last/win32/";
             var client = new WebClient();
 
             var waitingWindow = new WaitingWindow();
-            waitingWindow.Closing += (sndr, args) => cts.Cancel();
+            waitingWindow.Closing += (sndr, args) => VLCCTS.Cancel();
 
             if (download)
             {
@@ -530,7 +596,7 @@ namespace VGMGUI
                 {
                     waitingWindow.IsIndeterminate = false;
                     waitingWindow.Value = args.ProgressPercentage;
-                    waitingWindow.State = $"{IO.GetFileSize(args.BytesReceived)} / {IO.GetFileSize(args.TotalBytesToReceive)} - {(100 * (double)args.BytesReceived / args.TotalBytesToReceive).ToString("00.00")} %";
+                    waitingWindow.State = $"{IO.GetFileSize(args.BytesReceived, "0.00")} / {IO.GetFileSize(args.TotalBytesToReceive, "0.00")} - {(100 * (double)args.BytesReceived / args.TotalBytesToReceive).ToString("00.00")} %";
                 };
 
                 waitingWindow.SetResourceReference(Window.TitleProperty, "WW_DownloadVLC");
@@ -538,10 +604,11 @@ namespace VGMGUI
                 waitingWindow.IsIndeterminate = true;
             }
 
-            Task.Run(() => waitingWindow.Dispatcher.Invoke(waitingWindow.ShowDialog));
+            waitingWindow.Show();
 
             try
             {
+                DownloadCount++;
                 if (download)
                 {
                     var files = await new WebClient().DownloadStringTaskAsync(new Uri(dirAddress));
@@ -554,7 +621,7 @@ namespace VGMGUI
                     waitingWindow.SetResourceReference(WaitingWindow.TextProperty, "WW_DownloadOf");
                     waitingWindow.Labels.Children.Add(new TextBox() { IsReadOnly = true, BorderThickness = new Thickness(0), Text = address });
 
-                    await client.DownloadFileTaskAsync(address, arcFile).WithCancellation(cts.Token);
+                    await client.DownloadFileTaskAsync(address, arcFile).WithCancellation(VLCCTS.Token);
 
                     downloadResult = true;
                 }
@@ -579,20 +646,23 @@ namespace VGMGUI
                                 var libvlcTMPFile = Path.Combine(tempPath, "libvlc.dll");
                                 var libvlccoreTMPFile = Path.Combine(tempPath, "libvlccore.dll");
 
-                                var pluginsFolder = await arc.Entries.FirstOrDefaultAsync(entry => entry.FullName == "vlc-2.2.8/plugins/", cts.Token);
-                                var libvlcFile = await arc.Entries.FirstOrDefaultAsync(entry => entry.FullName == "vlc-2.2.8/libvlc.dll", cts.Token);
-                                var libvlccoreFile = await arc.Entries.FirstOrDefaultAsync(entry => entry.FullName == "vlc-2.2.8/libvlccore.dll", cts.Token);
+                                var pluginsFolder = await arc.Entries.FirstOrDefaultAsync(entry => Regex.IsMatch(entry.FullName, "^vlc-(\\d|\\.)+/plugins/$"), VLCCTS.Token);
+                                var libvlcFile = await arc.Entries.FirstOrDefaultAsync(entry => Regex.IsMatch(entry.FullName, "^vlc-(\\d|\\.)+/libvlc.dll$"), VLCCTS.Token);
+                                var libvlccoreFile = await arc.Entries.FirstOrDefaultAsync(entry => Regex.IsMatch(entry.FullName, "^vlc-(\\d|\\.)+/libvlccore.dll$"), VLCCTS.Token);
 
-                                await pluginsFolder.ExtractToDirectoryAsync(pluginsTMPFolder, true, cts.Token);
-                                await libvlcFile.ExtractToFileAsync(libvlcTMPFile, true, cts.Token);
-                                await libvlccoreFile.ExtractToFileAsync(libvlccoreTMPFile, true, cts.Token);
+                                await pluginsFolder.ExtractToDirectoryAsync(pluginsTMPFolder, true, VLCCTS.Token);
+                                await libvlcFile.ExtractToFileAsync(libvlcTMPFile, true, VLCCTS.Token);
+                                await libvlccoreFile.ExtractToFileAsync(libvlccoreTMPFile, true, VLCCTS.Token);
 
                                 if (Directory.Exists(App.VLCFolder)) await DirectoryAsync.TryAndRetryDeleteAsync(App.VLCFolder);
                                 Directory.CreateDirectory(App.VLCFolder);
 
-                                await DirectoryAsync.CopyAsync(pluginsTMPFolder, Path.Combine(App.VLCFolder, "plugins"), true, cts.Token);
-                                await FileAsync.CopyAsync(libvlcTMPFile, Path.Combine(App.VLCFolder, "libvlc.dll"), true, cts.Token);
-                                await FileAsync.CopyAsync(libvlccoreTMPFile, Path.Combine(App.VLCFolder, "libvlccore.dll"), true, cts.Token);
+                                await DirectoryAsync.CopyAsync(pluginsTMPFolder, Path.Combine(App.VLCFolder, "plugins"), true, VLCCTS.Token);
+                                await FileAsync.CopyAsync(libvlcTMPFile, Path.Combine(App.VLCFolder, "libvlc.dll"), true, VLCCTS.Token);
+                                await FileAsync.CopyAsync(libvlccoreTMPFile, Path.Combine(App.VLCFolder, "libvlccore.dll"), true, VLCCTS.Token);
+
+                                waitingWindow.SetResourceReference(WaitingWindow.TextProperty, "WW_VLCPluginsCaching");
+                                await Task.Run(() => new VlcMediaPlayer(new DirectoryInfo(App.VLCFolder), new[] { "--reset-plugins-cache" }).TryDispose()); //Create plugins cache
 
                                 ok = extractResult = true;
                             }
@@ -618,9 +688,10 @@ namespace VGMGUI
             finally
             {
                 if (downloadResult && !extract) VLCArcPath = arcFile;
-                else await FileAsync.TryAndRetryDeleteAsync(arcFile, throwEx: false);
+                else await DeleteTempFilesByName(arcFile);
 
                 await DirectoryAsync.TryAndRetryDeleteAsync(tempPath, throwEx: false);
+                DownloadCount--;
             }
 
             waitingWindow.Close();
@@ -637,7 +708,7 @@ namespace VGMGUI
             RedirectStandardError = true,
             CreateNoWindow = true,
             UseShellExecute = false,
-            Arguments = $"-o {(Uri.IsWellFormedUriString(new Uri(outFile).AbsoluteUri, UriKind.RelativeOrAbsolute) ? outFile : Path.ChangeExtension(inFile, "wav"))}{(startEndLoop ? " -E" : "")} -l {loopCount} {(fadeOut ? $"-f {fadeTime.ToString(Literal.DecimalSeparatorPoint)} -d {fadeDelay.ToString(Literal.DecimalSeparatorPoint)}" : "-F")} \"{inFile}\""
+            Arguments = $"-o \"{(Uri.IsWellFormedUriString(new Uri(outFile).AbsoluteUri, UriKind.RelativeOrAbsolute) ? outFile : Path.ChangeExtension(inFile, "wav"))}\"{(startEndLoop ? " -E" : String.Empty)} -l {loopCount} {(fadeOut ? $"-f {fadeTime.ToString(Literal.DecimalSeparatorPoint)} -d {fadeDelay.ToString(Literal.DecimalSeparatorPoint)}" : "-F")} \"{inFile}\""
         };
 
         /// <summary>
@@ -656,7 +727,7 @@ namespace VGMGUI
                         RedirectStandardError = true,
                         CreateNoWindow = true,
                         UseShellExecute = false,
-                        Arguments = $"-P {(startEndLoop ? " -E" : String.Empty)} -l {loopCount} {(fadeOut ? $"-f {fadeTime.ToString(Literal.DecimalSeparatorPoint)} -d {fadeDelay.ToString(Literal.DecimalSeparatorPoint)}" : "-F")} \"{inFile}\""
+                        Arguments = $"-P{(startEndLoop ? " -E" : String.Empty)} -l {loopCount} {(fadeOut ? $"-f {fadeTime.ToString(Literal.DecimalSeparatorPoint)} -d {fadeDelay.ToString(Literal.DecimalSeparatorPoint)}" : "-F")} \"{inFile}\""
                     };
                 case VGMStreamProcessTypes.Metadata:
                     return new ProcessStartInfo(App.VGMStreamPath)

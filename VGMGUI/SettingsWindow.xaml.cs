@@ -74,6 +74,22 @@ namespace VGMGUI
                 }
             }
 
+            if ((o = m_data.Global["VLCC"]) != null)
+            {
+                switch (o)
+                {
+                    case "Memory":
+                        cmbx_vlcc.SelectedIndex = 0;
+                        break;
+                    case "File":
+                        cmbx_vlcc.SelectedIndex = 1;
+                        break;
+                    case "Never":
+                        cmbx_vlcc.SelectedIndex = 2;
+                        break;
+                }
+            }
+
             if ((o = m_data.Global["StopWhenDelete"].ToBool()) != null) chbx_stopwhendelete.IsChecked = (bool)o;
             else chbx_stopwhendelete.IsChecked = true;
 
@@ -138,6 +154,18 @@ namespace VGMGUI
             if ((o = m_data["StatusBar"]["RAM"].ToBool()) != null) chbx_stsbar_RAM.IsChecked = (bool)o;
             else chbx_stsbar_RAM.IsChecked = true;
 
+            if ((o = m_data["StatusBar"]["StreamingType"].ToBool()) != null) chbx_stsbar_streamingType.IsChecked = (bool)o;
+            else chbx_stsbar_streamingType.IsChecked = true;
+
+            if ((o = m_data["StatusBar"]["SamplesDisplay"].ToBool()) != null) chbx_stsbar_samplesDisplay.IsChecked = (bool)o;
+            else chbx_stsbar_samplesDisplay.IsChecked = true;
+
+            if ((o = m_data["StatusBar"]["SearchDelay"].ToBool()) != null) chbx_stsbar_searchDelay.IsChecked = (bool)o;
+            else chbx_stsbar_searchDelay.IsChecked = true;
+
+            if ((o = m_data["StatusBar"]["PreAnalyse"].ToBool()) != null) chbx_stsbar_preAnalyse.IsChecked = (bool)o;
+            else chbx_stsbar_preAnalyse.IsChecked = true;
+
             if ((o = m_data["Colors"]["Foreground"].ToColor()) != null) rect_foregroundcolor.Fill = new SolidColorBrush((Color)o);
             if ((o = m_data["Colors"]["Background"].ToColor()) != null) rect_backgroundcolor.Fill = new SolidColorBrush((Color)o);
             if ((o = m_data["Colors"]["Error"].ToColor()) != null) rect_errorcolor.Fill = new SolidColorBrush((Color)o);
@@ -149,6 +177,7 @@ namespace VGMGUI
         private void Reset()
         {
             m_data.Global["Language"] = "Auto";
+            m_data.Global["VLCC"] = "Memory";
             m_data.Global["StopWhenDelete"] = "True";
             m_data.Global["PreAnalyse"] = "True";
             m_data.Global["Preview"] = "In";
@@ -166,6 +195,10 @@ namespace VGMGUI
             m_data["StatusBar"]["Display"] = "True";
             m_data["StatusBar"]["Counter"] = "True";
             m_data["StatusBar"]["RAM"] = "True";
+            m_data["StatusBar"]["SamplesDisplay"] = "True";
+            m_data["StatusBar"]["SearchDelay"] = "True";
+            m_data["StatusBar"]["PreAnalyse"] = "True";
+            m_data["StatusBar"]["StreamingType"] = "True";
 
             m_data["Colors"]["Foreground"] = "#16A085";
             m_data["Colors"]["Background"] = "#727272";
@@ -203,8 +236,7 @@ namespace VGMGUI
                     Close();
                 }
             }
-            else if (result.Exception is UnauthorizedAccessException) MessageBox.Show(result.Exception.Message + (BenLib.Misc.IsAdministrator() ? String.Empty : Environment.NewLine + App.Str("ERR_TryAdmin")), App.Str("ERR_AccessDenied"), MessageBoxButton.OK, MessageBoxImage.Error);
-            else MessageBox.Show(result.Exception.Message + (BenLib.Misc.IsAdministrator() ? String.Empty : Environment.NewLine + App.Str("ERR_TryAdmin")), App.Str("ERR_AccessDenied"), MessageBoxButton.OK, MessageBoxImage.Error);
+            else MessageBox.Show(result.Exception.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         /// <summary>
@@ -250,6 +282,18 @@ namespace VGMGUI
                 case "chbx_stsbar_RAM":
                     m_data["StatusBar"]["RAM"] = "True";
                     break;
+                case "chbx_stsbar_samplesDisplay":
+                    m_data["StatusBar"]["SamplesDisplay"] = "True";
+                    break;
+                case "chbx_stsbar_searchDelay":
+                    m_data["StatusBar"]["SearchDelay"] = "True";
+                    break;
+                case "chbx_stsbar_preAnalyse":
+                    m_data["StatusBar"]["PreAnalyse"] = "True";
+                    break;
+                case "chbx_stsbar_streamingType":
+                    m_data["StatusBar"]["StreamingType"] = "True";
+                    break;
             }
         }
 
@@ -282,6 +326,18 @@ namespace VGMGUI
                     break;
                 case "chbx_stsbar_RAM":
                     m_data["StatusBar"]["RAM"] = "False";
+                    break;
+                case "chbx_stsbar_samplesDisplay":
+                    m_data["StatusBar"]["SamplesDisplay"] = "False";
+                    break;
+                case "chbx_stsbar_searchDelay":
+                    m_data["StatusBar"]["SearchDelay"] = "False";
+                    break;
+                case "chbx_stsbar_preAnalyse":
+                    m_data["StatusBar"]["PreAnalyse"] = "False";
+                    break;
+                case "chbx_stsbar_streamingType":
+                    m_data["StatusBar"]["StreamingType"] = "False";
                     break;
             }
         }
@@ -392,6 +448,20 @@ namespace VGMGUI
                                 break;
                             case "English":
                                 m_data.Global["Language"] = "en-US";
+                                break;
+                        }
+                        break;
+                    case "cmbx_vlcc":
+                        switch (App.Res((cbx.SelectedItem as ComboBoxItem).Content.ToString()))
+                        {
+                            case "STGS_VLCC_Memory":
+                                m_data.Global["VLCC"] = "Memory";
+                                break;
+                            case "STGS_VLCC_File":
+                                m_data.Global["VLCC"] = "File";
+                                break;
+                            case "STGS_VLCC_Never":
+                                m_data.Global["VLCC"] = "Never";
                                 break;
                         }
                         break;
@@ -563,6 +633,12 @@ namespace VGMGUI
             if ((o = data["StatusBar"]["Display"].ToBool()) != null) StatusBar.Display = (bool)o;
             if ((o = data["StatusBar"]["Counter"].ToBool()) != null) StatusBar.Counter = (bool)o;
             if ((o = data["StatusBar"]["RAM"].ToBool()) != null) StatusBar.RAM = (bool)o;
+            if ((o = data["StatusBar"]["SamplesDisplay"].ToBool()) != null) StatusBar.SamplesDisplay = (bool)o;
+            if ((o = data["StatusBar"]["SearchDelay"].ToBool()) != null) StatusBar.SearchDelay = (bool)o;
+            if ((o = data["StatusBar"]["PreAnalyse"].ToBool()) != null) StatusBar.PreAnalyse = (bool)o;
+            if ((o = data["StatusBar"]["StreamingType"].ToBool()) != null) StatusBar.StreamingType = (bool)o;
+
+            if ((o = data.Global["StreamingType"].ToEnum<StreamingType>()) != null) Settings.StreamingType = (StreamingType)o;
 
             if ((o = data["AdditionalFormats"]["DKCTFCSMP"].ToBool()) != null) AdditionalFormats.DKCTFCSMP = (bool)o;
 
@@ -591,6 +667,7 @@ namespace VGMGUI
             }
 
             RefreshInfos();
+            UpdateStatusBar(false, true);
         }
     }
 }

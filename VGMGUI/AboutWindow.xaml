@@ -10,6 +10,7 @@
         <StackPanel>
             <Label Content="VGMGUI" FontSize="50" FontFamily="Calibri" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,5,0,0"/>
             <Label Name="lb_version" Content="{x:Static local:App.VersionString}" HorizontalAlignment="Center"/>
+            <Label Name="lb_vlcversion" Content="{x:Static local:AboutWindow.VLCVersion}" HorizontalAlignment="Center"/>
             <GroupBox>
                 <GroupBox.Header>
                     <Label Content="{DynamicResource ABOUT_Credits}"/>

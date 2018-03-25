@@ -25,37 +25,24 @@ namespace VGMGUI
         /// </summary>
         public bool Loading { get; set; }
 
-        /// <summary>
-        /// Fichier au format WAV contenant les données audio.
-        /// </summary>
-        private string m_filename;
+        private CancellationTokenSource m_cts;
 
         /// <summary>
         /// Fichier au format WAV contenant les données audio.
         /// </summary>
-        private Stream m_stream;
+        public string FileName { get; private set; }
 
         /// <summary>
         /// Fichier au format WAV contenant les données audio.
         /// </summary>
-        public string FileName => m_filename;
-
-        /// <summary>
-        /// Stream contenant les les données audio au format WAV.
-        /// </summary>
-        public Stream Stream => m_stream;
-
-        /// <summary>
-        /// Statut de la lecture.
-        /// </summary>
-        public MediaStates State => m_player.State;
+        public Stream Stream { get; private set; }
 
         /// <summary>
         /// Se produit qunad la lecture est arrêtée.
         /// </summary>
-        public event EventHandler<VlcMediaPlayerEndReachedEventArgs> EndReached { add => m_player.EndReached += value; remove => m_player.EndReached -= value; }
+        public event EventHandler<VlcMediaPlayerEndReachedEventArgs> EndReached { add => Player.EndReached += value; remove => Player.EndReached -= value; }
 
-        public event EventHandler<AudioPlayerStopEventArgs> Stopped;
+        public event EventHandler<EventArgs<bool>> Stopped;
 
         /// <summary>
         /// Le fichier qui est actuellement lu ou décodé pour la lecture.
@@ -92,10 +79,9 @@ namespace VGMGUI
             }
         }
 
-        private VlcMediaPlayer m_player;
-        public VlcMediaPlayer Player => m_player;
+        public VlcMediaPlayer Player => App.VlcMediaPlayer;
 
-        public double Position => positionslider.IsEnabled && !positionslider.IsMouseCaptureWithin ? m_player.Position : positionslider.Value;
+        public double Position => positionslider.IsEnabled && !positionslider.IsMouseCaptureWithin ? Player.Position : positionslider.Value;
 
         private bool m_mute;
         public bool Mute
@@ -103,7 +89,7 @@ namespace VGMGUI
             get => m_mute;
             set
             {
-                m_player.Audio.IsMute = m_mute = value;
+                Player.Audio.IsMute = m_mute = value;
                 volumeslider.Opacity = value ? 0.313 : 1;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("VolumeIcon"));
                 Settings.SettingsData.Global["Mute"] = value.ToString();
@@ -119,7 +105,7 @@ namespace VGMGUI
                 if (value < 0) value = 0;
                 if (value > 100) value = 100;
                 Mute = false;
-                m_player.Audio.Volume = m_volume = value;
+                Player.Audio.Volume = m_volume = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Volume"));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("VolumeIcon"));
                 Settings.SettingsData.Global["Volume"] = Volume.ToString();
@@ -138,8 +124,8 @@ namespace VGMGUI
             }
         }
 
-        public string PositionString => new Time(m_player.Length * positionslider.Value / 1000).ToString("hh:mm:ss");
-        public string LengthString => m_player.LengthTime().ToString("hh:mm:ss");
+        public string PositionString => new Time(Player.Length * positionslider.Value / 1000).ToString("hh:mm:ss");
+        public string LengthString => Player.LengthTime().ToString("hh:mm:ss");
 
         #endregion
 
@@ -150,13 +136,11 @@ namespace VGMGUI
         /// </summary>
         public AudioPlayer()
         {
-            try { m_player = new VlcMediaPlayer(new DirectoryInfo(App.VLCFolder)); }
-            catch (Exception ex) { throw new VLCException("Impossible de créer un objet de type VlcMediaPlayer.", ex) { Source = App.VLCFolder }; }
             InitializeComponent();
             DataContext = this;
             LoopTypeChanged += AudioPlayer_LoopTypeChanged;
-            m_player.PositionChanged += (sender, e) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Position"));
-            m_player.LengthChanged += (sender, e) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("LengthString"));
+            Player.PositionChanged += (sender, e) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Position"));
+            Player.LengthChanged += (sender, e) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("LengthString"));
         }
 
         #endregion
@@ -170,47 +154,57 @@ namespace VGMGUI
         /// </summary>
         /// <param name="cancellationToken"/>
         /// <returns>true si la lecture est bien en cours; null si un chargement est déjà en cours; sinon false.</returns>
-        public async Task<bool?> Play(CancellationToken cancellationToken = default)
+        public async Task<bool?> Play()
         {
             if (Loading) return null;
 
-            bool result = false;
-            Loading = true;
-
-            switch (m_player.State)
+            try
             {
-                case MediaStates.NothingSpecial:
-                case MediaStates.Stopped:
-                    {
-                        if (await SetMedia(cancellationToken))
+                m_cts = new CancellationTokenSource();
+
+                bool result = false;
+                Loading = true;
+
+                switch (Player.State)
+                {
+                    case MediaStates.NothingSpecial:
+                    case MediaStates.Stopped:
                         {
-                            try
+                            if (await SetMedia(m_cts.Token))
                             {
-                                await m_player.PlayAsync(cancellationToken);
-                                positionslider.IsEnabled = true;
-                                m_player.Audio.Volume = m_volume;
-                                m_player.Audio.IsMute = m_mute;
-                                if (CurrentPlaying != null) CurrentPlaying.FontWeight = FontWeights.Bold;
+                                try
+                                {
+                                    await Player.PlayAsync(5000, m_cts.Token);
+                                    positionslider.IsEnabled = true;
+                                    Player.Audio.Volume = m_volume;
+                                    Player.Audio.IsMute = m_mute;
+                                    if (CurrentPlaying != null) CurrentPlaying.FontWeight = FontWeights.Bold;
+                                }
+                                catch { await Stop(true); }
                             }
-                            catch { Stop(true); }
                         }
-                    }
-                    break;
-                case MediaStates.Paused:
-                    await m_player.PlayAsync();
-                    break;
-            }
+                        break;
+                    case MediaStates.Paused:
+                        await Player.PlayAsync(5000);
+                        break;
+                }
 
-            if (m_player.State == MediaStates.Playing)
-            {
-                PlayButtonSetPause();
-                App.MainWindow.TBISetPause();
-                result = true;
-            }
-            else result = false;
+                if (Player.State == MediaStates.Playing)
+                {
+                    PlayButtonSetPause();
+                    App.MainWindow.TBISetPause();
+                    result = true;
+                }
+                else
+                {
+                    await Stop();
+                    result = false;
+                }
 
-            Loading = false;
-            return result;
+                return result;
+            }
+            catch { return false; }
+            finally { Loading = false; }
         }
 
         /// <summary>
@@ -222,15 +216,16 @@ namespace VGMGUI
         {
             try
             {
-                await m_player.StopAsync();
+                await Player.StopAsync();
 
-                m_stream = null;
-                m_filename = null;
+                Stream = null;
+                FileName = null;
 
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Position"));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("LengthString"));
 
-                positionslider.IsEnabled = false;
+                m_cts?.Cancel();
+                positionslider.IsEnabled = Loading = false;
 
                 PlayButtonSetPlay(false);
                 App.MainWindow.TBISetPlay(false);
@@ -244,11 +239,11 @@ namespace VGMGUI
 
                 GC.Collect();
 
-                Stopped?.Invoke(this, new AudioPlayerStopEventArgs(end));
+                Stopped?.Invoke(this, new EventArgs<bool>(end));
 
-                return m_player.State == MediaStates.Stopped;
+                return Player.State == MediaStates.Stopped;
             }
-            finally { if (end) { await VGMStream.DeleteTMPFiles(); } }
+            finally { await VGMStream.DeleteTempFilesByType(VGMStreamProcessTypes.Streaming); }
         }
 
         /// <summary>
@@ -256,10 +251,11 @@ namespace VGMGUI
         /// </summary>
         public async Task<bool> Pause()
         {
-            await m_player.PauseAsync();
+            if (Player.State == MediaStates.Paused) return true;
+            await Player.PauseAsync();
             PlayButtonSetPlay(true);
             App.MainWindow.TBISetPlay(true);
-            return m_player.State == MediaStates.Paused;
+            return Player.State == MediaStates.Paused;
         }
 
         /// <summary>
@@ -267,7 +263,7 @@ namespace VGMGUI
         /// </summary>
         public async Task PlayPause()
         {
-            if (m_player.State == MediaStates.Playing) await Pause();
+            if (Player.State == MediaStates.Playing) await Pause();
             else await Play();
         }
 
@@ -277,12 +273,12 @@ namespace VGMGUI
         /// <param name="value">La valeur à soustraire (%).</param>
         public async Task PositionPlus(float value = 5)
         {
-            await Task.Run(() =>
+            await Task.Run((Action)(() =>
             {
-                var postPosition = m_player.Position + value / 100;
+                var postPosition = this.Player.Position + value / 100;
                 if (postPosition > 1) postPosition = 1;
-                m_player.Position = postPosition;
-            });
+                this.Player.Position = postPosition;
+            }));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Position"));
         }
 
@@ -292,12 +288,12 @@ namespace VGMGUI
         /// <param name="value">La valeur à additionner (%).</param>
         public async Task PositionMinus(float value = 5)
         {
-            await Task.Run(() =>
+            await Task.Run((Action)(() =>
             {
-                var postPosition = m_player.Position - value / 100;
+                var postPosition = this.Player.Position - value / 100;
                 if (postPosition < 0) postPosition = 0;
-                m_player.Position = postPosition;
-            });
+                this.Player.Position = postPosition;
+            }));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Position"));
         }
 
@@ -313,10 +309,10 @@ namespace VGMGUI
         {
             if (File.Exists(filename))
             {
-                m_filename = null;
-                m_stream = null;
+                FileName = null;
+                Stream = null;
 
-                m_filename = filename;
+                FileName = filename;
             }
         }
 
@@ -326,10 +322,10 @@ namespace VGMGUI
         /// <param name="stream">Stream contenant les les données audio au format WAV</param>
         public void SetAudio(Stream stream)
         {
-            m_stream = null;
-            m_filename = null;
+            Stream = null;
+            FileName = null;
 
-            m_stream = stream;
+            Stream = stream;
         }
 
         /// <summary>
@@ -341,14 +337,15 @@ namespace VGMGUI
         {
             try
             {
-                if (m_filename != null)
+                if (FileName != null) await Task.Run(() => Player.SetMedia(new FileInfo(FileName)), cancellationToken);
+                else if (Stream != null)
                 {
-                    await Task.Run(() => m_player.SetMedia(new FileInfo(m_filename)), cancellationToken);
-                }
-                else if (m_stream != null)
-                {
-                    if (m_stream is FileStream fs) await Task.Run(() => m_player.SetMedia(new FileInfo(fs.Name)), cancellationToken);
-                    else await Task.Run(() => m_player.SetMedia(m_stream), cancellationToken);
+                    if (Player.Manager.VlcVersionNumber.Major < 3 && Stream is FileStream fs)
+                    {
+                        SetAudio(fs.Name);
+                        return await SetMedia();
+                    }
+                    else await Task.Run(() => Player.SetMedia(Stream), cancellationToken);
                 }
                 else return false;
 
@@ -385,26 +382,13 @@ namespace VGMGUI
 
         #region Events
 
-        private async void PlayButton_Click(object sender, RoutedEventArgs e) => await PlayPause();
-
-        private async void StopButton_Click(object sender, RoutedEventArgs e)
-        {
-            switch (Keyboard.Modifiers)
-            {
-                case ModifierKeys.Shift:
-                    App.FreeMemory();
-                    break;
-                default:
-                    await Stop(true);
-                    break;
-            }
-        }
+        private async void PlayButton_Click(object sender, RoutedEventArgs e) { if (CurrentPlaying != null) await PlayPause(); }
 
         private void positionslider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
             if (positionslider.Value < 0) positionslider.Value = 0;
             else if (positionslider.Value > 1) positionslider.Value = 1;
-            m_player.Position = (float)positionslider.Value;
+            Player.Position = (float)positionslider.Value;
         }
 
         private void positionslider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("PositionString"));
@@ -465,13 +449,6 @@ namespace VGMGUI
         #endregion
     }
 
-    public class AudioPlayerStopEventArgs
-    {
-        public AudioPlayerStopEventArgs(bool end) => End = end;
-
-        public bool End { get; set; }
-    }
-
     public enum LoopTypes { None, All, Random }
 
     public static class VLCExtensions
@@ -485,22 +462,18 @@ namespace VGMGUI
             }, cancellationToken);
             await Task.Delay(1);
         }
-        public static async Task PlayAsync(this VlcMediaPlayer player, CancellationToken cancellationToken = default)
+        public static async Task<bool> PlayAsync(this VlcMediaPlayer player, int millisecondsTimeout, CancellationToken cancellationToken = default)
         {
             await Task.Run(() =>
             {
                 player.Play();
                 while (player.State != MediaStates.Playing && player.State != MediaStates.Error) continue;
-            }, cancellationToken);
+            }, cancellationToken).WithTimeout(millisecondsTimeout);
             await Task.Delay(1);
+            return player.State == MediaStates.Playing;
         }
         public static Task PauseAsync(this VlcMediaPlayer player, CancellationToken cancellationToken = default) => Task.Run(() => player.Pause(), cancellationToken);
         public static Time PositionTime(this VlcMediaPlayer player) => new Time(player.Position * player.Length / 1000);
         public static Time LengthTime(this VlcMediaPlayer player) => new Time(player.Length / 1000);
-    }
-
-    public class VLCException : Exception
-    {
-        public VLCException(string message, Exception innerException) : base(message, innerException) { }
     }
 }

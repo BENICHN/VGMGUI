@@ -108,27 +108,42 @@ namespace VGMGUI
         /// <summary>
         /// Indique si un ajout est en cours.
         /// </summary>
-        bool Adding => !(FilesToAdd.Count == 0 && CurrentAdding == 0);
+        public bool Adding => !(FilesToAdd.Count == 0 && CurrentAdding == 0);
 
         /// <summary>
         /// Nombre d'ajouts en cours.
         /// </summary>
-        int CurrentAdding { get; set; }
+        public int CurrentAdding { get; private set; }
 
         /// <summary>
         /// Nombre de fichiers à ajouter.
         /// </summary>
-        int AddingCount { get; set; }
+        public int AddingCount { get; private set; }
+
+        private int m_addingErrorCount;
+        public int AddingErrorCount
+        {
+            get => m_addingErrorCount;
+            private set
+            {
+                m_addingErrorCount = value;
+                if (WaitingWindow != null && WaitingWindow.Labels.Children.Count > 1 && WaitingWindow.Labels.Children[1] is Label label)
+                {
+                    label.Content = $"{value} {App.Str("WW_Errors")}";
+                    if (value == 1) label.SetResourceReference(ForegroundProperty, "ErrorBrush");
+                }
+            }
+        }
 
         /// <summary>
         /// Nombre de fichiers ajoutés.
         /// </summary>
-        int AddingProgress => AddingCount - FilesToAdd.Count;
+        public int AddingProgress => AddingCount - FilesToAdd.Count;
 
         /// <summary>
         /// Fichiers à ajouter.
         /// </summary>
-        Queue<KeyValuePair<string, FichierOutData>> FilesToAdd { get; set; } = new Queue<KeyValuePair<string, FichierOutData>>();
+        public Queue<KeyValuePair<string, FichierOutData>> FilesToAdd { get; private set; } = new Queue<KeyValuePair<string, FichierOutData>>();
 
         /// <summary>
         /// Se produit une fois l'ajout terminé.
@@ -142,27 +157,42 @@ namespace VGMGUI
         /// <summary>
         /// Indique si une analyse est en cours.
         /// </summary>
-        bool Analyzing => !(FilesToAnalyze.Count == 0 && CurrentAnalyzing == 0);
+        public bool Analyzing => !(FilesToAnalyze.Count == 0 && CurrentAnalyzing == 0);
 
         /// <summary>
         /// Nombre d'analyses en cours.
         /// </summary>
-        int CurrentAnalyzing { get; set; }
+        public int CurrentAnalyzing { get; private set; }
 
         /// <summary>
         /// Nombre de fichiers à analyser.
         /// </summary>
-        int AnalyzingCount { get; set; }
+        public int AnalyzingCount { get; private set; }
+
+        private int m_analyzingErrorCount;
+        public int AnalyzingErrorCount
+        {
+            get => m_analyzingErrorCount;
+            private set
+            {
+                m_analyzingErrorCount = value;
+                if (WaitingWindow != null && WaitingWindow.Labels.Children.Count > 1 && WaitingWindow.Labels.Children[1] is Label label)
+                {
+                    label.Content = $"{value} {App.Str("WW_Errors")}";
+                    if (value == 1) label.SetResourceReference(ForegroundProperty, "ErrorBrush");
+                }
+            }
+        }
 
         /// <summary>
         /// Nombre de fichiers analysés.
         /// </summary>
-        int AnalyzeProgress => AnalyzingCount - FilesToAnalyze.Count;
+        public int AnalyzeProgress => AnalyzingCount - FilesToAnalyze.Count;
 
         /// <summary>
         /// Fichiers à analyser.
         /// </summary>
-        Queue<KeyValuePair<Fichier, IEnumerable<string>>> FilesToAnalyze { get; set; } = new Queue<KeyValuePair<Fichier, IEnumerable<string>>>();
+        public Queue<KeyValuePair<Fichier, IEnumerable<string>>> FilesToAnalyze { get; private set; } = new Queue<KeyValuePair<Fichier, IEnumerable<string>>>();
 
         #endregion
 
@@ -184,7 +214,8 @@ namespace VGMGUI
             FILEList.ItemsSource = filesCollection;
             View.Filter = new Predicate<object>((o) =>
             {
-                if (o is Fichier fichier)
+                if (SearchFilter.IsNullOrEmpty()) return true;
+                else if (o is Fichier fichier)
                 {
                     string property = String.Empty;
                     switch (SearchColumn)
@@ -266,17 +297,14 @@ namespace VGMGUI
         /// Ajoute un fichier dans la liste.
         /// </summary>
         /// <param name="filename">Fichier à ajouter.</param>
-        public void AddFile(string filename, FichierOutData outData) => AddFiles(new Dictionary<string, FichierOutData>() { { filename, outData } });
+        public Task AddFile(string filename, FichierOutData outData) => AddFiles(new Dictionary<string, FichierOutData>() { { filename, outData } });
 
         /// <summary>
         /// Ajoute des fichiers dans la liste.
         /// </summary>
         /// <param name="filenames">Fichiers à ajouter.</param>
         /// <param name="outData">Données supplémentaires pour les fichiers.</param>
-        public void AddFiles(IEnumerable<string> filenames, FichierOutData outData = default)
-        {
-            if (filenames != null) AddFiles(filenames.ToDictionary(s => s, s => outData));
-        }
+        public Task AddFiles(IEnumerable<string> filenames, FichierOutData outData = default) => AddFiles(filenames?.ToDictionary(s => s, s => outData));
 
         /// <summary>
         /// Ajoute des fichiers dans la liste.
@@ -295,6 +323,7 @@ namespace VGMGUI
                         #region WaitingWindow
 
                         WaitingWindow = new WaitingWindow { Maximum = AddingCount };
+                        WaitingWindow.Labels.Children.Add(new Label() { Margin = new Thickness(0, 1, 0, 0), Content = $"0 {App.Str("WW_Errors")}" });
                         WaitingWindow.SetResourceReference(WaitingWindow.TextProperty, "WW_Running");
                         WaitingWindow.SetResourceReference(Window.TitleProperty, "WW_FilesAdding");
                         WaitingWindow.CancelButton.Click += CancelAdding;
@@ -349,7 +378,11 @@ namespace VGMGUI
                         f.Index = filesCollection.Count;
                         filesCollection.Add(f);
                     }
-                    else ErrorWindow.BadFiles.Add(fileName);
+                    else
+                    {
+                        AddingErrorCount++;
+                        ErrorWindow.BadFiles.Add(fileName);
+                    }
                 }
                 else //Ajouter uniquement
                 {
@@ -417,6 +450,7 @@ namespace VGMGUI
                         if (displayWaitingWindow)
                         {
                             WaitingWindow = new WaitingWindow { Maximum = AnalyzingCount };
+                            WaitingWindow.Labels.Children.Add(new Label() { Margin = new Thickness(0, 1, 0, 0), Content = $"0 {App.Str("WW_Errors")}" });
                             WaitingWindow.SetResourceReference(WaitingWindow.TextProperty, "WW_Running");
                             WaitingWindow.SetResourceReference(Window.TitleProperty, "WW_FilesAnalyze");
                             WaitingWindow.CancelButton.Click += CancelAdding;
@@ -455,7 +489,7 @@ namespace VGMGUI
         /// </summary>
         /// <param name="files">Fichiers à analyser.</param>
         /// <param name="displayWaitingWindow">true si la fenêtre d'attente doit être affichée pendant l'analyse; sinon, false.</param>
-        public void AnalyzeFiles(IEnumerable<Fichier> files, bool displayWaitingWindow = true) => AnalyzeFiles(files.ToDictionary(f => f, f => default(IEnumerable<string>)), displayWaitingWindow);
+        public Task AnalyzeFiles(IEnumerable<Fichier> files, bool displayWaitingWindow = true) => AnalyzeFiles(files.ToDictionary(f => f, f => default(IEnumerable<string>)), displayWaitingWindow);
 
         /// <summary>
         /// Analyse un fichier.
@@ -463,7 +497,7 @@ namespace VGMGUI
         /// <param name="file">Fichier à analyser.</param>
         /// <param name="data">Données vgmstream du fichier.</param>
         /// <param name="displayWaitingWindow">true si la fenêtre d'attente doit être affichée pendant l'analyse; sinon, false.</param>
-        public void AnalyzeFile(Fichier file, IEnumerable<string> data, bool displayWaitingWindow = false) => AnalyzeFiles(new Dictionary<Fichier, IEnumerable<string>>() { { file, data } }, displayWaitingWindow);
+        public Task AnalyzeFile(Fichier file, IEnumerable<string> data, bool displayWaitingWindow = false) => AnalyzeFiles(new Dictionary<Fichier, IEnumerable<string>>() { { file, data } }, displayWaitingWindow);
 
         /// <summary>
         /// Analyse un fichier.
@@ -509,7 +543,11 @@ namespace VGMGUI
                     }
                     else if (f.OriginalState != "FSTATE_Queued") fc.SetInvalid(f.OriginalState);
                 }
-                else fc.SetInvalid();
+                else
+                {
+                    AnalyzingErrorCount++;
+                    fc.SetInvalid();
+                }
 
                 if ((!AddingMultithreading || AddingMaxProcessCount > 0) && FilesToAnalyze.Count > 0 && CurrentAnalyzing < 1000) //Start new
                 {
@@ -557,7 +595,7 @@ namespace VGMGUI
                 ErrorWindow.BadFiles = new System.Collections.ObjectModel.ObservableCollection<string>();
             }
 
-            AddingCount = AnalyzingCount = 0;
+            AddingCount = AnalyzingCount = AddingErrorCount = AnalyzingErrorCount = 0;
             AddingCTS = new CancellationTokenSource();
 
             FilesToAdd = new Queue<KeyValuePair<string, FichierOutData>>();
@@ -990,23 +1028,23 @@ namespace VGMGUI
             m_verticalScrollBarVisibility = ScrollViewer.ComputedVerticalScrollBarVisibility;
         }
 
-        private void SearchBox_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private async void SearchBox_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             SearchFilter = (bool)e.NewValue ? RestoreSearchFilter : String.Empty;
-            Search();
+            await Search();
         }
 
-        private void Settings_StaticPropertyChanged(object sender, PropertyChangedEventArgs e)
+        private async void Settings_StaticPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             switch (e.PropertyName)
             {
                 case "SearchCaseSensitive":
                 case "SearchColumn":
-                    Search();
+                    await Search();
                     break;
                 case "RestoreSearchFilter":
                     SearchFilter = RestoreSearchFilter;
-                    Search();
+                    await Search();
                     break;
             }
         }

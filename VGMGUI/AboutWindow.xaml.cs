@@ -10,7 +10,8 @@ namespace VGMGUI
     /// </summary>
     public partial class AboutWindow : Window
     {
-        public static string Copyright => "© " + App.Assembly.GetLinkerTime().Year + " BenNat";
+        public static string Copyright => $"© {App.Assembly.GetLinkerTime().Year} BenNat";
+        public static string VLCVersion => $"VLC {App.VLCVersion}";
 
         public AboutWindow()
         {

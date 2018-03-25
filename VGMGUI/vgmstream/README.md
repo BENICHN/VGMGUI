@@ -27,8 +27,8 @@ or you can get them here: https://github.com/kode54/vgmstream/tree/master/ext_li
 (bundled here: https://f.losno.co/vgmstream-win32-deps.zip, may not be latest).
 
 Put ```libvorbis.dll```, ```libmpg123-0.dll```, ```libg7221_decode.dll```, ```libg719_decode.dll```,
-```avcodec-vgmstream-58.dll```, ```avformat-vgmstream-58.dll```, ```avutil-vgmstream-56.dll```
-and ```swresample-vgmstream-3.dll``` somewhere Windows can
+```avcodec-vgmstream-58.dll```, ```avformat-vgmstream-58.dll```, ```avutil-vgmstream-56.dll```, ```swresample-vgmstream-3.dll```
+and ```libatrac9.dll``` somewhere Windows can
 find them.
 
 For Winamp/XMPlay/command line this means in the directory with the main .exe,
@@ -205,9 +205,10 @@ are used in few games.
 - SDX2 2:1 Squareroot-Delta-Exact compression DPCM
 - CBD2 2:1 Cuberoot-Delta-Exact compression DPCM
 - InterPlay ACM
-- Visual Art's NWA
+- VisualArt's NWA
 - CRI HCA
 - Electronic Arts MicroTalk a.k.a. UTK or UMT
+- FMOD FADPCM 4-bit ADPCM
 - Xiph Vorbis (Ogg, FSB5, Wwise, OGL, Silicon Knights)
 - MPEG MP1/2/3 (standard, AHX, XVAG, FSB, AWC, P3D, etc)
 - ITU-T G.722.1 (Polycom Siren 7)

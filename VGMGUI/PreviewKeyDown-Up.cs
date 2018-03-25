@@ -18,22 +18,30 @@ namespace VGMGUI
             {
                 if (AP.IsMouseOver)
                 {
+                    e.Handled = true;
                     switch (key)
                     {
                         case Key.Space:
-                            if (AP.State == MediaStates.Stopped || AP.State == MediaStates.NothingSpecial) PlayFile(tasklist.FILEList.SelectedItem as Fichier);
-                            else AP.PlayPause();
-                            e.Handled = true;
+                            if (Keyboard.Modifiers == ModifierKeys.Control) tasklist.FILEList.ScrollIntoView(AP.CurrentPlaying);
+                            else
+                            {
+                                if (AP.Player.State == MediaStates.Stopped || AP.Player.State == MediaStates.NothingSpecial) await PlayFile(tasklist.FILEList.SelectedItem as Fichier, null);
+                                else await AP.PlayPause();
+                            }
                             break;
                         case Key.S:
-                            if (Keyboard.Modifiers == ModifierKeys.Shift) App.FreeMemory();
-                            else CancelAndStop();
+                            if (Keyboard.Modifiers == ModifierKeys.Shift)
+                            {
+                                await VGMStream.DeleteTempFilesIfNotUsed();
+                                GC.Collect();
+                            }
+                            else await CancelAndStop();
                             break;
                         case Key.PageDown:
-                            NextWithRandom();
+                            await NextWithRandom();
                             break;
                         case Key.PageUp:
-                            PreviousWithRandom();
+                            await PreviousWithRandom();
                             break;
                         case Key.Insert:
                             tasklist.OpenFileDialog(Keyboard.Modifiers == ModifierKeys.Control);
@@ -53,52 +61,51 @@ namespace VGMGUI
                             }
                             break;
                         case Key.Left:
-                            AP.PositionMinus();
+                            await AP.PositionMinus();
                             break;
                         case Key.Right:
-                            AP.PositionPlus();
+                            await AP.PositionPlus();
                             break;
                         default:
                             goto NoMouseOver;
                     }
 
-                    e.Handled = true;
                 }
                 else if (tasklist.IsMouseOver)
                 {
                     switch (key)
                     {
                         case Key.Space:
-                            if (AP.State == MediaStates.Stopped || AP.State == MediaStates.NothingSpecial) PlayFile(tasklist.FILEList.SelectedItem as Fichier, null);
-                            else AP.PlayPause();
                             e.Handled = true;
+                            if (Keyboard.Modifiers == ModifierKeys.Control) tasklist.FILEList.ScrollIntoView(AP.CurrentPlaying);
+                            else
+                            {
+                                if (AP.Player.State == MediaStates.Stopped || AP.Player.State == MediaStates.NothingSpecial) await PlayFile(tasklist.FILEList.SelectedItem as Fichier, null);
+                                else await AP.PlayPause();
+                            }
                             break;
                         case Key.S:
-                            if (Keyboard.Modifiers == ModifierKeys.Shift) App.FreeMemory();
-                            else CancelAndStop();
+                            if (Keyboard.Modifiers == ModifierKeys.Shift)
+                            {
+                                await VGMStream.DeleteTempFilesIfNotUsed();
+                                GC.Collect();
+                            }
+                            else await CancelAndStop();
                             break;
                         case Key.PageDown:
-                            NextWithRandom();
                             e.Handled = true;
+                            await NextWithRandom();
                             break;
                         case Key.PageUp:
-                            PreviousWithRandom();
                             e.Handled = true;
+                            await PreviousWithRandom();
                             break;
                         case Key.F:
                             if (Keyboard.Modifiers == ModifierKeys.Control)
                             {
+                                e.Handled = true;
                                 if (tasklist.SearchBox.Visibility == Visibility.Visible) tasklist.SearchBox.TextBox.Focus();
                                 else tasklist.SearchBox.Visibility = Visibility.Visible;
-                                e.Handled = true;
-                            }
-                            break;
-                        case Key.B:
-                            if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift))
-                            {
-                                Settings.StatusBar.Display = !Settings.StatusBar.Display;
-                                Settings.SettingsData["StatusBar"]["Display"] = Settings.StatusBar.Display.ToString();
-                                e.Handled = true;
                             }
                             break;
                     }
@@ -106,10 +113,38 @@ namespace VGMGUI
                     if (!tasklist.IsKeyboardFocusWithin) tasklist.FILEList_PreviewKeyDown(sender, e);
                 }
             }
-            NoMouseOver:
 
+            NoMouseOver:
             switch (key)
             {
+                case Key.Play:
+                    if (AP.Player.State == MediaStates.Stopped || AP.Player.State == MediaStates.NothingSpecial) await PlayFile(tasklist.FILEList.SelectedItem as Fichier, null);
+                    else await AP.Play();
+                    break;
+                case Key.Pause:
+                    await AP.Pause();
+                    break;
+                case Key.MediaPlayPause:
+                    if (AP.Player.State == MediaStates.Stopped || AP.Player.State == MediaStates.NothingSpecial) await PlayFile(tasklist.FILEList.SelectedItem as Fichier, null);
+                    else await AP.PlayPause();
+                    break;
+                case Key.MediaStop:
+                    await CancelAndStop();
+                    break;
+                case Key.MediaNextTrack:
+                    await NextWithRandom();
+                    break;
+                case Key.MediaPreviousTrack:
+                    await PreviousWithRandom();
+                    break;
+                case Key.B:
+                    if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift))
+                    {
+                        e.Handled = true;
+                        StatusBar.Display = !StatusBar.Display;
+                        Settings.SettingsData["StatusBar"]["Display"] = StatusBar.Display.ToString();
+                    }
+                    break;
                 case Key.P:
                     if (Keyboard.Modifiers == ModifierKeys.Control) OpenSettingsWindow();
                     break;
@@ -127,9 +162,6 @@ namespace VGMGUI
                 case Key.D:
                     switch (Keyboard.Modifiers)
                     {
-                        case ModifierKeys.Control | ModifierKeys.Shift:
-                            await VGMStream.DownloadFFmpeg();
-                            break;
                         case ModifierKeys.Control | ModifierKeys.Alt:
                             if (await VGMStream.DownloadVLC()) MessageBox.Show(App.Str("WW_VLCDownloaded"), String.Empty, MessageBoxButton.OK, MessageBoxImage.Information);
                             break;
@@ -159,7 +191,7 @@ namespace VGMGUI
                     }
                     break;
 
-                    #endif
+                #endif
             }
         }
 

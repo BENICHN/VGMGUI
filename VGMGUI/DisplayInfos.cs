@@ -25,7 +25,7 @@ namespace VGMGUI
         /// <summary>
         /// Dictionnaires contennant le nombre d'instances de toutes les propriétés des fichiers sélectionnés.
         /// </summary>
-        public Dictionary<object, int>[] Infos { get; set; } = new Dictionary<object, int>[17];
+        public Dictionary<object, int>[] Infos { get; set; } = new Dictionary<object, int>[18];
 
         #endregion
 
@@ -167,6 +167,11 @@ namespace VGMGUI
                     else if (Infos[16].Count == 1) BitrateTB.Text = Infos[16].Keys.First().ToString();
                     else BitrateTB.Text = App.Str("MW_Multiple");
                     break;
+                case MediaInfos.SamplesToPlay:
+                    if (Infos[17].Count == 0) SamplesToPlayTB.Text = String.Empty;
+                    else if (Infos[17].Count == 1) SamplesToPlayTB.Text = Infos[17].Keys.First().ToString();
+                    else SamplesToPlayTB.Text = App.Str("MW_Multiple");
+                    break;
                 case MediaInfos.All:
                     {
                         //Format=====================================================================
@@ -245,6 +250,10 @@ namespace VGMGUI
                         if (Infos[16].Count == 0) BitrateTB.Text = String.Empty;
                         else if (Infos[16].Count == 1) BitrateTB.Text = Infos[16].Keys.First().ToString();
                         else BitrateTB.Text = App.Str("MW_Multiple");
+                        //SamplesToPlay=====================================================================
+                        if (Infos[17].Count == 0) SamplesToPlayTB.Text = String.Empty;
+                        else if (Infos[17].Count == 1) SamplesToPlayTB.Text = Infos[17].Keys.First().ToString();
+                        else SamplesToPlayTB.Text = App.Str("MW_Multiple");
                         //=====================================================================
                     }
                     break;
@@ -399,6 +408,7 @@ namespace VGMGUI
             RegisterInfo(14, fichier.Layout);
             RegisterInfo(15, fichier.InterleaveString);
             RegisterInfo(16, fichier.BitrateString);
+            RegisterInfo(17, fichier.SamplesToPlayString);
         }
 
         /// <summary>
@@ -425,6 +435,7 @@ namespace VGMGUI
             UnRegisterInfo(14, fichier.Layout);
             UnRegisterInfo(15, fichier.InterleaveString);
             UnRegisterInfo(16, fichier.BitrateString);
+            UnRegisterInfo(17, fichier.SamplesToPlayString);
         }
 
         /// <summary>
@@ -605,6 +616,13 @@ namespace VGMGUI
                             DisplayInfo(MediaInfos.Bitrate);
                             break;
                         }
+                    case "SamplesToPlayString":
+                        {
+                            UnRegisterInfo(17, e.OldValue);
+                            RegisterInfo(17, e.NewValue);
+                            DisplayInfo(MediaInfos.SamplesToPlay);
+                            break;
+                        }
                 }
             }
         }
@@ -680,9 +698,9 @@ namespace VGMGUI
                                     }
 
                                     Settings.SettingsData.Global["RecentFiles"] = sb.ToString();
-                                    if ((await Settings.TryWriteSettings()).Result) Dispatcher.BeginInvoke(new Action(() => DisplayRecentFiles(ofd.FileName)));
+                                    if ((await Settings.TryWriteSettings()).Result) await Dispatcher.BeginInvoke(new Action(() => DisplayRecentFiles(ofd.FileName)));
                                 }
-                                else Dispatcher.BeginInvoke(new Action(() => MainDestCB.SelectedItem = (from ComboBoxItem cbxitem in MainDestCB.Items select cbxitem).FirstOrDefault(cbitem => cbitem.Content.Equals(ofd.FileName))));
+                                else await Dispatcher.BeginInvoke(new Action(() => MainDestCB.SelectedItem = (from ComboBoxItem cbxitem in MainDestCB.Items select cbxitem).FirstOrDefault(cbitem => cbitem.Content.Equals(ofd.FileName))));
                             }
                             break;
                         case "SelectedTasksBrowse":
@@ -737,5 +755,5 @@ namespace VGMGUI
         #endregion
     }
 
-    public enum MediaInfos { Format, Encoding, Channels, Layout, Interleave, Bitrate, SampleRate, TotalSamples, LoopFlag, LoopStartString, LoopEndString, LoopCount, StartEndLoop, FadeOut, FadeDelay, FadeTime, Destination, All }
+    public enum MediaInfos { Format, Encoding, Channels, Layout, Interleave, Bitrate, SampleRate, TotalSamples, LoopFlag, LoopStartString, LoopEndString, LoopCount, StartEndLoop, FadeOut, FadeDelay, FadeTime, Destination, SamplesToPlay, All }
 }

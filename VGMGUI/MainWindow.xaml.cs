@@ -14,6 +14,7 @@ using System.Windows.Threading;
 using System.Windows.Shell;
 using System.IO;
 using BenLib;
+using BenLib.WPF;
 using Vlc.DotNet.Core.Interops.Signatures;
 using Clipboard = System.Windows.Forms.Clipboard;
 using static VGMGUI.Settings;
@@ -35,6 +36,8 @@ namespace VGMGUI
         /// Indique si un fichier est actuellement en train d'être décodé pour la lecture.
         /// </summary>
         public bool Buffering { get; set; }
+
+        public bool Passing { get; set; }
 
         /// <summary>
         /// Annule la lecture.
@@ -152,18 +155,13 @@ namespace VGMGUI
             App.FileListItemCMItems.FindCollectionItem<MenuItem>("PlayInMI").Click += PlayInMI;
             App.FileListItemCMItems.FindCollectionItem<MenuItem>("PlayOutMI").Click += PlayOutMI;
             App.FileListItemCMItems.FindCollectionItem<MenuItem>("ConvertMI").Click += ConvertMI;
+            App.FileListItemCMItems.FindCollectionItem<MenuItem>("SkipMI").Click += SkipMI;
 
             App.LanguageChanged += App_LanguageChanged;
 
             ClipboardNotification.ClipboardUpdate += ClipboardNotification_ClipboardUpdate;
 
             #endregion
-        }
-
-        private async void AP_EndReached(object sender, Vlc.DotNet.Core.VlcMediaPlayerEndReachedEventArgs e)
-        {
-            if (AP.LoopType != LoopTypes.None) await Dispatcher.InvokeAsync(NextWithRandom);
-            else await Dispatcher.InvokeAsync(() => AP.Stop(true));
         }
 
         #endregion
@@ -258,12 +256,14 @@ namespace VGMGUI
 
         #region StatusBar
 
-        public void UpdateStatusBar(bool memory = false)
+        public void UpdateStatusBar(bool memory = false, bool samplesDisplay = false, bool streamingType = false)
         {
             if (StatusBar.Display)
             {
                 if (StatusBar.Counter) listCountLabel.Content = tasklist.FILEList.SelectedItems.Count > 0 ? $"{tasklist.FILEList.SelectedItems.Count} {(tasklist.FILEList.SelectedItems.Count == 1 ? App.Str("ST_objectSelectedOutOf") : App.Str("ST_objectsSelectedOutOf"))} {tasklist.FILEList.Items.Count}" : $"{tasklist.FILEList.Items.Count} {(tasklist.FILEList.Items.Count == 1 ? App.Str("ST_object") : App.Str("ST_objects"))}";
-                if (StatusBar.RAM && memory) RAMUsageLabel.Content = $"{App.Str("ST_RAMUsage")} {IO.GetFileSize(App.Process.PrivateMemorySize64)}";
+                if (StatusBar.RAM && memory) RAMUsageLabel.Content = $"{App.Str("ST_RAMUsage")} {IO.GetFileSize(App.Process.PrivateMemorySize64, "0.00")}";
+                if (StatusBar.StreamingType && streamingType) StreamingTypeButton.ToolTip = $"{App.Str("STGS_STSBAR_StreamingType")} : {(Settings.StreamingType == StreamingType.Live ? App.Str("STGS_STSBAR_StreamingTypeLive") : "Cache")}";
+                if (samplesDisplay) samplesDisplayLabel.Content = HMSSamplesDisplay ? "xx:xx" : "x sec";
             }
         }
 
@@ -289,7 +289,7 @@ namespace VGMGUI
         /// <summary>
         /// Effectue certaines actions en fonction de des arguments de l'application.
         /// </summary>
-        void ApplyArgs()
+        async Task ApplyArgs()
         {
             bool? playout = null;
             bool playnext = false;
@@ -303,10 +303,10 @@ namespace VGMGUI
 
             Dictionary<string, FichierOutData> FilesToAdd = new Dictionary<string, FichierOutData>();
 
-            void playfilecallback(object sender, EventArgs e)
+            async void playfilecallback(object sender, EventArgs e)
             {
                 var ftp = tasklist.Files.Where(f => f.Path == filetoplay).ToList();
-                if (ftp.Count > 0) PlayFile(ftp[0], playout);
+                if (ftp.Count > 0) await PlayFile(ftp[0], playout);
 
                 tasklist.AddingCompleted -= playfilecallback;
             }
@@ -405,7 +405,7 @@ namespace VGMGUI
                 if (File.Exists(arg)) FilesToAdd.Add(arg, template);
             }
 
-            if (FilesToAdd.Count > 0) tasklist.AddFiles(FilesToAdd);
+            if (FilesToAdd.Count > 0) await tasklist.AddFiles(FilesToAdd);
             if (filetoplay != null) tasklist.AddingCompleted += playfilecallback;
         }
 
@@ -425,7 +425,6 @@ namespace VGMGUI
                     AP.DownButton.SetResourceReference(ToolTipProperty, "AP_CustomDown");
                     AP.RemButton.SetResourceReference(ToolTipProperty, "AP_DeleteInvalidFiles");
                     AP.AddButton.SetResourceReference(ToolTipProperty, "AP_AddFolders");
-                    AP.DownloadButton.SetResourceReference(ToolTipProperty, "AP_DownloadFFmpeg");
                     if (Converting)
                     {
                         StartButton.SetResourceReference(ContentProperty, "MW_Cancel");
@@ -474,18 +473,21 @@ namespace VGMGUI
         /// <param name="Out">true si la sortie doit être lue; false si l'entrée doit être lue; null pour utiliser les boutons "Apperçu dans le lecteur".</param>
         /// <param name="cancellationToken">Jeton d'annulation qui peut être utilisé par d'autres objets ou threads pour être informés de l'annulation.</param>
         /// <returns>Le Stream contenant les données audio.</returns>
-        async Task<string> VGFileToStream(Fichier fichier, bool? Out = null)
+        async Task<Stream> VGFileToStream(Fichier fichier, bool? Out = null)
         {
-            var fileName = await VGMStream.GetStreamWithOtherFormats(fichier, Out ?? (bool)ALSRadioButton.IsChecked, PlayingCTS.Token);
+            var result = await VGMStream.GetStreamWithOtherFormats(fichier, Settings.StreamingType == StreamingType.Cache && App.VLCVersion.Major >= 3, Out ?? (bool)ALSRadioButton.IsChecked, PlayingCTS.Token);
 
-            if (fileName == null) PlayingCTS.Cancel();
+            if (result == null)
+            {
+                if (!PlayingCTS.IsCancellationRequested) PlayingCTS.Cancel();
+            }
             else if (!fichier.Analyzed)
             {
-                tasklist.AnalyzeFiles(new[] { fichier }, false);
+                await tasklist.AnalyzeFiles(new[] { fichier }, false);
                 fichier.SetValid();
             }
 
-            return fileName;
+            return result;
         }
 
         /// <summary>
@@ -497,7 +499,7 @@ namespace VGMGUI
         /// <returns>Tâche qui représente l'opération de lecture asynchrone.</returns>
         async Task PlayFile(Fichier file, bool? Out = null, bool force = false)
         {
-            if ((!Buffering || force) && file != null && (AP.State == MediaStates.Stopped || AP.State == MediaStates.NothingSpecial || force))
+            if ((!Buffering || force) && file != null && (AP.Player.State == MediaStates.Stopped || AP.Player.State == MediaStates.NothingSpecial || force))
             {
                 if (File.Exists(file.Path))
                 {
@@ -506,22 +508,22 @@ namespace VGMGUI
                         Buffering = true;
 
                         PlayingCTS = new CancellationTokenSource();
-                        if (AP.State != MediaStates.Stopped && AP.State != MediaStates.NothingSpecial && AP.State != MediaStates.Ended) await AP.Stop();
+                        if (AP.Player.State != MediaStates.Stopped && AP.Player.State != MediaStates.NothingSpecial && AP.Player.State != MediaStates.Ended) await AP.Stop();
                         AP.CurrentPlaying = file;
 
                         Canvas loadingcircle = (Application.Current.Resources["LoadingCircleAnimated"] as Canvas);
                         (loadingcircle.Children[0] as ContentPresenter).Content = Application.Current.Resources["LoadingCircle10"];
                         AP.PlayButton.Content = loadingcircle;
-                        var fn = await VGFileToStream(file, Out);
-                        if (fn != null)
+                        var stream = await VGFileToStream(file, Out);
+                        if (stream != null)
                         {
-                            AP.SetAudio(fn);
+                            AP.SetAudio(stream);
                             if (tasklist.FILEList.Items.Contains(AP.CurrentPlaying)) AP.Playlist = (from Fichier fichier in tasklist.FILEList.Items select fichier).ToList();
                             else if (tasklist.Files.Contains(AP.CurrentPlaying)) AP.Playlist = tasklist.Files.ToList();
-                            await AP.Play(PlayingCTS.Token);
+                            await AP.Play();
                             file.Played = true;
                         }
-                        else PlayingCTS.Cancel();
+                        else if (!PlayingCTS.IsCancellationRequested) PlayingCTS.Cancel();
 
                         Buffering = false;
                     }
@@ -554,18 +556,19 @@ namespace VGMGUI
         /// </summary>
         async Task Previous()
         {
-            if (AP.Playlist != null && AP.CurrentPlaying != null)
+            if (Passing || AP.Playlist == null || AP.CurrentPlaying == null) return;
+            try
             {
+                Passing = true;
                 int cp = AP.Playlist.IndexOf(AP.CurrentPlaying);
                 if (cp > -1)
                 {
                     if (cp == 0) cp = AP.Playlist.Count; //Permet de jouer le dernier fichier de la liste si le premier est en cours de lecture
 
-                    await AP.Stop();
-
-                    PlayFile(AP.Playlist[cp - 1], force: true);
+                    await PlayFile(AP.Playlist[cp - 1], force: true);
                 }
             }
+            finally { Passing = false; }
         }
 
         /// <summary>
@@ -573,18 +576,19 @@ namespace VGMGUI
         /// </summary>
         async Task Next()
         {
-            if (AP.Playlist != null && AP.CurrentPlaying != null)
+            if (Passing || AP.Playlist == null || AP.CurrentPlaying == null) return;
+            try
             {
+                Passing = true;
                 int cp = AP.Playlist.IndexOf(AP.CurrentPlaying);
                 if (cp > -1)
                 {
                     if (cp == AP.Playlist.Count - 1) cp = -1; //Permet de jouer le premier fichier de la liste si le dernier est en cours de lecture
 
-                    await AP.Stop();
-
-                    PlayFile(AP.Playlist[cp + 1], force: true);
+                    await PlayFile(AP.Playlist[cp + 1], force: true);
                 }
             }
+            finally { Passing = false; }
         }
 
         /// <summary>
@@ -592,12 +596,13 @@ namespace VGMGUI
         /// </summary>
         async Task NextWithRandom()
         {
-            if (AP.Loading) return;
             switch (AP.LoopType)
             {
                 case LoopTypes.Random:
-                    if (AP.Playlist != null && AP.Playlist.Count > 0 && AP.CurrentPlaying != null)
+                    if (Passing || AP.Playlist == null || AP.Playlist.Count <= 0 || AP.CurrentPlaying == null) return;
+                    try
                     {
+                        Passing = true;
                         var playlist = AP.Playlist.Where(f => !f.Played).ToList();
                         if (playlist.Count == 0)
                         {
@@ -606,13 +611,13 @@ namespace VGMGUI
                         }
                         if (playlist.Count != 0)
                         {
-                            await AP.Stop();
-                            PlayFile(playlist[new Random().Next(0, playlist.Count - 1)], force: true);
+                            await PlayFile(playlist[new Random().Next(0, playlist.Count - 1)], force: true);
                         }
+                        break;
                     }
-                    break;
+                    finally { Passing = false; }
                 default:
-                    Next();
+                    await Next();
                     break;
             }
         }
@@ -625,8 +630,10 @@ namespace VGMGUI
             switch (AP.LoopType)
             {
                 case LoopTypes.Random:
-                    if (AP.Playlist != null && AP.Playlist.Count > 0 && AP.CurrentPlaying != null)
+                    if (Passing || AP.Playlist == null || AP.Playlist.Count <= 0 || AP.CurrentPlaying == null) return;
+                    try
                     {
+                        Passing = true;
                         var playlist = AP.Playlist.Where(f => !f.Played).ToList();
                         if (playlist.Count == 0)
                         {
@@ -635,13 +642,13 @@ namespace VGMGUI
                         }
                         if (playlist.Count != 0)
                         {
-                            await AP.Stop();
-                            PlayFile(playlist[new Random().Next(0, playlist.Count - 1)], force: true);
+                            await PlayFile(playlist[new Random().Next(0, playlist.Count - 1)], force: true);
                         }
                     }
+                    finally { Passing = false; }
                     break;
                 default:
-                    Previous();
+                    await Previous();
                     break;
             }
         }
@@ -652,7 +659,7 @@ namespace VGMGUI
         async Task CancelAndStop()
         {
             if (Buffering) PlayingCTS.Cancel();
-            await AP.Stop(true);
+            else await AP.Stop(true);
         }
 
         #endregion
@@ -694,15 +701,15 @@ namespace VGMGUI
             {
                 CurrentConverting++;
 
-                await ConversionPTS.Token.WaitWhilePausedAsync();
+                await ConversionPTS.Token.WaitWhilePausedAsync().WithCancellation(ConversionCTS.Token);
 
-                var data = await VGMStream.ConvertFileWithOtherFormats(fichier, ConversionCTS.Token).WithCancellation(ConversionCTS.Token);
+                var data = await VGMStream.ConvertFileWithOtherFormats(fichier, ConversionCTS.Token, ConversionPTS.Token);
 
-                if (data != null && !fichier.Analyzed) tasklist.AnalyzeFile(fichier, data);
+                if (data != null && !fichier.Analyzed) await tasklist.AnalyzeFile(fichier, data);
 
-                await ConversionPTS.Token.WaitWhilePausedAsync();
+                await ConversionPTS.Token.WaitWhilePausedAsync().WithCancellation(ConversionCTS.Token);
 
-                if ((!ConversionMultithreading || ConversionMaxProcessCount > 0) && FilesToConvert.Count > 0 && CurrentConverting < 1000)
+                if (!ConversionCTS.IsCancellationRequested && (!ConversionMultithreading || ConversionMaxProcessCount > 0) && FilesToConvert.Count > 0 && CurrentConverting < 1000)
                 {
                     ConvertFile(FilesToConvert.Dequeue());
                 }
@@ -717,7 +724,7 @@ namespace VGMGUI
 
                 if (CurrentConverting == 0 && (ConversionCTS.IsCancellationRequested || FilesToConvert.Count == 0)) //S'exécute à la toute fin de la conversion
                 {
-                    Finish();
+                    await Finish();
                 }
             }
         }
@@ -761,9 +768,14 @@ namespace VGMGUI
 
             if ((ConversionCount = FilesToConvert.Count) > 0)
             {
-                App.FileListItemCMItems.FindCollectionItem<MenuItem>("DeleteMI").IsEnabled = App.FileListItemCMItems.FindCollectionItem<MenuItem>("ConvertMI").IsEnabled = tasklist.CanRemove = tasklist.CanAdd = false;
+                var convertMI = App.FileListItemCMItems.FindCollectionItem<MenuItem>("ConvertMI");
+                App.FileListItemCMItems.FindCollectionItem<MenuItem>("SkipMI").Visibility = Visibility.Visible;
+                convertMI.IsEnabled = App.FileListItemCMItems.FindCollectionItem<MenuItem>("DeleteMI").IsEnabled = tasklist.CanRemove = tasklist.CanAdd = false;
+                convertMI.Visibility = Visibility.Collapsed;
+
                 ConversionCTS = new CancellationTokenSource();
                 ConversionPTS = new PauseTokenSource();
+
                 MainProgress.Maximum = ConversionCount;
                 tii_main.ProgressState = TaskbarItemProgressState.Normal;
                 StartButton.SetResourceReference(ContentProperty, Keyboard.Modifiers == ModifierKeys.Control ? "MW_Cancel" : ConversionPTS.IsPaused ? "MW_Resume" : "MW_Pause");
@@ -797,8 +809,7 @@ namespace VGMGUI
             {
                 if (!File.Exists(result = Path.Combine(
                     Path.GetDirectoryName(fileName),
-                    Path.GetFileNameWithoutExtension(fileName) + " (" + i + ")" +
-                    Path.GetExtension(fileName))))
+                    $"{Path.GetFileNameWithoutExtension(fileName)} ({i}) {Path.GetExtension(fileName)}")))
                 {
                     break;
                 }
@@ -813,8 +824,7 @@ namespace VGMGUI
             {
                 if (!files.Contains((result = Path.Combine(
                     Path.GetDirectoryName(fileName),
-                    Path.GetFileNameWithoutExtension(fileName) + " (" + i + ")" +
-                    Path.GetExtension(fileName)))))
+                    $"{Path.GetFileNameWithoutExtension(fileName)} ({i}) {Path.GetExtension(fileName)}"))))
                 {
                     break;
                 }
@@ -829,8 +839,7 @@ namespace VGMGUI
             {
                 if (!files.Any(f => f.FinalDestination.Equals((result = Path.Combine(
                     Path.GetDirectoryName(fileName),
-                    Path.GetFileNameWithoutExtension(fileName) + " (" + i + ")" +
-                    Path.GetExtension(fileName))))))
+                    $"{Path.GetFileNameWithoutExtension(fileName)} ({i}) {Path.GetExtension(fileName)}")))))
                 {
                     break;
                 }
@@ -841,7 +850,7 @@ namespace VGMGUI
         /// <summary>
         /// Se produit une fois la conversion terminée.
         /// </summary>
-        void Finish()
+        async Task Finish()
         {
             if (ConversionCTS.IsCancellationRequested)
             {
@@ -861,10 +870,17 @@ namespace VGMGUI
             FilesToConvert = new Queue<Fichier>();
             tii_main.ProgressState = TaskbarItemProgressState.None;
             MainProgress.Maximum = 100;
-            App.FileListItemCMItems.FindCollectionItem<MenuItem>("DeleteMI").IsEnabled = App.FileListItemCMItems.FindCollectionItem<MenuItem>("ConvertMI").IsEnabled = tasklist.CanRemove = tasklist.CanAdd = true;
+
+            var convertMI = App.FileListItemCMItems.FindCollectionItem<MenuItem>("ConvertMI");
+            App.FileListItemCMItems.FindCollectionItem<MenuItem>("SkipMI").Visibility = Visibility.Collapsed;
+            App.FileListItemCMItems.FindCollectionItem<MenuItem>("DeleteMI").IsEnabled = convertMI.IsEnabled = tasklist.CanRemove = tasklist.CanAdd = true;
+            convertMI.Visibility = Visibility.Visible;
+
             StartButton.SetResourceReference(ContentProperty, "MW_StartConversion");
             StartButton.SetResourceReference(ToolTipProperty, "MW_StartConversionToolTip");
-            App.FreeMemory();
+
+            await VGMStream.DeleteTempFilesByType(VGMStreamProcessTypes.Conversion);
+            GC.Collect();
         }
 
         #region Controls
@@ -924,8 +940,8 @@ namespace VGMGUI
         {
             if (MessageBox.Show(App.Str("Q_Cancel"), String.Empty, MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) == MessageBoxResult.Yes)
             {
-                ResumeConversion(false);
                 ConversionCTS.Cancel();
+                ResumeConversion(false);
             }
         }
 
@@ -948,6 +964,8 @@ namespace VGMGUI
 
         private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            e.Cancel = true;
+
             var columns = (tasklist.FILEList.View as GridView).Columns;
             int[] columnsindexes = new int[columns.Count];
             double[] columnswhiths = new double[columns.Count];
@@ -1052,17 +1070,25 @@ namespace VGMGUI
 
             await TryWriteSettings();
 
-            CancelAndStop();
+            await CancelAndStop();
+            VGMStream.VLCCTS?.Cancel();
             MessageBoxManager.Unregister();
+            await VGMStream.DeleteTempFiles(false);
+
+            e.Cancel = false;
+            Closing -= Window_Closing;
+            this.TryClose();
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            await Dispatcher.InvokeAsync(() => App.CurrentCulture = App.CurrentCulture); //Empêche les propriétés CultureInfo.CurrentCulture et CultureInfo.CurrentUICulture de se réinitialiser au démarrage
+            UpdateStatusBar(streamingType: true);
             RAMTimer.Start();
             ShowHideStatusBar(StatusBar.Display);
             DisplayRecentFiles();
             LoopCountBox.AllowedStrings = FadeDelayBox.AllowedStrings = FadeTimeBox.AllowedStrings = App.AllowedStbxTxt;
-            ApplyArgs();
+            await ApplyArgs();
             LoopCountLabel.GetBindingExpression(ContentProperty).UpdateTarget();
             FadeDelayLabel.GetBindingExpression(ContentProperty).UpdateTarget();
             FadeTimeLabel.GetBindingExpression(ContentProperty).UpdateTarget();
@@ -1072,7 +1098,7 @@ namespace VGMGUI
 
         private void App_LanguageChanged(object sender, PropertyChangedExtendedEventArgs<string> e)
         {
-            UpdateStatusBar();
+            UpdateStatusBar(streamingType: true);
             LoopCountBox.AllowedStrings = FadeDelayBox.AllowedStrings = FadeTimeBox.AllowedStrings = App.AllowedStbxTxt;
             RefreshInfos();
             switch (App.Res(tbi_playpause.Description, e.OldValue, "TBI_"))
@@ -1093,6 +1119,19 @@ namespace VGMGUI
             FadeTimeLabel.GetBindingExpression(ContentProperty).UpdateTarget();
         }
 
+        private async void AP_EndReached(object sender, Vlc.DotNet.Core.VlcMediaPlayerEndReachedEventArgs e)
+        {
+            if (AP.LoopType != LoopTypes.None)
+            {
+                await Dispatcher.InvokeAsync(async () =>
+                {
+                    await AP.Stop();
+                    await NextWithRandom();
+                });
+            }
+            else await Dispatcher.InvokeAsync(() => AP.Stop(true));
+        }
+
         private async void StartButton_Click(object sender, RoutedEventArgs e)
         {
             if (!Preconversion)
@@ -1101,9 +1140,9 @@ namespace VGMGUI
                 {
                     Preconversion = true;
 
-                    if ((File.Exists(App.VGMStreamPath) || await App.AskVGMStream()) && (!AdditionalFormats.Any || File.Exists(App.FFmpegPath) || await App.AskFFmepg()))
+                    if ((File.Exists(App.VGMStreamPath) || await App.AskVGMStream()))
                     {
-                        if (!MainDestTB.Text.ContainsAny(Literal.ForbiddenPathNameCharacters))
+                        if (!MainDestTB.Text.ContainsAny(Path.GetInvalidFileNameChars()) && !IO.ReservedFilenames.Contains(MainDestTB.Text.ToUpper()))
                         {
                             foreach (Fichier fichier in tasklist.Files)
                             {
@@ -1119,7 +1158,11 @@ namespace VGMGUI
 
                             StartConversion();
                         }
-                        else MessageBox.Show(App.Str("ERR_UnauthorizedChars"), App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+                        else
+                        {
+                            MessageBox.Show($"{App.Str("ERR_InvalidDestination")}{Environment.NewLine + Environment.NewLine}{App.Str("ERR_UnauthorizedCharacters")}{Environment.NewLine + Environment.NewLine}{App.Str("ERR_SystemReservedFilenames")}", App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+                            Preconversion = false;
+                        }
                     }
                     else Preconversion = false;
                 }
@@ -1138,11 +1181,11 @@ namespace VGMGUI
             }
         }
 
-        private void Files_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private async void Files_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             if (StopPlayingWhenDeleteFile && e.Action == NotifyCollectionChangedAction.Remove)
             {
-                if (e.OldItems.Contains(AP.CurrentPlaying)) CancelAndStop();
+                if (e.OldItems.Contains(AP.CurrentPlaying)) await CancelAndStop();
             }
 
             UpdateStatusBar();
@@ -1156,6 +1199,40 @@ namespace VGMGUI
         }
 
         private void statusBar_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e) => ShowHideStatusBar((bool)e.NewValue);
+
+        private void SamplesDisplayButton_Click(object sender, RoutedEventArgs e)
+        {
+            switch (samplesDisplayLabel.Content)
+            {
+                case "x sec":
+                    HMSSamplesDisplay = true;
+                    SettingsData.Global["SamplesDisplay"] = "HMS";
+                    samplesDisplayLabel.Content = "xx:xx";
+                    break;
+                case "xx:xx":
+                    HMSSamplesDisplay = false;
+                    SettingsData.Global["SamplesDisplay"] = "S";
+                    samplesDisplayLabel.Content = "x sec";
+                    break;
+                default: return;
+            }
+
+            RefreshInfos();
+        }
+
+        private void StreamingTypeButton_Click(object sender, RoutedEventArgs e)
+        {
+            switch (Settings.StreamingType)
+            {
+                case StreamingType.Cache:
+                    Settings.StreamingType = StreamingType.Live;
+                    break;
+                case StreamingType.Live:
+                    Settings.StreamingType = StreamingType.Cache;
+                    break;
+            }
+            UpdateStatusBar(streamingType: true);
+        }
 
         #region AudioPlayer
 
@@ -1238,7 +1315,19 @@ namespace VGMGUI
 
         private async void NextButton_Click(object sender, RoutedEventArgs e) => await NextWithRandom();
 
-        private void StopButton_Click(object sender, RoutedEventArgs e) { if (Buffering) PlayingCTS.Cancel(); }
+        private async void StopButton_Click(object sender, RoutedEventArgs e)
+        {
+            switch (Keyboard.Modifiers)
+            {
+                case ModifierKeys.Shift:
+                    await VGMStream.DeleteTempFilesIfNotUsed();
+                    GC.Collect();
+                    break;
+                default:
+                    await CancelAndStop();
+                    break;
+            }
+        }
 
         private void SettingsButton_Click(object sender, RoutedEventArgs e) => OpenSettingsWindow();
 
@@ -1246,14 +1335,11 @@ namespace VGMGUI
         {
             switch (Keyboard.Modifiers)
             {
-                case ModifierKeys.Control:
-                    VGMStream.DownloadFFmpeg();
-                    break;
                 case ModifierKeys.Shift:
                     if (await VGMStream.DownloadVLC()) MessageBox.Show(App.Str("WW_VLCDownloaded"), String.Empty, MessageBoxButton.OK, MessageBoxImage.Information);
                     break;
                 default:
-                    VGMStream.DownloadVGMStream();
+                    await VGMStream.DownloadVGMStream();
                     break;
             }
         }
@@ -1263,10 +1349,9 @@ namespace VGMGUI
             foreach (Fichier fichier in tasklist.Files) fichier.Played = fichier == AP.CurrentPlaying;
         }
 
-        private void AP_Stopped(object sender, AudioPlayerStopEventArgs e)
+        private void AP_Stopped(object sender, EventArgs<bool> e)
         {
-            if (e.End)
-                foreach (Fichier fichier in tasklist.Files) fichier.Played = false;
+            if (e.Param1) foreach (Fichier fichier in tasklist.Files) fichier.Played = false;
         }
 
         #endregion

@@ -1,18 +1,10 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Media;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Threading;
 using System.IO;
 using BenLib;
-using System.Linq;
-using Microsoft.WindowsAPICodePack.Dialogs;
 using static VGMGUI.Settings;
 
 namespace VGMGUI
@@ -179,8 +171,10 @@ namespace VGMGUI
         private FontWeight m_fontWeight = FontWeights.Normal;
 
         #endregion
-        
+
         #region VGMStream
+
+        private CancellationTokenSource m_cts = new CancellationTokenSource();
 
         /// <summary>
         /// Indique si le fichier est analysé.
@@ -193,6 +187,10 @@ namespace VGMGUI
         public bool Invalid { get; set; }
 
         public bool Played { get; set; }
+
+        public CancellationToken CancellationToken => m_cts.Token;
+
+        public bool IsCancellable => !CancellationToken.IsCancellationRequested && (OriginalState == "FSTATE_Queued" || OriginalState == "FSTATE_Conversion" || OriginalState == "FSTATE_Suspended");
 
         #region State
 
@@ -473,7 +471,7 @@ namespace VGMGUI
         /// Début de la boucle du stream.
         /// </summary>
         public string LoopStartString => HMSSamplesDisplay ?
-            LoopStart + " " + App.Str("TT_samples") + " (" + LoopStartTime.ToString(SamplesDisplayMaxDec, true) + ")" :
+            LoopStart + " " + App.Str("TT_samples") + " (" + LoopStartTime.ToString(SamplesDisplayMaxDec, true).TrimStart("00:", 1) + ")" :
             LoopStart + " " + App.Str("TT_samples") + " (" + LoopStartTime.TotalSeconds.ToString(SamplesDisplayMaxDec, true) + " " + App.Str("TT_seconds") + ")";
 
         #endregion
@@ -513,7 +511,7 @@ namespace VGMGUI
         /// Fin de la boucle du stream.
         /// </summary>
         public string LoopEndString => HMSSamplesDisplay ?
-            LoopEnd + " " + App.Str("TT_samples") + " (" + LoopEndTime.ToString(SamplesDisplayMaxDec, true) + ")" :
+            LoopEnd + " " + App.Str("TT_samples") + " (" + LoopEndTime.ToString(SamplesDisplayMaxDec, true).TrimStart("00:", 1) + ")" :
             LoopEnd + " " + App.Str("TT_samples") + " (" + LoopEndTime.TotalSeconds.ToString(SamplesDisplayMaxDec, true) + " " + App.Str("TT_seconds") + ")";
 
         #endregion
@@ -602,7 +600,7 @@ namespace VGMGUI
         /// Nombre total d'échantillons du stream.
         /// </summary>
         public string TotalSamplesString => HMSSamplesDisplay ?
-            TotalSamples + " " + App.Str("TT_samples") + " (" + Duration.ToString(SamplesDisplayMaxDec, true) + ")" :
+            TotalSamples + " " + App.Str("TT_samples") + " (" + Duration.ToString(SamplesDisplayMaxDec, true).TrimStart("00:", 1) + ")" :
             TotalSamples + " " + App.Str("TT_samples") + " (" + Duration.TotalSeconds.ToString(SamplesDisplayMaxDec, true) + " " + App.Str("TT_seconds") + ")";
 
         /// <summary>
@@ -613,7 +611,7 @@ namespace VGMGUI
         /// <summary>
         /// Durée du stream.
         /// </summary>
-        public string DurationString => Duration.Hours > 0 ? Duration.ToString("hh:mm:ss.ssss") : Duration.ToString("mm:ss.ssss");
+        public string DurationString => Duration.ToString("hh:mm:ss.ssss").TrimStart("00:", 1);
 
         #endregion
 
@@ -632,8 +630,12 @@ namespace VGMGUI
                 if (value != FadeDelay && value >= 0)
                 {
                     var tmp = m_fadeDelay;
+                    var tmptp = SamplesToPlay;
+                    var strtmptp = SamplesToPlayString;
                     m_fadeDelay = value;
                     NotifyPropertyChanged("FadeDelay", tmp, value);
+                    NotifyPropertyChanged("SamplesToPlay", tmptp, SamplesToPlay);
+                    NotifyPropertyChanged("SamplesToPlayString", strtmptp, SamplesToPlayString);
                 }
             }
         }
@@ -650,8 +652,12 @@ namespace VGMGUI
                 if (value != FadeTime && value >= 0)
                 {
                     var tmp = m_fadeTime;
+                    var tmptp = SamplesToPlay;
+                    var strtmptp = SamplesToPlayString;
                     m_fadeTime = value;
                     NotifyPropertyChanged("FadeTime", tmp, value);
+                    NotifyPropertyChanged("SamplesToPlay", tmptp, SamplesToPlay);
+                    NotifyPropertyChanged("SamplesToPlayString", strtmptp, SamplesToPlayString);
                 }
             }
         }
@@ -668,8 +674,12 @@ namespace VGMGUI
                 if (value != FadeOut)
                 {
                     var tmp = m_fadeOut;
+                    var tmptp = SamplesToPlay;
+                    var strtmptp = SamplesToPlayString;
                     m_fadeOut = value;
                     NotifyPropertyChanged("FadeOut", tmp, value);
+                    NotifyPropertyChanged("SamplesToPlay", tmptp, SamplesToPlay);
+                    NotifyPropertyChanged("SamplesToPlayString", strtmptp, SamplesToPlayString);
                 }
             }
         }
@@ -686,8 +696,12 @@ namespace VGMGUI
                 if (value != LoopCount && value >= 0)
                 {
                     var tmp = m_loopCount;
+                    var tmptp = SamplesToPlay;
+                    var strtmptp = SamplesToPlayString;
                     m_loopCount = value;
                     NotifyPropertyChanged("LoopCount", tmp, value);
+                    NotifyPropertyChanged("SamplesToPlay", tmptp, SamplesToPlay);
+                    NotifyPropertyChanged("SamplesToPlayString", strtmptp, SamplesToPlayString);
                 }
             }
         }
@@ -704,12 +718,21 @@ namespace VGMGUI
                 if (value != StartEndLoop)
                 {
                     var tmp = m_startEndLoop;
+                    var tmptp = SamplesToPlay;
+                    var strtmptp = SamplesToPlayString;
                     m_startEndLoop = value;
                     NotifyPropertyChanged("StartEndLoop", tmp, value);
+                    NotifyPropertyChanged("SamplesToPlay", tmptp, SamplesToPlay);
+                    NotifyPropertyChanged("SamplesToPlayString", strtmptp, SamplesToPlayString);
                 }
             }
         }
         private bool m_startEndLoop = DefaultOutData.StartEndLoop ?? false;
+
+        public int SamplesToPlay => (int)(LoopStart + LoopCount * (StartEndLoop ? TotalSamples : LoopFlag ? LoopEnd - LoopStart : 0) + (FadeOut && (LoopFlag || StartEndLoop) ? (FadeTime + FadeDelay) * SampleRate : TotalSamples - LoopEnd));
+        public string SamplesToPlayString => HMSSamplesDisplay ?
+            SamplesToPlay + " " + App.Str("TT_samples") + " (" + (SampleRate > 0 ? new Time((double)SamplesToPlay / SampleRate) : new Time(0)).ToString(SamplesDisplayMaxDec, true).TrimStart("00:", 1) + ")" :
+            SamplesToPlay + " " + App.Str("TT_samples") + " (" + (SampleRate > 0 ? new Time((double)SamplesToPlay / SampleRate) : new Time(0)).TotalSeconds.ToString(SamplesDisplayMaxDec, true) + " " + App.Str("TT_seconds") + ")";
 
         /// <summary>
         /// Données de sortie du fichier.
@@ -822,6 +845,11 @@ namespace VGMGUI
         {
             if (Invalid) SetInvalid(OriginalState);
         }
+
+        public void Cancel() => m_cts.Cancel();
+        public void CancelIfCancellable() { if (IsCancellable) Cancel(); }
+
+        public void ResetCancellation() => m_cts = new CancellationTokenSource();
 
         public override string ToString() => Path;
 

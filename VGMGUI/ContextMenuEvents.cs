@@ -1,10 +1,11 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Diagnostics;
 using BenLib;
 using Clipboard = System.Windows.Forms.Clipboard;
-using static VGMGUI.Settings;
+using System;
 
 namespace VGMGUI
 {
@@ -28,9 +29,9 @@ namespace VGMGUI
         {
             Preconversion = true;
 
-            if ((File.Exists(App.VGMStreamPath) || await App.AskVGMStream()) && (!AdditionalFormats.Any || File.Exists(App.FFmpegPath) || await App.AskFFmepg()))
+            if ((File.Exists(App.VGMStreamPath) || await App.AskVGMStream()))
             {
-                if (!MainDestTB.Text.ContainsAny(Literal.ForbiddenPathNameCharacters))
+                if (!MainDestTB.Text.ContainsAny(Path.GetInvalidFileNameChars()) && !IO.ReservedFilenames.Contains(MainDestTB.Text.ToUpper()))
                 {
                     foreach (Fichier fichier in tasklist.FILEList.SelectedItems)
                     {
@@ -43,9 +44,17 @@ namespace VGMGUI
 
                     StartConversion();
                 }
-                else MessageBox.Show(App.Str("ERR_UnauthorizedChars"), App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+                else MessageBox.Show($"{App.Str("ERR_InvalidDestination")}{Environment.NewLine + Environment.NewLine}{App.Str("ERR_UnauthorizedCharacters")}{Environment.NewLine + Environment.NewLine}{App.Str("ERR_SystemReservedFilenames")}", App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
             }
             else Preconversion = false;
+        }
+
+        private void SkipMI(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.Parent is ContextMenu contextMenu && contextMenu.PlacementTarget is ListViewItem item && ItemsControl.ItemsControlFromItemContainer(item) is ListView listView)
+            {
+                foreach (Fichier fichier in listView.SelectedItems) fichier.CancelIfCancellable();
+            }
         }
     }
 

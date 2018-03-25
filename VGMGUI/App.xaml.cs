@@ -1,25 +1,19 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using IniParser;
 using IniParser.Model;
 using System.IO;
 using System.Diagnostics;
 using System.Reflection;
-using System.Drawing;
-using System.Resources;
 using BenLib;
-using System.Windows.Input;
+using Vlc.DotNet.Core;
+using static VGMGUI.Settings;
 
 namespace VGMGUI
 {
@@ -31,21 +25,26 @@ namespace VGMGUI
         public new static MainWindow MainWindow { get; private set; }
         private static bool ShowMainWindow { get; set; }
 
+        public static string[] InvalidFileNameChars => Path.GetInvalidFileNameChars().Select(c => c.ToString()).ToArray();
+
         public static string AppPath => AppDomain.CurrentDomain.BaseDirectory;
         public static string VGMStreamPath => Path.Combine(AppPath, "vgmstream\\test.exe");
         public static string VGMStreamFolder => Path.Combine(AppPath, "vgmstream");
-        public static string FFmpegPath => Path.Combine(AppPath, "ffmpeg\\ffmpeg.exe");
-        public static string FFmpegFolder => Path.Combine(AppPath, "ffmpeg");
+        public static VlcMediaPlayer VlcMediaPlayer { get; private set; }
         public static string VLCFolder => Path.Combine(AppPath, "vlc");
+        public static Version VLCVersion => VlcMediaPlayer.Manager.VlcVersionNumber;
         public static string VersionString => Version.ToString(3);
         public static Version Version => Assembly.GetName().Version;
         public static Assembly Assembly => Assembly.GetExecutingAssembly();
         public static Process Process => Process.GetCurrentProcess();
 
         public static bool AutoCulture { get; set; }
-        public static CultureInfo CurrentCulture { get; set; } = new CultureInfo("fr-FR");
-        public static CultureInfo DefaultThreadCurrentCulture { get => CultureInfo.DefaultThreadCurrentCulture; set => CultureInfo.DefaultThreadCurrentCulture = value; }
-        public static CultureInfo DefaultThreadCurrentUICulture { get => CultureInfo.DefaultThreadCurrentUICulture; set => CultureInfo.DefaultThreadCurrentUICulture = value; }
+        private static CultureInfo s_currentCulture = new CultureInfo("fr-FR");
+        public static CultureInfo CurrentCulture
+        {
+            get => s_currentCulture;
+            set => CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = s_currentCulture = value;
+        }
 
         public static string[] Args { get; set; }
 
@@ -64,25 +63,15 @@ namespace VGMGUI
             #else
             DispatcherUnhandledException += async (sender, e) =>
             {
-                await VGMStream.DeleteTMPFiles();
+                MessageBox.Show($"{e.Exception.Message}{Environment.NewLine}StackTrace : {e.Exception.StackTrace}", e.Exception.GetType().Name, MessageBoxButton.OK, MessageBoxImage.Error);
+                await VGMStream.DeleteTempFiles(false);
                 MainWindow?.Close();
-
-                if (e.Exception.InnerException is VLCException vlcEx)
-                {
-                    if (MessageBox.Show(Str("ERR_VLCNotFound"), Str("TT_Error"), MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes)
-                    {
-                        var path = Assembly.Location;
-                        Process.Start(path, "vlc");
-                    }
-                }
-                else MessageBox.Show(e.Exception.Message, e.Exception.GetType().Name, MessageBoxButton.OK, MessageBoxImage.Error);
-
                 Shutdown(1);
             };
             #endif
 
-            try { Settings.SettingsData = File.Exists(AppPath + "VGMGUI.ini") ? Settings.Parser.ReadFile(AppPath + "VGMGUI.ini") : new IniData(); }
-            catch { Settings.SettingsData = new IniData(); }
+            try { SettingsData = File.Exists(AppPath + "VGMGUI.ini") ? Parser.ReadFile(AppPath + "VGMGUI.ini") : new IniData(); }
+            catch { SettingsData = new IniData(); }
         }
 
         public static async Task<bool> AskVGMStream()
@@ -90,15 +79,6 @@ namespace VGMGUI
             if (MessageBox.Show(Str("ERR_VGMStreamNotFound"), Str("TT_Error"), MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes)
             {
                 return await VGMStream.DownloadVGMStream();
-            }
-            else return false;
-        }
-
-        public static async Task<bool> AskFFmepg()
-        {
-            if (MessageBox.Show(Str("ERR_FFNotFound"), Str("TT_Error"), MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes)
-            {
-                return await VGMStream.DownloadFFmpeg();
             }
             else return false;
         }
@@ -117,8 +97,8 @@ namespace VGMGUI
 
             try { dict.Source = new Uri("..\\Lang\\" + culture + ".xaml", UriKind.Relative); }
             catch (IOException) { dict.Source = new Uri("..\\Lang\\en-US.xaml", UriKind.Relative); }
-            try { CurrentCulture = DefaultThreadCurrentCulture = DefaultThreadCurrentUICulture = new CultureInfo(culture); }
-            catch (CultureNotFoundException) { CurrentCulture = DefaultThreadCurrentCulture = DefaultThreadCurrentUICulture = new CultureInfo("en-US"); }
+            try { CurrentCulture = new CultureInfo(culture); }
+            catch (CultureNotFoundException) { CurrentCulture = new CultureInfo("en-US"); }
 
             Current.Resources.MergedDictionaries.RemoveAt(1);
             Current.Resources.MergedDictionaries.Add(dict);
@@ -149,19 +129,13 @@ namespace VGMGUI
                 var res = (from DictionaryEntry entry in new ResourceDictionary() { Source = new Uri("..\\Lang\\" + CurrentCulture + ".xaml", UriKind.Relative) } where entry.Value.Equals(str) && (entry.Key as string).Contains(indice) select entry).ToList();
                 return res.Count == 1 ? res[0].Key as String : null;
             }
-            return Current.Resources.Dictionary().FirstOrDefault(kvp => kvp.Value.Equals(str)).Key as string;
+            return Current.Resources.ToDictionary().FirstOrDefault(kvp => kvp.Value.Equals(str)).Key as string;
         }
         public static string Res(string str, Dictionary<object, object> dictionary, string indice = "") => dictionary.FirstOrDefault(kvp => kvp.Value.Equals(str) && (kvp.Key as string).Contains(indice)).Key as string;
         public static string Res(string str, string culture, string indice = "")
         {
             var res = (from DictionaryEntry entry in new ResourceDictionary() { Source = new Uri("..\\Lang\\" + culture + ".xaml", UriKind.Relative) } where entry.Value.Equals(str) && (entry.Key as string).Contains(indice) select entry).ToList();
             return res.Count == 1 ? res[0].Key as String : null;
-        }
-
-        public static async Task FreeMemory()
-        {
-            await VGMStream.DeleteTMPFiles();
-            GC.Collect();
         }
 
         private async void Application_Startup(object sender, StartupEventArgs e)
@@ -185,6 +159,70 @@ namespace VGMGUI
 
             if (ShowMainWindow)
             {
+                object o;
+                if ((o = SettingsData.Global["VLCC"]) != null)
+                {
+                    switch (o)
+                    {
+                        case "Memory":
+                            VLCC = VLCCType.Memory;
+                            break;
+                        case "File":
+                            VLCC = VLCCType.File;
+                            break;
+                        case "Never":
+                            VLCC = VLCCType.Never;
+                            break;
+                    }
+                }
+
+                void ResetVLCCache()
+                {
+                    new VlcMediaPlayer(new DirectoryInfo(VLCFolder), new[] { "--reset-plugins-cache" });
+                    Process.Start(Assembly.Location, "vlcc");
+                    Shutdown(2);
+                }
+
+                try
+                {
+                    if (!Args.Contains("vlcc"))
+                    {
+                        bool vlccreset = (VLCC == VLCCType.Memory || VLCC == VLCCType.File) && !File.Exists(Path.Combine(VLCFolder, @"plugins\plugins.dat"));
+
+                        if (vlccreset)
+                        {
+                            ResetVLCCache();
+                            return;
+                        }
+                        else if (VLCC == VLCCType.Memory)
+                        {
+                            VlcMediaPlayer = new VlcMediaPlayer(new DirectoryInfo(VLCFolder));
+                            if (Process.PrivateMemorySize64 > 60000000)
+                            {
+                                VlcMediaPlayer.TryDispose();
+                                ResetVLCCache();
+                                return;
+                            }
+                        }
+                        else VlcMediaPlayer = new VlcMediaPlayer(new DirectoryInfo(VLCFolder));
+                    }
+                    else VlcMediaPlayer = new VlcMediaPlayer(new DirectoryInfo(VLCFolder));
+                }
+                catch
+                {
+                    if (MessageBox.Show(Str("ERR_VLC"), Str("TT_Error"), MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes)
+                    {
+                        Process.Start(Assembly.Location, "vlc");
+                        Shutdown(2);
+                        return;
+                    }
+                    else
+                    {
+                        Shutdown(1);
+                        return;
+                    }
+                }
+
                 MainWindow = new MainWindow();
                 MainWindow.Closed += (sndr, args) => Shutdown();
                 MainWindow.Show();

@@ -39,14 +39,14 @@
     <sys:String x:Key="ST_objectSelectedOutOf">objet sélectionné sur</sys:String>
     <sys:String x:Key="ST_RAMUsage">Utilisation de la RAM :</sys:String>
 
-    <sys:String x:Key="ERR_UnauthorizedChars">La destination principale contient des caractères non autorisés.</sys:String>
+    <sys:String x:Key="ERR_InvalidDestination">La destination principale n'est pas valide.</sys:String>
+    <sys:String x:Key="ERR_UnauthorizedCharacters">Caractères non autorisés : \ / : * ? " &lt; gt; |</sys:String>
+    <sys:String x:Key="ERR_SystemReservedFilenames">Noms réservés par le système : "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"</sys:String>
     <sys:String x:Key="ERR_UnauthorizedAccess1">L'accès au chemin d'accès '</sys:String>
     <sys:String x:Key="ERR_UnauthorizedAccess2">' est refusé.</sys:String>
     <sys:String x:Key="ERR_AccessDenied">Accèss refusé</sys:String>
-    <sys:String x:Key="ERR_TryAdmin">Essayez d'exécuter VGMGUI en tant qu'administrateur.</sys:String>
     <sys:String x:Key="ERR_VGMStreamNotFound">Impossible de trouver le fichier "vgmstream\test.exe".&#xD;&#xA;Voulez-vous le télécharger ?</sys:String>
-    <sys:String x:Key="ERR_FFNotFound">Impossible de trouver le fichier "ffmpeg\ffmpeg.exe".&#xD;&#xA;Voulez-vous le télécharger ?</sys:String>
-    <sys:String x:Key="ERR_VLCNotFound">VLC ne se trouve pas dans le dossier "vlc".&#xD;&#xA;Voulez-vous le télécharger ?</sys:String>
+    <sys:String x:Key="ERR_VLC">Erreur lors du chargement de VLC.&#xD;&#xA;Voulez-vous le télécharger ?</sys:String>
     <sys:String x:Key="ERR_FileNotFound">Fichier introuvable</sys:String>
     <sys:String x:Key="ERR_SameSourceAndDest">La destination est identique à la source.</sys:String>
 
@@ -58,12 +58,13 @@
     <sys:String x:Key="WW_Decompression">Décompression...</sys:String>
     <sys:String x:Key="WW_Search">Recherche...</sys:String>
     <sys:String x:Key="WW_VLCDownloaded">VLC Téléchargé.&#xD;&#xA;Il sera extrait à la fermeture de l'application.</sys:String>
+    <sys:String x:Key="WW_VLCPluginsCaching">Mise en cache des plugins...</sys:String>
     <sys:String x:Key="WW_DownloadVLC">Téléchargement de VLC</sys:String>
     <sys:String x:Key="WW_VLCExtraction">Extracion de VLC</sys:String>
-    <sys:String x:Key="WW_DownloadFFmpeg">Téléchargement de FFmpeg</sys:String>
     <sys:String x:Key="WW_DownloadVGMStream">Téléchargement de VGMStream</sys:String>
     <sys:String x:Key="WW_FilesAdding">Ajout de fichiers</sys:String>
     <sys:String x:Key="WW_FilesAnalyze">Analyse de fichiers</sys:String>
+    <sys:String x:Key="WW_Errors">Erreurs</sys:String>
 
     <sys:String x:Key="INFO_ConversionCompleted">Conversion terminée</sys:String>
     <sys:String x:Key="INFO_Info">Info</sys:String>
@@ -81,6 +82,7 @@
     <sys:String x:Key="CM_Number">Numéroter</sys:String>
     <sys:String x:Key="CM_Ignore">Ignorer</sys:String>
     <sys:String x:Key="CM_Properties">Propriétés</sys:String>
+    <sys:String x:Key="CM_Skip">Ignorer</sys:String>
 
     <sys:String x:Key="SRCH_Case">Respecter la case</sys:String>
 
@@ -101,7 +103,6 @@
     <sys:String x:Key="AP_Volume">Volume</sys:String>
     <sys:String x:Key="AP_Settings">Paramètres (Ctrl+P)</sys:String>
     <sys:String x:Key="AP_DownloadVGMStream">Télécharger la dernière version de VGMStream (Ctrl+D)</sys:String>
-    <sys:String x:Key="AP_DownloadFFmpeg">Télécharger la dernière version de FFmpeg (Ctrl+Maj+D)</sys:String>
     <sys:String x:Key="AP_DownloadVLC">Télécharger la dernière version stable de VLC (Ctrl+Alt+D)</sys:String>
     <sys:String x:Key="AP_LOOP_None">Lire une fois</sys:String>
     <sys:String x:Key="AP_LOOP_All">Lire tout</sys:String>
@@ -178,6 +179,7 @@
     <sys:String x:Key="FSTATE_Completed">Terminé</sys:String>
     <sys:String x:Key="FSTATE_Canceled">Annulé</sys:String>
     <sys:String x:Key="FSTATE_Suspended">Suspendu</sys:String>
+    <sys:String x:Key="FSTATE_Skipped">Ignoré</sys:String>
     <sys:String x:Key="FSTATE_Error">Erreur</sys:String>
 
     <sys:String x:Key="FL_COL_Name">Nom</sys:String>
@@ -203,6 +205,7 @@
     <sys:String x:Key="STGS_MTH_Adding">Multithreading à l'ajout</sys:String>
     <sys:String x:Key="STGS_MTH_MaxAdding1">Maximum :</sys:String>
     <sys:String x:Key="STGS_MTH_MaxAdding2">processus simultanés (Illimité : 0)</sys:String>
+    <sys:String x:Key="STGS_SearchDelay0">Délai de la recherche</sys:String>
     <sys:String x:Key="STGS_SearchDelay1">Délai de la recherche :</sys:String>
     <sys:String x:Key="STGS_SearchDelay2">millisecondes</sys:String>
     <sys:String x:Key="STGS_AdditionalFormats">Formats additionnels</sys:String>
@@ -222,6 +225,12 @@
     <sys:String x:Key="STGS_STSBAR">Barre de statut (Ctrl+Maj+B)</sys:String>
     <sys:String x:Key="STGS_STSBAR_Count">Compteur d'éléments</sys:String>
     <sys:String x:Key="STGS_STSBAR_RAM">Utilisation de la RAM</sys:String>
+    <sys:String x:Key="STGS_STSBAR_StreamingType">Mode de streaming</sys:String>
+    <sys:String x:Key="STGS_STSBAR_StreamingTypeLive">Direct (VLC 3.0)</sys:String>
+    <sys:String x:Key="STGS_VLCC">Mise en cache automatique des plugins de VLC :</sys:String>
+    <sys:String x:Key="STGS_VLCC_File">Si le fichier plugins.dat est introuvable</sys:String>
+    <sys:String x:Key="STGS_VLCC_Memory">Si la consommation initiale de mémoire dépasse 60 Mo</sys:String>
+    <sys:String x:Key="STGS_VLCC_Never">Jamais</sys:String>
 
     <sys:String x:Key="FMT_FFmpeg">Foramt supporté par FFmpeg</sys:String>
 

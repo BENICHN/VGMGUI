@@ -8,8 +8,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using NAudio.Wave;
 using Z.Linq;
-using AsyncIO.FileSystem;
 
 namespace VGMGUI
 {
@@ -17,7 +17,12 @@ namespace VGMGUI
     {
         public static readonly byte[] RFRM = { 82, 70, 82, 77 };
         public static readonly byte[] CSMP = { 67, 83, 77, 80 };
-        public static readonly byte[] DATA = { 68, 65, 84, 65 };
+        public static readonly byte[] FMTA = { 70, 77, 84, 65 };
+        public static readonly byte[] LABL = { 76, 65, 66, 76 };
+
+        public static int ScanningCount { get; private set; }
+        public static int StreamingCount { get; private set; }
+        public static int ConversionCount { get; private set; }
 
         /// <summary>
         /// À partir d'un nom de fichier, obtient un fichier analysé uniquement s'il possède l'en-tête RFRM CSMP.
@@ -28,83 +33,72 @@ namespace VGMGUI
         /// <returns>Le fichier analysé.</returns>
         public static async Task<Fichier> GetFile(string fileName, FichierOutData outData = default, CancellationToken cancellationToken = default)
         {
-            if (!File.Exists(fileName)) return null;
+            if (cancellationToken.IsCancellationRequested || !File.Exists(fileName)) return null;
+
+            byte chanCount = 0;
+            string dspFile = String.Empty;
 
             try
             {
-                var dspCount = 0;
-                var dspFile = Path.ChangeExtension(Path.GetTempFileName(), ".dsp"); //Temp DSP file name
+                ScanningCount++;
+                var dsps = await GetDSPFiles(fileName, VGMStreamProcessTypes.Metadata, 1, cancellationToken);
 
-                using (var stream = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    if (!(await (await stream.PeekBytesAsync(0x00, 4)).SequenceEqualAsync(RFRM) && await (await stream.PeekBytesAsync(0x14, 4)).SequenceEqualAsync(CSMP))) return null; //Check Magic
+                if (dsps == null) return null;
 
-                    var csmpFile = await stream.ReadAllBytesAsync(cancellationToken);
-                    var dataIndex = await csmpFile.IndexOfAsync(DATA, cancellationToken);
-
-                    if (dataIndex == -1) return null; //DATA index
-
-                    var data = csmpFile.SubArray(dataIndex + 27, csmpFile.Length - dataIndex - 27); //Get DATA subArray
-                    var header = data.SubArray(0, 28); //Get header subArray
-
-                    var dspIndexes = await data.AllIndexesOfAsync(header, cancellationToken); //Get indexes of subDSP files in string version of DATA
-                    if (dspIndexes.IsNullOrEmpty()) return null;
-                    else dspCount = dspIndexes.Count; //Get channels count
-
-                    await AsyncFile.WriteAllBytesAsync(dspFile, data.SubArray(0, dspCount > 1 ? dspIndexes[1] : data.Length), cancellationToken); //Write temp file
-                }
-                if (dspCount == 0) return null;
+                dspFile = dsps.Item1[0];
+                chanCount = dsps.Item2;
 
                 Process vgmstreamprocess = new Process() { StartInfo = VGMStream.StartInfo(dspFile, VGMStreamProcessTypes.Metadata) };
                 VGMStream.RunningProcess.Add(vgmstreamprocess, VGMStreamProcessTypes.Metadata);
 
-                try
-                {
-                    TryResult StartResult = await vgmstreamprocess.TryStartAsync(cancellationToken); //Start
-
-                    if (!StartResult.Result) //N'a pas pu être démarré
-                    {
-                        if (!(StartResult.Exception is OperationCanceledException)) MessageBox.Show(StartResult.Exception.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-                        return null;
-                    }
-
-                    await vgmstreamprocess.WaitForExitAsync(cancellationToken); //WaitForExit
-
-                    VGMStream.RunningProcess.Remove(vgmstreamprocess);
-
-                    string[] s = vgmstreamprocess.StandardOutput.ReadAllLines();
-
-                    if (s.IsNullOrEmpty()) return null;
-
-                    var fichier = VGMStream.GetFile(s, outData, false, false);
-                    if (fichier.Invalid) return fichier;
-                    else
-                    {
-                        fichier.Path = fileName;
-                        fichier.OriginalFormat = "Retro Studios DKCTF CSMP";
-                        fichier.Channels = dspCount;
-                        fichier.Bitrate *= dspCount;
-                        return fichier;
-                    }
-                }
-                catch (OperationCanceledException)
+                cancellationToken.Register(() =>
                 {
                     vgmstreamprocess.TryKill();
-                    return null;
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-                    return null;
-                }
-                finally
-                {
                     if (VGMStream.RunningProcess.ContainsKey(vgmstreamprocess)) VGMStream.RunningProcess.Remove(vgmstreamprocess);
-                    if (File.Exists(dspFile)) FileAsync.TryAndRetryDeleteAsync(dspFile, throwEx: false);
+                });
+
+                TryResult StartResult = await vgmstreamprocess.TryStartAsync(cancellationToken); //Start
+
+                if (!StartResult.Result) //N'a pas pu être démarré
+                {
+                    if (!(StartResult.Exception is OperationCanceledException)) MessageBox.Show(StartResult.Exception.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+                    return null;
                 }
 
+                await vgmstreamprocess.WaitForExitAsync(cancellationToken); //WaitForExit
+
+                if (VGMStream.RunningProcess.ContainsKey(vgmstreamprocess)) VGMStream.RunningProcess.Remove(vgmstreamprocess);
+
+                if (cancellationToken.IsCancellationRequested) return null;
+
+                string[] s = vgmstreamprocess.StandardOutput.ReadAllLines();
+
+                if (s.IsNullOrEmpty()) return null;
+
+                var fichier = VGMStream.GetFile(s, outData, false, false);
+
+                if (cancellationToken.IsCancellationRequested) return null;
+                else if (fichier.Invalid) return fichier;
+                else
+                {
+                    fichier.Path = fileName;
+                    fichier.OriginalFormat = "Retro Studios DKCTF CSMP";
+                    fichier.Channels = chanCount;
+                    fichier.Bitrate *= chanCount;
+                    return fichier;
+                }
             }
-            catch (ArgumentException) { return null; }
+            catch (OperationCanceledException) { return null; }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
+            finally
+            {
+                if (!cancellationToken.IsCancellationRequested) await VGMStream.DeleteTempFilesByName(dspFile);
+                ScanningCount--;
+            }
         }
 
         /// <summary>
@@ -114,131 +108,86 @@ namespace VGMGUI
         /// <param name="Out">true si la sortie doit être lue; false si l'entrée doit être lue.</param>
         /// <param name="cancellationToken">Jeton d'annulation qui peut être utilisé par d'autres objets ou threads pour être informés de l'annulation.</param>
         /// <returns>Le Stream contenant les données audio.</returns>
-        public static async Task<string> GetStream(Fichier fichier, bool Out = false, CancellationToken cancellationToken = default)
+        public static async Task<Stream> GetStream(Fichier fichier, bool Out = false, CancellationToken cancellationToken = default)
         {
-            if (!File.Exists(fichier.Path)) return null;
+            if (cancellationToken.IsCancellationRequested || !File.Exists(fichier.Path)) return null;
 
-            var dspCount = 0;
-            var dsps = new List<byte[]>();
+            byte chanCount = 0;
             var dspFiles = new List<string>();
             var wavFiles = new List<string>();
+            string fn = VGMStream.CreateTempFile("wav", VGMStreamProcessTypes.Streaming); //Nom du fichier temporaire
 
             try
             {
-                try
+                StreamingCount++;
+                var dsps = await GetDSPFiles(fichier.Path, VGMStreamProcessTypes.Streaming, 0, cancellationToken);
+
+                if (dsps == null) return null;
+
+                dspFiles = dsps.Item1;
+                chanCount = dsps.Item2;
+
+                wavFiles = (await dspFiles.SelectAsync(dspFile => VGMStream.CreateTempFile("wav", VGMStreamProcessTypes.Streaming), cancellationToken)).ToList();
+
+                var vgmstreamTmpInfos = new ProcessStartInfo[chanCount];
+                var vgmstreamTmpProcess = new Process[chanCount];
+
+                if (cancellationToken.IsCancellationRequested || !File.Exists(App.VGMStreamPath) && !await App.AskVGMStream()) return null; //Check VGMStream
+
+                for (int i = 0; i < chanCount && !cancellationToken.IsCancellationRequested; i++)
                 {
-                    using (var stream = File.Open(fichier.Path, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    {
-                        if (!(await (await stream.PeekBytesAsync(0x00, 4)).SequenceEqualAsync(RFRM) && await (await stream.PeekBytesAsync(0x14, 4)).SequenceEqualAsync(CSMP))) return null; //Check Magic
-
-                        var csmpFile = await stream.ReadAllBytesAsync(cancellationToken);
-                        var dataIndex = await csmpFile.IndexOfAsync(DATA, cancellationToken);
-
-                        if (dataIndex == -1) return null; //DATA index
-
-                        var data = csmpFile.SubArray(dataIndex + 27, csmpFile.Length - dataIndex - 27); //Get DATA subArray
-                        var header = data.SubArray(0, 28); //Get header subArray
-
-                        var dspIndexes = await data.AllIndexesOfAsync(header, cancellationToken); //Get indexes of subDSP files in string version of DATA
-                        if (dspIndexes.IsNullOrEmpty()) return null;
-                        else dspCount = dspIndexes.Count; //Get channels count
-
-                        dspFiles = (await dspIndexes.SelectAsync(index => Path.ChangeExtension(Path.GetTempFileName(), ".dsp"), cancellationToken)).ToList(); //Temp DSP files names
-                        wavFiles = (await dspFiles.SelectAsync(dspFile => Path.ChangeExtension(dspFile, ".wav"), cancellationToken)).ToList(); //Temp WAV files names
-
-                        await Task.Run(() =>
-                        {
-                            for (int i = 0; i < dspCount; i++) //Fill DSPs list
-                            {
-                                var length = i == dspCount - 1 ? data.Length - dspIndexes[i] : dspIndexes[i + 1] - dspIndexes[i];
-                                dsps.Add(data.SubArray(dspIndexes[i], length));
-                            }
-                        }, cancellationToken);
-
-                        for (int i = 0; i < dspCount; i++) await AsyncFile.WriteAllBytesAsync(dspFiles[i], dsps[i], cancellationToken); //Write temp files
-                    }
-                }
-                catch (ArgumentException) { return null; }
-
-                if (dspCount == 0) return null;
-
-                var vgmstreamTmpInfos = new ProcessStartInfo[dspCount];
-                var vgmstreamTmpProcess = new Process[dspCount];
-
-                if (!File.Exists(App.VGMStreamPath) && !await App.AskVGMStream()) return null; //Check VGMStream
-
-                await Task.Run(() =>
-                {
-                    for (int i = 0; i < dspCount; i++)
+                    await Task.Run(() =>
                     {
                         vgmstreamTmpInfos[i] = Out ? VGMStream.StartInfo(dspFiles[i], wavFiles[i], fichier.LoopCount, fichier.FadeOut, fichier.FadeDelay, fichier.FadeTime, fichier.StartEndLoop) : VGMStream.StartInfo(dspFiles[i], wavFiles[i], 1, false);
                         vgmstreamTmpProcess[i] = Process.Start(vgmstreamTmpInfos[i]);
                         VGMStream.RunningProcess.Add(vgmstreamTmpProcess[i], VGMStreamProcessTypes.Streaming);
+                    });
+                }
+
+                cancellationToken.Register(() =>
+                {
+                    foreach (Process process in vgmstreamTmpProcess)
+                    {
+                        process.TryKill();
+                        if (VGMStream.RunningProcess.ContainsKey(process)) VGMStream.RunningProcess.Remove(process);
                     }
-                }, cancellationToken);
+                });
 
-                for (int i = 0; i < dspCount; i++)
+                for (int i = 0; i < vgmstreamTmpProcess.Length; i++)
                 {
-                    await vgmstreamTmpProcess[i].WaitForExitAsync();
+                    await vgmstreamTmpProcess[i].WaitForExitAsync(cancellationToken);
+                    if (vgmstreamTmpProcess[i].ExitCode != 0) return null;
                 }
 
-                if (!File.Exists(App.FFmpegPath) && !await App.AskFFmepg()) return null; //Check FFmepg
-
-                string fn = Path.ChangeExtension(Path.GetTempFileName(), ".wav"); //Nom du fichier temporaire
-                await Task.Run(() => { while (File.Exists(fn)) fn = Path.ChangeExtension(Path.GetTempFileName(), ".wav"); });
-
-                ProcessStartInfo FFInfo = new ProcessStartInfo(App.FFmpegPath, await GetFFArgsAsync(wavFiles, fn))
-                {
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true,
-                    UseShellExecute = false
-                };
-
-                Process FFProcess = new Process() { StartInfo = FFInfo };
-
-                VGMStream.RunningProcess.Add(FFProcess, VGMStreamProcessTypes.Streaming);
-
-                TryResult StartResult = await FFProcess.TryStartAsync(cancellationToken); //Start
-
-                if (!StartResult.Result) //N'a pas pu être démarré
-                {
-                    if (!(StartResult.Exception is OperationCanceledException)) MessageBox.Show(StartResult.Exception.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-                    return null;
-                }
+                if (cancellationToken.IsCancellationRequested) return null;
 
                 try
                 {
-                    await FFProcess.WaitForExitAsync(cancellationToken); //WaitForExit
-
-                    VGMStream.RunningProcess.Remove(FFProcess);
-
-                    foreach (string file in wavFiles) await FileAsync.TryAndRetryDeleteAsync(file, throwEx: false);
-
-                    if (FFProcess.ExitCode == 0)
+                    await Task.Run(() =>
                     {
-                        VGMStream.TempFiles.Enqueue(fn);
-                        return fn;
-                    }
-                    else
-                    {
-                        fichier.SetInvalid();
-                        return null;
-                    }
+                        var waveProvider = new MultiplexingWaveProvider(wavFiles.Select(file => new WaveFileReader(file)));
+                        WaveFileWriter.CreateWaveFile(fn, waveProvider);
+                    }, cancellationToken);
+
+                    return cancellationToken.IsCancellationRequested ? null : File.OpenRead(fn);
                 }
-                catch (OperationCanceledException) { FFProcess.TryKill(); }
-                finally { if (VGMStream.RunningProcess.ContainsKey(FFProcess)) VGMStream.RunningProcess.Remove(FFProcess); }
-
-                return null;
+                catch (OperationCanceledException) { return null; }
+                catch
+                {
+                    fichier.SetInvalid();
+                    return null;
+                }
             }
             catch (OperationCanceledException) { return null; }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
             finally
             {
-                for (int i = 0; i < dspCount; i++)
-                {
-                    VGMStream.TempFiles.Enqueue(dspFiles[i]);
-                    VGMStream.TempFiles.Enqueue(wavFiles[i]);
-                }
+                if (!cancellationToken.IsCancellationRequested) await VGMStream.DeleteTempFilesByName((await dspFiles.ConcatAsync(wavFiles)).ToArray());
+                StreamingCount--;
             }
         }
 
@@ -248,170 +197,172 @@ namespace VGMGUI
         /// <param name="fichier">Le fichier à convertir.</param>
         /// <param name="cancellationToken">Jeton d'annulation qui peut être utilisé par d'autres objets ou threads pour être informés de l'annulation.</param>
         /// <returns>true si la conversion a réussi; sinon false.</returns>
-        public static async Task<IEnumerable<string>> ConvertFile(Fichier fichier, CancellationToken cancellationToken = default)
+        public static async Task<List<string>> ConvertFile(Fichier fichier, bool finalize = true, CancellationToken cancellationToken = default, PauseToken pauseToken = default)
         {
-            if (!File.Exists(fichier.Path)) return null;
-
-            fichier.OriginalState = "FSTATE_Conversion";
-
             bool success = false;
 
-            var dspCount = 0;
-            var dsps = new List<byte[]>();
+            var chanCount = 0;
             var dspFiles = new List<string>();
             var wavFiles = new List<string>();
 
             try
             {
-                using (var stream = File.Open(fichier.Path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                ConversionCount++;
+                await pauseToken.WaitWhilePausedAsync();
+
+                if (cancellationToken.IsCancellationRequested || !File.Exists(fichier.Path)) return null;
+
+                fichier.OriginalState = "FSTATE_Conversion";
+
+                var dsps = await GetDSPFiles(fichier.Path, VGMStreamProcessTypes.Conversion, 0, cancellationToken, pauseToken);
+
+                if (dsps == null) return null;
+
+                dspFiles = dsps.Item1;
+                chanCount = dsps.Item2;
+
+                wavFiles = (await dspFiles.SelectAsync(dspFile => VGMStream.CreateTempFile("wav", VGMStreamProcessTypes.Conversion), cancellationToken)).ToList();
+
+                var vgmstreamTmpInfos = new ProcessStartInfo[chanCount];
+                var vgmstreamTmpProcess = new Process[chanCount];
+
+                await pauseToken.WaitWhilePausedAsync();
+
+                if (cancellationToken.IsCancellationRequested || !File.Exists(App.VGMStreamPath) && !await App.AskVGMStream()) return null; //Check VGMStream
+
+                for (int i = 0; i < chanCount && !cancellationToken.IsCancellationRequested; i++)
                 {
-                    if (!(await (await stream.PeekBytesAsync(0x00, 4)).SequenceEqualAsync(RFRM) && await (await stream.PeekBytesAsync(0x14, 4)).SequenceEqualAsync(CSMP))) return null; //Check Magic
-
-                    var csmpFile = await stream.ReadAllBytesAsync(cancellationToken);
-                    var dataIndex = await csmpFile.IndexOfAsync(DATA, cancellationToken);
-
-                    if (dataIndex == -1) return null; //DATA index
-
-                    var data = csmpFile.SubArray(dataIndex + 27, csmpFile.Length - dataIndex - 27); //Get DATA subArray
-                    var header = data.SubArray(0, 28); //Get header subArray
-
-                    var dspIndexes = await data.AllIndexesOfAsync(header, cancellationToken); //Get indexes of subDSP files in string version of DATA
-                    if (dspIndexes.IsNullOrEmpty()) return null;
-                    else dspCount = dspIndexes.Count; //Get channels count
-
-                    dspFiles = (await dspIndexes.SelectAsync(index => Path.ChangeExtension(Path.GetTempFileName(), ".dsp"), cancellationToken)).ToList(); //Temp DSP files names
-                    wavFiles = (await dspFiles.SelectAsync(dspFile => Path.ChangeExtension(dspFile, ".wav"), cancellationToken)).ToList(); //Temp WAV files names
-
                     await Task.Run(() =>
                     {
-                        for (int i = 0; i < dspCount; i++) //Fill DSPs list
-                        {
-                            var length = i == dspCount - 1 ? data.Length - dspIndexes[i] : dspIndexes[i + 1] - dspIndexes[i];
-                            dsps.Add(data.SubArray(dspIndexes[i], length));
-                        }
-                    }, cancellationToken);
-
-                    for (int i = 0; i < dspCount; i++) await AsyncFile.WriteAllBytesAsync(dspFiles[i], dsps[i], cancellationToken); //Write temp files
+                        pauseToken.WaitWhilePausedAsync();
+                        vgmstreamTmpInfos[i] = VGMStream.StartInfo(dspFiles[i], wavFiles[i], fichier.LoopCount, fichier.FadeOut, fichier.FadeDelay, fichier.FadeTime, fichier.StartEndLoop);
+                        vgmstreamTmpProcess[i] = Process.Start(vgmstreamTmpInfos[i]);
+                        VGMStream.RunningProcess.Add(vgmstreamTmpProcess[i], VGMStreamProcessTypes.Conversion);
+                    });
                 }
-            }
-            catch (ArgumentException) { return null; }
 
-            if (dspCount == 0) return null;
-
-            var vgmstreamTmpInfos = new ProcessStartInfo[dspCount];
-            var vgmstreamTmpProcess = new Process[dspCount];
-
-            if (!File.Exists(App.VGMStreamPath) && !await App.AskVGMStream()) return null; //Check VGMStream
-
-            for (int i = 0; i < dspCount; i++)
-            {
-                await Task.Run(() =>
+                for (int i = 0; i < vgmstreamTmpProcess.Length; i++)
                 {
-                    vgmstreamTmpInfos[i] = VGMStream.StartInfo(dspFiles[i], wavFiles[i], fichier.LoopCount, fichier.FadeOut, fichier.FadeDelay, fichier.FadeTime, fichier.StartEndLoop);
-                    vgmstreamTmpProcess[i] = Process.Start(vgmstreamTmpInfos[i]);
-                    VGMStream.RunningProcess.Add(vgmstreamTmpProcess[i], VGMStreamProcessTypes.Conversion);
-                });
+                    await vgmstreamTmpProcess[i].WaitForExitAsync(cancellationToken);
+                    if (vgmstreamTmpProcess[i].ExitCode != 0) return null;
+                }
+
+                if (cancellationToken.IsCancellationRequested) return null;
+
+                try
+                {
+                    var waveProvider = new MultiplexingWaveProvider(wavFiles.Select(file => new WaveFileReader(file)));
+                    WaveFileWriter.CreateWaveFile(fichier.FinalDestination, waveProvider);
+
+                    await pauseToken.WaitWhilePausedAsync();
+
+                    if (!cancellationToken.IsCancellationRequested)
+                    {
+                        success = true;
+                        var data = (await vgmstreamTmpProcess[0].StandardOutput.ReadAllLinesAsync().WithCancellation(cancellationToken)).ToList();
+
+                        var indexOfPath = data.IndexOf(data.FirstOrDefault(s => s.Contains(dspFiles[0])));
+                        var indexOfChannels = data.IndexOf(data.FirstOrDefault(s => s.Contains("channels")));
+                        var indexOfFormat = data.IndexOf(data.FirstOrDefault(s => s.Contains("metadata from")));
+                        var indexOfBitrate = data.IndexOf(data.FirstOrDefault(s => s.Contains("bitrate")));
+
+                        data[indexOfPath] = data[indexOfPath].Replace(dspFiles[0], fichier.Path);
+                        data[indexOfChannels] = data[indexOfChannels].Replace("1", chanCount.ToString());
+                        data[indexOfFormat] = data[indexOfFormat].Replace("Standard Nintendo DSP header", "Retro Studios DKCTF CSMP");
+
+                        var brp = data[indexOfBitrate].Split(':');
+                        if (brp.Length == 2)
+                        {
+                            var brs = brp[1].Replace("kbps", String.Empty);
+                            var br = brs.ToInt();
+                            if (br != null)
+                            {
+                                var bitrate = br * chanCount;
+                                data[indexOfBitrate] = data[indexOfBitrate].Replace(br.ToString(), bitrate.ToString());
+                            }
+                        }
+
+                        return data;
+                    }
+                    else return null;
+                }
+                catch { return null; }
+            }
+            catch (OperationCanceledException) { return null; }
+            finally
+            {
+                await VGMStream.DeleteTempFilesByName((await dspFiles.ConcatAsync(wavFiles)).ToArray());
+
+                if (success) fichier.OriginalState = "FSTATE_Completed";
+                else if (!cancellationToken.IsCancellationRequested && finalize) fichier.SetInvalid();
+
+                ConversionCount--;
+            }
+        }
+
+        /// <summary>
+        /// Écrit les sous-fichiers DSP d'un fichier DKCTF CSMP.
+        /// </summary>
+        /// <param name="csmpFileName">Chemin du fichier DKCTF CSMP.</param>
+        /// <param name="count">Nombre maximal de fichiers à écrire (0 = illimité).</param>
+        /// <param name="cancellationToken"></param>
+        /// <returns>Liste des noms des fichiers écrits.</returns>
+        private static async Task<Tuple<List<string>, byte>> GetDSPFiles(string csmpFileName, VGMStreamProcessTypes type, byte count = 0, CancellationToken cancellationToken = default, PauseToken pauseToken = default)
+        {
+            if (cancellationToken.IsCancellationRequested) return null;
+
+            IEnumerable<string> GetDSPFileNames(int fileCount)
+            {
+                for (int i = 0; i < fileCount; i++) yield return VGMStream.CreateTempFile("dsp", type);
             }
 
-            for (int i = 0; i < vgmstreamTmpProcess.Length; i++) await vgmstreamTmpProcess[i].WaitForExitAsync();
-
-            if (!File.Exists(App.FFmpegPath) && !await App.AskFFmepg()) return null; //Check FFmepg
-
-            if (File.Exists(fichier.FinalDestination)) await FileAsync.TryAndRetryDeleteAsync(fichier.FinalDestination, throwEx: false);
-
-            ProcessStartInfo FFInfo = new ProcessStartInfo(App.FFmpegPath, await GetFFArgsAsync(wavFiles, fichier.FinalDestination))
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-                UseShellExecute = false
-            };
-
-            Process FFProcess = new Process() { StartInfo = FFInfo };
-
-            VGMStream.RunningProcess.Add(FFProcess, VGMStreamProcessTypes.Conversion);
+            CancellationTokenRegistration registration = default;
+            List<string> dspFiles = default;
 
             try
             {
-                TryResult StartResult = await FFProcess.TryStartAsync(cancellationToken); //Start
-
-                if (!StartResult.Result) //N'a pas pu être démarré
+                using (var stream = File.Open(csmpFileName, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
-                    if (!(StartResult.Exception is OperationCanceledException)) MessageBox.Show(StartResult.Exception.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-                    return null;
-                }
+                    if (!(await (await stream.PeekBytesAsync(0x00, 4)).SequenceEqualAsync(RFRM) && await (await stream.PeekBytesAsync(0x14, 4)).SequenceEqualAsync(CSMP))) return null; //Check Magic
 
-                await FFProcess.WaitForExitAsync(cancellationToken); //WaitForExit
+                    var size = Hexadecimal.DCBAEndianToInt(await stream.PeekBytesAsync(0x08, 4), false);
 
-                VGMStream.RunningProcess.Remove(FFProcess);
+                    long fmtaIndex = 0;
 
-                foreach (string file in wavFiles) await FileAsync.TryAndRetryDeleteAsync(file, throwEx: false);
+                    var fmtalabl = await stream.PeekBytesAsync(0x20, 4);
 
-                if (FFProcess.ExitCode == 0)
-                {
-                    success = true;
-                    var data = (await vgmstreamTmpProcess[0].StandardOutput.ReadAllLinesAsync()).ToList();
-
-                    var indexOfPath = data.IndexOf(data.FirstOrDefault(s => s.Contains(dspFiles[0])));
-                    var indexOfChannels = data.IndexOf(data.FirstOrDefault(s => s.Contains("channels")));
-                    var indexOfFormat = data.IndexOf(data.FirstOrDefault(s => s.Contains("metadata from")));
-                    var indexOfBitrate = data.IndexOf(data.FirstOrDefault(s => s.Contains("bitrate")));
-
-                    data[indexOfPath] = data[indexOfPath].Replace(dspFiles[0], fichier.Path);
-                    data[indexOfChannels] = data[indexOfChannels].Replace("1", dspCount.ToString());
-                    data[indexOfFormat] = data[indexOfFormat].Replace("Standard Nintendo DSP header", "Retro Studios DKCTF CSMP");
-
-                    var brp = data[indexOfBitrate].Split(':');
-                    if (brp.Length == 2)
+                    if (await fmtalabl.SequenceEqualAsync(FMTA)) fmtaIndex = 0x20;
+                    else if (await fmtalabl.SequenceEqualAsync(LABL))
                     {
-                        var brs = brp[1].Replace("kbps", "");
-                        var br = brs.ToInt();
-                        if (br != null)
+                        var lablSize = 24 + Hexadecimal.DCBAEndianToInt(await stream.PeekBytesAsync(0x28, 4), false);
+                        fmtaIndex = 0x20 + lablSize;
+                        size -= lablSize;
+                    }
+
+                    var chanCount = stream.PeekByte(fmtaIndex + 24); //Get channels count
+                    var realCount = count == 0 ? chanCount : Math.Min(count, chanCount); //Number of DSP files to create
+
+                    int dspLength = (size - 56) / chanCount; //Get length of a DSP file. Also check if chanCount == 0 (catch a DivideByZeroException)
+
+                    stream.Seek(fmtaIndex + 56, SeekOrigin.Begin); //Seek to the first DSP file
+
+                    dspFiles = GetDSPFileNames(realCount).ToList(); //Get DSP files names list
+                    registration = cancellationToken.Register(async () => await VGMStream.DeleteTempFilesByName(dspFiles.ToArray()));
+
+                    for (int i = 0; i < realCount; i++)
+                    {
+                        using (var fs = File.Create(dspFiles[i]))
                         {
-                            var bitrate = br * dspCount;
-                            data[indexOfBitrate] = data[indexOfBitrate].Replace(br.ToString(), bitrate.ToString());
+                            await pauseToken.WaitWhilePausedAsync();
+                            await stream.CopyToAsync(fs, 0, dspLength, false, cancellationToken); //Write the DSP files
                         }
                     }
 
-                    return data;
+                    return cancellationToken.IsCancellationRequested ? null : Tuple.Create(dspFiles, chanCount);
                 }
-                else return null;
             }
-            catch (OperationCanceledException)
-            {
-                FFProcess.TryKill();
-                return null;
-            }
-            finally
-            {
-                for (int i = 0; i < dspCount; i++)
-                {
-                    VGMStream.TempFiles.Enqueue(dspFiles[i]);
-                    VGMStream.TempFiles.Enqueue(wavFiles[i]);
-                }
-
-                if (VGMStream.RunningProcess.ContainsKey(FFProcess)) VGMStream.RunningProcess.Remove(FFProcess);
-
-                if (!cancellationToken.IsCancellationRequested)
-                {
-                    if (success) fichier.OriginalState = "FSTATE_Completed";
-                    else fichier.SetInvalid();
-                }
-                else if (!success) fichier.OriginalState = "FSTATE_Canceled";
-            }
+            catch { return null; }
+            finally { registration.TryDispose(); }
         }
-
-        private static string GetFFArgs(IEnumerable<string> channels, string outputPath)
-        {
-            var channelsCount = channels.Count();
-            StringBuilder sb = new StringBuilder();
-            foreach (string channel in channels) sb.Append(" -i \"" + channel + "\"");
-            sb.Append(" -filter_complex \"");
-            for (int i = 0; i < channelsCount; i++) sb.Append($"[{i}:a]");
-            sb.Append($"amerge=inputs={channelsCount}[aout]\" -map \"[aout]\" -y \"{outputPath}\"");
-            return sb.ToString().TrimStart(' ');
-        }
-
-        private static Task<string> GetFFArgsAsync(IEnumerable<string> channels, string outputPath) => Task.Run(() => GetFFArgs(channels, outputPath));
     }
 }

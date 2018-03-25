@@ -37,5 +37,14 @@ namespace VGMGUI
                 }
             }
         }
+
+        private void ContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            if (sender is ContextMenu contextMenu && contextMenu.PlacementTarget is ListViewItem item && ItemsControl.ItemsControlFromItemContainer(item) is ListView listView)
+            {
+                var selectedItems = listView.SelectedItems.OfType<Fichier>();
+                contextMenu.Items.FindCollectionItem<MenuItem>("SkipMI").IsEnabled = !selectedItems.All(fichier => !fichier.IsCancellable);
+            }
+        }
     }
 }

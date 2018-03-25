@@ -53,15 +53,62 @@ namespace VGMGUI
         /// </summary>
         public static int AddingMaxProcessCount { get; set; } = 5;
 
+        public static StreamingType StreamingType
+        {
+            get => s_streamingType;
+            set
+            {
+                s_streamingType = value;
+                SettingsData.Global["StreamingType"] = value.ToString();
+                StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("StreamingType"));
+            }
+        }
+
         /// <summary>
         /// Délai avant le rafraîchissement de <see cref="View"/> quand une recherche est lancée.
         /// </summary>
-        public static int SearchDelay { get; set; } = 250;
+        public static int SearchDelay
+        {
+            get => s_searchDelay; set
+            {
+                s_searchDelay = value;
+                StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("SearchDelayString"));
+            }
+        }
+        /// <summary>
+        /// Délai avant le rafraîchissement de <see cref="View"/> quand une recherche est lancée.
+        /// </summary>
+        public static string SearchDelayString
+        {
+            get => SearchDelay.ToString();
+            set
+            {
+                if (value.ToInt() is int i && i != s_searchDelay)
+                {
+                    s_searchDelay = i;
+                    SettingsData["Search"]["SearchDelay"] = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Indique si les fichiers doivent être analysés à l'ajout.
         /// </summary>
-        public static bool PreAnalyse { get; set; } = true;
+        public static bool PreAnalyse
+        {
+            get => s_preAnalyse;
+            set
+            {
+                if (value != s_preAnalyse)
+                {
+                    s_preAnalyse = value;
+                    SettingsData.Global["PreAnalyse"] = value.ToString();
+                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("PreAnalyse"));
+                }
+            }
+        }
+
+        public static VLCCType VLCC { get; set; } = VLCCType.Memory;
 
         public class AdditionalFormats
         {
@@ -69,52 +116,13 @@ namespace VGMGUI
             public static bool Any => DKCTFCSMP;
         }
 
-        public class StatusBar
-        {
-            private static bool s_display = true;
-            private static bool s_counter = true;
-            private static bool s_RAM = true;
-
-            public static bool Display
-            {
-                get => s_display;
-                set
-                {
-                    s_display = value;
-                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("Display"));
-                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("DisplayVisibility"));
-                }
-            }
-            public static bool Counter
-            {
-                get => s_counter;
-                set
-                {
-                    s_counter = value;
-                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("Counter"));
-                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("CounterVisibility"));
-                }
-            }
-            public static bool RAM
-            {
-                get => s_RAM;
-                set
-                {
-                    s_RAM = value;
-                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("RAM"));
-                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("RAMVisibility"));
-                }
-            }
-        }
-
-        public static Visibility DisplayVisibility => StatusBar.Display ? Visibility.Visible : Visibility.Collapsed;
-        public static Visibility CounterVisibility => StatusBar.Counter ? Visibility.Visible : Visibility.Collapsed;
-        public static Visibility RAMVisibility => StatusBar.RAM ? Visibility.Visible : Visibility.Collapsed;
-
         private static FichierOutData m_defaultOutData;
         private static string s_searchFilter;
         private static bool s_searchCaseSensitive;
         private static FileListColumn s_searchColumn;
+        private static int s_searchDelay = 250;
+        private static bool s_preAnalyse = true;
+        private static StreamingType s_streamingType;
 
         /// <summary>
         /// Données de sortie par défaut d'un fichier.
@@ -193,4 +201,7 @@ namespace VGMGUI
         /// </summary>
         public static async Task<TryResult> TryWriteSettings() => await Parser.TryAndRetryWriteFile(Path.Combine(App.AppPath, "VGMGUI.ini"), SettingsData);
     }
+
+    public enum StreamingType { Cache, Live }
+    public enum VLCCType { Memory, File, Never }
 }

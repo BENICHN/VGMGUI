@@ -87,6 +87,16 @@
                     <Label Content="{DynamicResource STGS_Playback}"/>
                 </GroupBox.Header>
                 <StackPanel Margin="5">
+                    <StackPanel Orientation="Horizontal">
+                        <Label Content="{DynamicResource STGS_VLCC}" Margin="0,0,4,0"/>
+                        <ComboBox Name="cmbx_vlcc" SelectedIndex="0" SelectionChanged="ComboBox_SelectionChanged" MinWidth="100">
+                            <ComboBox.Items>
+                                <ComboBoxItem Content="{DynamicResource STGS_VLCC_Memory}"/>
+                                <ComboBoxItem Content="{DynamicResource STGS_VLCC_File}"/>
+                                <ComboBoxItem Content="{DynamicResource STGS_VLCC_Never}"/>
+                            </ComboBox.Items>
+                        </ComboBox>
+                    </StackPanel>
                     <CheckBox Name="chbx_stopwhendelete" Content="{DynamicResource STGS_StopWhenDelete}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked"/>
                     <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                         <Label Content="{DynamicResource STGS_PRV}" Margin="0,0,4,0"/>
@@ -101,6 +111,10 @@
                 </GroupBox.Header>
                 <StackPanel Margin="5">
                     <CheckBox Name="chbx_stsbar_count" Content="{DynamicResource STGS_STSBAR_Count}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
+                    <CheckBox Name="chbx_stsbar_streamingType" Content="{DynamicResource STGS_STSBAR_StreamingType}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
+                    <CheckBox Name="chbx_stsbar_preAnalyse" Content="{DynamicResource STGS_PreAnalyse}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
+                    <CheckBox Name="chbx_stsbar_searchDelay" Content="{DynamicResource STGS_SearchDelay0}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
+                    <CheckBox Name="chbx_stsbar_samplesDisplay" Content="{DynamicResource STGS_SPLDSP}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
                     <CheckBox Name="chbx_stsbar_RAM" Content="{DynamicResource STGS_STSBAR_RAM}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
                 </StackPanel>
             </GroupBox>
