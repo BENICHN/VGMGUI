@@ -129,8 +129,12 @@ namespace VGMGUI
                 m_addingErrorCount = value;
                 if (WaitingWindow != null && WaitingWindow.Labels.Children.Count > 1 && WaitingWindow.Labels.Children[1] is Label label)
                 {
-                    label.Content = $"{value} {App.Str("WW_Errors")}";
-                    if (value == 1) label.SetResourceReference(ForegroundProperty, "ErrorBrush");
+                    if (value == 1)
+                    {
+                        label.Content = $"{value} {App.Str("WW_Error")}";
+                        label.SetResourceReference(ForegroundProperty, "ErrorBrush");
+                    }
+                    else label.Content = $"{value} {App.Str("WW_Errors")}";
                 }
             }
         }
@@ -178,8 +182,12 @@ namespace VGMGUI
                 m_analyzingErrorCount = value;
                 if (WaitingWindow != null && WaitingWindow.Labels.Children.Count > 1 && WaitingWindow.Labels.Children[1] is Label label)
                 {
-                    label.Content = $"{value} {App.Str("WW_Errors")}";
-                    if (value == 1) label.SetResourceReference(ForegroundProperty, "ErrorBrush");
+                    if (value == 1)
+                    {
+                        label.Content = $"{value} {App.Str("WW_Error")}";
+                        label.SetResourceReference(ForegroundProperty, "ErrorBrush");
+                    }
+                    else label.Content = $"{value} {App.Str("WW_Errors")}";
                 }
             }
         }
@@ -263,7 +271,7 @@ namespace VGMGUI
                             property = fichier.DateString;
                             break;
                     }
-                    if (property.Contains(SearchFilter, SearchCaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase)) return true; else return false;
+                    return property.Contains(SearchFilter, SearchCaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase) ^ SearchNo;
                 }
                 else return false;
             });
@@ -595,6 +603,12 @@ namespace VGMGUI
                 ErrorWindow.BadFiles = new System.Collections.ObjectModel.ObservableCollection<string>();
             }
 
+            if (Fichier.Overflow)
+            {
+                MessageBox.Show(App.Str("ERR_OverflowAdd"), App.Str("TT_Warning"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                Fichier.Overflow = false;
+            }
+
             AddingCount = AnalyzingCount = AddingErrorCount = AnalyzingErrorCount = 0;
             AddingCTS = new CancellationTokenSource();
 
@@ -734,7 +748,7 @@ namespace VGMGUI
                                 {
                                     try { dir = int.Parse(ibr.Text); }
                                     catch (OverflowException) { dir = int.MaxValue; }
-                                    if (dir > SIDict.First().Key) dir = -1 - filesCollection.IndexOf(SIDict.Values.First());
+                                    if (dir > SIDict.First().Key) dir = -filesCollection.IndexOf(SIDict.Values.First());
                                     else dir *= -1;
                                 }
                                 else dir = 0;
@@ -747,7 +761,7 @@ namespace VGMGUI
                                 {
                                     try { dir = int.Parse(ibr.Text); }
                                     catch (OverflowException) { dir = int.MaxValue; }
-                                    if (dir > filesCollection.Count - SIDict.First().Key - 1) dir = filesCollection.Count - filesCollection.IndexOf(SIDict.Values.First());
+                                    if (dir > filesCollection.Count - SIDict.First().Key - 1) dir = filesCollection.Count - filesCollection.IndexOf(SIDict.Values.First()) - 1;
                                 }
                                 else dir = 0;
                             }
@@ -1038,6 +1052,7 @@ namespace VGMGUI
         {
             switch (e.PropertyName)
             {
+                case "SearchNo":
                 case "SearchCaseSensitive":
                 case "SearchColumn":
                     await Search();

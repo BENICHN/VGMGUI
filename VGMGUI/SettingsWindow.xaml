@@ -112,6 +112,7 @@
                 <StackPanel Margin="5">
                     <CheckBox Name="chbx_stsbar_count" Content="{DynamicResource STGS_STSBAR_Count}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
                     <CheckBox Name="chbx_stsbar_streamingType" Content="{DynamicResource STGS_STSBAR_StreamingType}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
+                    <CheckBox Name="chbx_stsbar_size" Content="{DynamicResource ST_Size}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
                     <CheckBox Name="chbx_stsbar_preAnalyse" Content="{DynamicResource STGS_PreAnalyse}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
                     <CheckBox Name="chbx_stsbar_searchDelay" Content="{DynamicResource STGS_SearchDelay0}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
                     <CheckBox Name="chbx_stsbar_samplesDisplay" Content="{DynamicResource STGS_SPLDSP}" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>

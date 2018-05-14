@@ -18,6 +18,14 @@
     <Grid>
         <local:SearchBox Height="63" x:Name="SearchBox" Panel.ZIndex="1" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,21,0,0" Visibility="Collapsed" IsVisibleChanged="SearchBox_IsVisibleChanged"/>
         <ListView Name="FILEList" SelectionMode="Extended" benlib:ListBoxSelector.Enabled="True" AllowDrop="True" DragEnter="FILEList_DragEnterOverLeave" DragOver="FILEList_DragEnterOverLeave" DragLeave="FILEList_DragEnterOverLeave" Drop="FILEList_Drop" SelectionChanged="FILEList_SelectionChanged" GridViewColumnHeader.Click="FILEListHeader_Click" PreviewKeyDown="FILEList_PreviewKeyDown" FocusVisualStyle="{x:Null}">
+            <ListView.Resources>
+                <Style x:Key="{x:Type ToolTip}" TargetType="{x:Type ToolTip}" BasedOn="{StaticResource {x:Type ToolTip}}">
+                    <Setter Property="Padding" Value="1"/>
+                    <Setter Property="BorderBrush" Value="#FFCECECE"/>
+                    <Setter Property="HasDropShadow" Value="False"/>
+                    <Setter Property="Placement" Value="Center"/>
+                </Style>
+            </ListView.Resources>
             <ListView.View>
                 <GridView>
 
@@ -35,7 +43,7 @@
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" Margin="-2,0,0,0">
                                     <ContentPresenter Height="16" Width="16" Content="{Binding Icon}"/>
-                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding Name}" Margin="4,0,0,0" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Name}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding Name}" ToolTip="{Binding Name}" Margin="4,0,0,0" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Name}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
                                 </StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
@@ -44,7 +52,7 @@
                     <GridViewColumn Header="{DynamicResource FL_COL_State}" Width="112">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding State}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=State}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                <StackPanel Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="{Binding State}" ToolTip="{Binding State}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=State}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/></StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -52,7 +60,7 @@
                     <GridViewColumn Header="{DynamicResource FL_COL_Duration}" Width="80">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding DurationString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Duration}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                <StackPanel Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="{Binding DurationString}" ToolTip="{Binding DurationString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Duration}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/></StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -60,7 +68,7 @@
                     <GridViewColumn Header="{DynamicResource FL_COL_Format}" Width="200">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Format}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Format}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                <StackPanel Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="{Binding Format}" ToolTip="{Binding Format}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Format}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/></StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -68,7 +76,7 @@
                     <GridViewColumn Header="{DynamicResource FL_COL_Encoding}" Width="200">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Encoding}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Encoding}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                <StackPanel Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="{Binding Encoding}" ToolTip="{Binding Encoding}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Encoding}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/></StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -76,7 +84,7 @@
                     <GridViewColumn Header="{DynamicResource FL_COL_SampleRate}" Width="70">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding SampleRateString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=SampleRate}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                <StackPanel Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="{Binding SampleRateString}" ToolTip="{Binding SampleRateString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=SampleRate}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/></StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -84,7 +92,7 @@
                     <GridViewColumn Header="{DynamicResource FL_COL_Bitrate}" Width="70">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding BitrateString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Bitrate}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                <StackPanel Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="{Binding BitrateString}" ToolTip="{Binding BitrateString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Bitrate}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/></StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -92,7 +100,7 @@
                     <GridViewColumn Header="{DynamicResource FL_COL_Channels}" Width="60">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Channels}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Channels}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                <StackPanel Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="{Binding Channels}" ToolTip="{Binding Channels}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Channels}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/></StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -100,7 +108,7 @@
                     <GridViewColumn Header="{DynamicResource FL_COL_Loop}" Width="50">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding LoopFlagString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Loop}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                <StackPanel Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="{Binding LoopFlagString}" ToolTip="{Binding LoopFlagString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Loop}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/></StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -108,7 +116,7 @@
                     <GridViewColumn Header="{DynamicResource FL_COL_Layout}" Width="180">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Layout}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Layout}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                <StackPanel Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="{Binding Layout}" ToolTip="{Binding Layout}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Layout}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/></StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -116,7 +124,7 @@
                     <GridViewColumn Header="{DynamicResource FL_COL_Interleave}" Width="90">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding InterleaveString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Interleave}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                <StackPanel Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="{Binding InterleaveString}" ToolTip="{Binding InterleaveString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Interleave}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/></StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -124,7 +132,7 @@
                     <GridViewColumn Header="{DynamicResource FL_COL_Folder}" Width="300">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Folder}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Folder}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                <StackPanel Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="{Binding Folder}" ToolTip="{Binding Folder}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Folder}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/></StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -132,7 +140,7 @@
                     <GridViewColumn Header="{DynamicResource FL_COL_Size}" Width="70">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding SizeString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Size}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                <StackPanel Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Text="{Binding SizeString}" ToolTip="{Binding SizeString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Size}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/></StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -140,7 +148,7 @@
                     <GridViewColumn Header="{DynamicResource FL_COL_Date}" Width="150">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding DateString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Date}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/>
+                                <StackPanel Orientation="Horizontal"><TextBlock VerticalAlignment="Center" Width="Auto" Text="{Binding DateString}" ToolTip="{Binding DateString}" benlib:HighlightableTextBlock.HightlightText="{Binding Converter={StaticResource filterConverter}, ConverterParameter=Date}" benlib:HighlightableTextBlock.HighlightBrush="#FFF0B445"/></StackPanel>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

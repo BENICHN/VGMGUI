@@ -165,8 +165,8 @@
                                         <ComboBoxItem Name="MultipleCBI" Content="{DynamicResource MW_Multiple}" Visibility="Collapsed" IsEnabled="False"/>
                                         <ComboBoxItem Content="{DynamicResource DEST_Principal}"/>
                                         <ComboBoxItem Content="{DynamicResource DEST_SourceFolder}"/>
+                                        <ComboBoxItem Name="SelectedTasksCustom" Visibility="Collapsed" IsEnabled="False"/>
                                         <ComboBoxItem Name="SelectedTasksBrowse" Content="{DynamicResource DEST_Browse}" Selected="ComboBoxItem_Selected"/>
-                                        <ComboBoxItem Name="SelectedTasksCustom" Visibility="Collapsed"/>
                                     </ComboBox.Items>
                                 </ComboBox>
                             </StackPanel>
@@ -195,7 +195,7 @@
         </Grid>
         <StatusBar Name="statusBar" Height="25" Grid.Row="1" VerticalAlignment="Bottom" Visibility="{Binding Path=(local:StatusBar.Display), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" IsVisibleChanged="statusBar_IsVisibleChanged">
             <!--================================================== Counter ==================================================-->
-            <Label Margin="1,0,0,-1" Content="⬤" FontSize="8" Foreground="{StaticResource StatusBarIconBrush}"  Visibility="{Binding Path=(local:StatusBar.Counter), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+            <Ellipse Margin="1,0,0,-1" Width="6" Height="6" Fill="{StaticResource StatusBarIconBrush}" Visibility="{Binding Path=(local:StatusBar.Counter), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
             <Label Name="listCountLabel" Margin="-3,0,0,0"  Visibility="{Binding Path=(local:StatusBar.Counter), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
             <!--=============================================================================================================-->
             <DockPanel HorizontalAlignment="Right" Margin="0,-3">
@@ -207,6 +207,8 @@
                         </Binding.Converter>
                     </Binding>
                 </Button>
+                <!--================================================== Size ==================================================-->
+                <Button Name="SizeButton" Content="{DynamicResource Size}" Style="{StaticResource StatusBarButton}" Visibility="{Binding Path=(local:StatusBar.Size), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" ToolTip="{DynamicResource ST_Size}" Click="SizeButton_Click"/>
                 <!--================================================== PreAnalyse ==================================================-->
                 <ContentControl Margin="5,0,0,0" Content="{DynamicResource Scan}"  Visibility="{Binding Path=(local:StatusBar.PreAnalyse), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" ToolTip="{DynamicResource STGS_PreAnalyse}"/>
                 <CheckBox Name="PreAnalyseCB" Margin="5,0,0,0" Width="13" VerticalAlignment="Center" ToolTip="{DynamicResource STGS_PreAnalyse}"  Visibility="{Binding Path=(local:StatusBar.PreAnalyse), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" IsChecked="{Binding Path=(local:Settings.PreAnalyse), UpdateSourceTrigger=PropertyChanged}"/>
@@ -229,6 +231,7 @@
                 <ContextMenu Name="StatusBarCM">
                     <MenuItem Header="{DynamicResource STGS_STSBAR_Count}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.Counter), UpdateSourceTrigger=PropertyChanged}"/>
                     <MenuItem Header="{DynamicResource STGS_STSBAR_StreamingType}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.StreamingType), UpdateSourceTrigger=PropertyChanged}"/>
+                    <MenuItem Header="{DynamicResource ST_Size}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.Size), UpdateSourceTrigger=PropertyChanged}"/>
                     <MenuItem Header="{DynamicResource STGS_PreAnalyse}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.PreAnalyse), UpdateSourceTrigger=PropertyChanged}"/>
                     <MenuItem Header="{DynamicResource STGS_SearchDelay0}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.SearchDelay), UpdateSourceTrigger=PropertyChanged}"/>
                     <MenuItem Header="{DynamicResource STGS_SPLDSP}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.SamplesDisplay), UpdateSourceTrigger=PropertyChanged}"/>

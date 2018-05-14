@@ -41,11 +41,11 @@ namespace VGMGUI
         /// </summary>
         public static Queue<KeyValuePair<string, VGMStreamProcessTypes?>> TempFiles { get; private set; } = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>();
 
-        public static string CreateTempFile(string extension, VGMStreamProcessTypes? type)
+        public static string CreateTempFile(string extension, VGMStreamProcessTypes? type, bool enqueue = true)
         {
             string fn;
             while (File.Exists(fn = Path.ChangeExtension(Path.GetTempFileName(), extension))) continue;
-            TempFiles.Enqueue(new KeyValuePair<string, VGMStreamProcessTypes?>(fn, type));
+            if (enqueue) TempFiles.Enqueue(new KeyValuePair<string, VGMStreamProcessTypes?>(fn, type));
             return fn;
         }
 
@@ -298,26 +298,40 @@ namespace VGMGUI
         public static async Task<Fichier> GetFileWithOtherFormats(string fileName, FichierOutData outData = default, CancellationToken cancellationToken = default)
         {
             Fichier result = null;
-            if (AdditionalFormats.DKCTFCSMP && (result = await DKCTFCSMP.GetFile(fileName, outData, cancellationToken)) != null || cancellationToken.IsCancellationRequested) return result;
-            else return await GetFile(fileName, outData, cancellationToken);
+            try
+            {
+                if (AdditionalFormats.DKCTFCSMP && (result = await DKCTFCSMP.GetFile(fileName, outData, cancellationToken)) != null || cancellationToken.IsCancellationRequested) return result;
+                else return result = await GetFile(fileName, outData, cancellationToken);
+            }
+            finally
+            {
+                if (result != null && result.SamplesToPlay == -1)
+                {
+                    result.FadeDelay = 0;
+                    result.FadeTime = 10;
+                    result.LoopCount = 2;
+                    result.StartEndLoop = false;
+                    Fichier.Overflow = true;
+                }
+            }
         }
 
         public static async Task<Stream> GetStreamWithOtherFormats(Fichier fichier, bool useFile, bool Out = false, CancellationToken cancellationToken = default)
         {
             Stream result = null;
             if (AdditionalFormats.DKCTFCSMP && (result = await DKCTFCSMP.GetStream(fichier, Out, cancellationToken)) != null || cancellationToken.IsCancellationRequested) return result;
-            else return await GetStream(fichier, useFile, Out, cancellationToken);
+            else return result = await GetStream(fichier, useFile, Out, cancellationToken);
         }
 
         public static async Task<IEnumerable<string>> ConvertFileWithOtherFormats(Fichier fichier, CancellationToken cancellationToken = default, PauseToken pauseToken = default)
         {
             CancellationTokenRegistration registration = cancellationToken.Register(fichier.Cancel);
+            IEnumerable<string> result = null;
 
             try
             {
-                IEnumerable<string> result = null;
                 if (AdditionalFormats.DKCTFCSMP && (result = await DKCTFCSMP.ConvertFile(fichier, false, fichier.CancellationToken, pauseToken)) != null || fichier.CancellationToken.IsCancellationRequested) return result;
-                else return await ConvertFile(fichier, fichier.CancellationToken, pauseToken);
+                else return result = await ConvertFile(fichier, fichier.CancellationToken, pauseToken);
             }
             finally
             {
@@ -583,7 +597,7 @@ namespace VGMGUI
             var downloadResult = false;
             var extractResult = false;
             var tempPath = IO.GetTempDirectory();
-            var arcFile = CreateTempFile("zip", null);
+            var arcFile = CreateTempFile("zip", null, false);
             var dirAddress = Environment.Is64BitProcess ? @"http://download.videolan.org/vlc/last/win64/" : @"http://download.videolan.org/vlc/last/win32/";
             var client = new WebClient();
 
@@ -688,7 +702,7 @@ namespace VGMGUI
             finally
             {
                 if (downloadResult && !extract) VLCArcPath = arcFile;
-                else await DeleteTempFilesByName(arcFile);
+                else await FileAsync.TryAndRetryDeleteAsync(arcFile, throwEx: false);
 
                 await DirectoryAsync.TryAndRetryDeleteAsync(tempPath, throwEx: false);
                 DownloadCount--;

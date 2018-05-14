@@ -21,6 +21,7 @@ namespace VGMGUI
         private static bool s_SearchDelay = true;
         private static bool s_PreAnalyse = true;
         private static bool s_StreamingType = true;
+        private static bool s_Size = true;
 
         public static bool Display
         {
@@ -110,6 +111,19 @@ namespace VGMGUI
                     s_StreamingType = value;
                     SettingsData["StatusBar"]["StreamingType"] = value.ToString();
                     StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("StreamingType"));
+                }
+            }
+        }
+        public static bool Size
+        {
+            get => s_Size;
+            set
+            {
+                if (value != s_Size)
+                {
+                    s_Size = value;
+                    SettingsData["StatusBar"]["Size"] = value.ToString();
+                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("Size"));
                 }
             }
         }

@@ -38,6 +38,7 @@
     <sys:String x:Key="ST_objectsSelectedOutOf">objets sélectionnés sur</sys:String>
     <sys:String x:Key="ST_objectSelectedOutOf">objet sélectionné sur</sys:String>
     <sys:String x:Key="ST_RAMUsage">Utilisation de la RAM :</sys:String>
+    <sys:String x:Key="ST_Size">Réinitialiser la taille des éléments et de la fenêtre</sys:String>
 
     <sys:String x:Key="ERR_InvalidDestination">La destination principale n'est pas valide.</sys:String>
     <sys:String x:Key="ERR_UnauthorizedCharacters">Caractères non autorisés : \ / : * ? " &lt; gt; |</sys:String>
@@ -49,6 +50,8 @@
     <sys:String x:Key="ERR_VLC">Erreur lors du chargement de VLC.&#xD;&#xA;Voulez-vous le télécharger ?</sys:String>
     <sys:String x:Key="ERR_FileNotFound">Fichier introuvable</sys:String>
     <sys:String x:Key="ERR_SameSourceAndDest">La destination est identique à la source.</sys:String>
+    <sys:String x:Key="ERR_Overflow">Certains fichiers n'ont pas été modifiés car cela entraînait un dépassement de la quantité maximale d'échantillons dans le fichier de sortie.</sys:String>
+    <sys:String x:Key="ERR_OverflowAdd">Les données de sortie par défaut n'ont pas été appliquées à certains fichiers car cela entraînait un dépassement de la quantité maximale d'échantillons dans le fichier de sortie.</sys:String>
 
     <sys:String x:Key="Q_Cancel">Voulez-vous vraiment annuler la conversion?</sys:String>
     <sys:String x:Key="Q_DeleteCanceled">Supprimer les fichiers annulés ?</sys:String>
@@ -57,13 +60,14 @@
     <sys:String x:Key="WW_DownloadOf">Téléchargement de</sys:String>
     <sys:String x:Key="WW_Decompression">Décompression...</sys:String>
     <sys:String x:Key="WW_Search">Recherche...</sys:String>
-    <sys:String x:Key="WW_VLCDownloaded">VLC Téléchargé.&#xD;&#xA;Il sera extrait à la fermeture de l'application.</sys:String>
+    <sys:String x:Key="WW_VLCDownloaded">VLC téléchargé.&#xD;&#xA;Il sera extrait à la fermeture de l'application.</sys:String>
     <sys:String x:Key="WW_VLCPluginsCaching">Mise en cache des plugins...</sys:String>
     <sys:String x:Key="WW_DownloadVLC">Téléchargement de VLC</sys:String>
     <sys:String x:Key="WW_VLCExtraction">Extracion de VLC</sys:String>
     <sys:String x:Key="WW_DownloadVGMStream">Téléchargement de VGMStream</sys:String>
     <sys:String x:Key="WW_FilesAdding">Ajout de fichiers</sys:String>
     <sys:String x:Key="WW_FilesAnalyze">Analyse de fichiers</sys:String>
+    <sys:String x:Key="WW_Error">Erreur</sys:String>
     <sys:String x:Key="WW_Errors">Erreurs</sys:String>
 
     <sys:String x:Key="INFO_ConversionCompleted">Conversion terminée</sys:String>
@@ -85,6 +89,7 @@
     <sys:String x:Key="CM_Skip">Ignorer</sys:String>
 
     <sys:String x:Key="SRCH_Case">Respecter la case</sys:String>
+    <sys:String x:Key="SRCH_No">Afficher uniquement / Masquer les éléments correspondants</sys:String>
 
     <sys:String x:Key="ABOUT_Credits">Crédits</sys:String>
     <sys:String x:Key="ABOUT_Icons">Icônes :</sys:String>
@@ -150,6 +155,7 @@
     <sys:String x:Key="TT_seconds">secondes</sys:String>
     <sys:String x:Key="TT_samples">échantillons</sys:String>
     <sys:String x:Key="TT_Error">Erreur</sys:String>
+    <sys:String x:Key="TT_Warning">Attention</sys:String>
     <sys:String x:Key="TT_UnhandledException">Exception non gérée</sys:String>
     <sys:String x:Key="TT_Yes">Oui</sys:String>
     <sys:String x:Key="TT_No">Non</sys:String>

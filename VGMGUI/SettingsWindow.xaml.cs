@@ -166,6 +166,9 @@ namespace VGMGUI
             if ((o = m_data["StatusBar"]["PreAnalyse"].ToBool()) != null) chbx_stsbar_preAnalyse.IsChecked = (bool)o;
             else chbx_stsbar_preAnalyse.IsChecked = true;
 
+            if ((o = m_data["StatusBar"]["Size"].ToBool()) != null) chbx_stsbar_size.IsChecked = (bool)o;
+            else chbx_stsbar_size.IsChecked = true;
+
             if ((o = m_data["Colors"]["Foreground"].ToColor()) != null) rect_foregroundcolor.Fill = new SolidColorBrush((Color)o);
             if ((o = m_data["Colors"]["Background"].ToColor()) != null) rect_backgroundcolor.Fill = new SolidColorBrush((Color)o);
             if ((o = m_data["Colors"]["Error"].ToColor()) != null) rect_errorcolor.Fill = new SolidColorBrush((Color)o);
@@ -199,6 +202,7 @@ namespace VGMGUI
             m_data["StatusBar"]["SearchDelay"] = "True";
             m_data["StatusBar"]["PreAnalyse"] = "True";
             m_data["StatusBar"]["StreamingType"] = "True";
+            m_data["StatusBar"]["Size"] = "True";
 
             m_data["Colors"]["Foreground"] = "#16A085";
             m_data["Colors"]["Background"] = "#727272";
@@ -294,6 +298,9 @@ namespace VGMGUI
                 case "chbx_stsbar_streamingType":
                     m_data["StatusBar"]["StreamingType"] = "True";
                     break;
+                case "chbx_stsbar_size":
+                    m_data["StatusBar"]["Size"] = "True";
+                    break;
             }
         }
 
@@ -338,6 +345,9 @@ namespace VGMGUI
                     break;
                 case "chbx_stsbar_streamingType":
                     m_data["StatusBar"]["StreamingType"] = "False";
+                    break;
+                case "chbx_stsbar_size":
+                    m_data["StatusBar"]["Size"] = "False";
                     break;
             }
         }
@@ -507,7 +517,7 @@ namespace VGMGUI
         {
             object o;
 
-            if ((o = data.Global["Language"]) != null) App.SetLanguage(o as string);
+            App.SetLanguage(data.Global["Language"] ?? "Auto");
             if ((o = data.Global["StopWhenDelete"].ToBool()) != null) StopPlayingWhenDeleteFile = (bool)o;
             if ((o = data.Global["PreAnalyse"].ToBool()) != null) PreAnalyse = (bool)o;
             if (startup && (o = data.Global["Preview"]) != null)
@@ -622,6 +632,7 @@ namespace VGMGUI
                 if ((o = data["Search"]["SearchFilter"]) != null) RestoreSearchFilter = o as string;
                 if ((o = data["Search"]["SearchColumn"].ToEnum<FileListColumn>()) != null) SearchColumn = (FileListColumn)o;
                 if ((o = data["Search"]["CaseSensitive"].ToBool()) != null) SearchCaseSensitive = ((bool)o);
+                if ((o = data["Search"]["No"].ToBool()) != null) SearchNo = ((bool)o);
             }
 
             if ((o = data["Multithreading"]["Conversion"].ToBool()) != null) ConversionMultithreading = (bool)o;
@@ -637,6 +648,7 @@ namespace VGMGUI
             if ((o = data["StatusBar"]["SearchDelay"].ToBool()) != null) StatusBar.SearchDelay = (bool)o;
             if ((o = data["StatusBar"]["PreAnalyse"].ToBool()) != null) StatusBar.PreAnalyse = (bool)o;
             if ((o = data["StatusBar"]["StreamingType"].ToBool()) != null) StatusBar.StreamingType = (bool)o;
+            if ((o = data["StatusBar"]["Size"].ToBool()) != null) StatusBar.Size = (bool)o;
 
             if ((o = data.Global["StreamingType"].ToEnum<StreamingType>()) != null) Settings.StreamingType = (StreamingType)o;
 

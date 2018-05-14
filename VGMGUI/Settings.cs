@@ -119,6 +119,7 @@ namespace VGMGUI
         private static FichierOutData m_defaultOutData;
         private static string s_searchFilter;
         private static bool s_searchCaseSensitive;
+        private static bool s_searchNo;
         private static FileListColumn s_searchColumn;
         private static int s_searchDelay = 250;
         private static bool s_preAnalyse = true;
@@ -186,6 +187,19 @@ namespace VGMGUI
             {
                 s_searchCaseSensitive = value;
                 StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("SearchCaseSensitive"));
+            }
+        }
+
+        /// <summary>
+        /// Indique si la recherche doit respecter la case.
+        /// </summary>
+        public static bool SearchNo
+        {
+            get => s_searchNo;
+            set
+            {
+                s_searchNo = value;
+                StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("SearchNo"));
             }
         }
 

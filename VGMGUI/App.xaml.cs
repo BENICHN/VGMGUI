@@ -87,7 +87,19 @@ namespace VGMGUI
         {
             if (culture == "Auto")
             {
-                culture = CultureInfo.InstalledUICulture.ToString();
+                var installedCulture = CultureInfo.InstalledUICulture.ToString();
+                switch(installedCulture.Split('-')[0])
+                {
+                    case "fr":
+                        culture = "fr-FR";
+                        break;
+                    case "en":
+                        culture = "en-US";
+                        break;
+                    default:
+                        culture = "en-US";
+                        break;
+                }
                 AutoCulture = true;
             }
             else AutoCulture = false;

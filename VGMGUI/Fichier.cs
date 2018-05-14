@@ -192,6 +192,8 @@ namespace VGMGUI
 
         public bool IsCancellable => !CancellationToken.IsCancellationRequested && (OriginalState == "FSTATE_Queued" || OriginalState == "FSTATE_Conversion" || OriginalState == "FSTATE_Suspended");
 
+        public static bool Overflow { get; set; }
+
         #region State
 
         /// <summary>
@@ -729,7 +731,17 @@ namespace VGMGUI
         }
         private bool m_startEndLoop = DefaultOutData.StartEndLoop ?? false;
 
-        public int SamplesToPlay => (int)(LoopStart + LoopCount * (StartEndLoop ? TotalSamples : LoopFlag ? LoopEnd - LoopStart : 0) + (FadeOut && (LoopFlag || StartEndLoop) ? (FadeTime + FadeDelay) * SampleRate : TotalSamples - LoopEnd));
+        public int SamplesToPlay
+        {
+            get
+            {
+                checked
+                {
+                    try { return (int)(LoopStart + LoopCount * (StartEndLoop ? TotalSamples : LoopFlag ? LoopEnd - LoopStart : 0) + (FadeOut && (LoopFlag || StartEndLoop) ? (FadeTime + FadeDelay) * SampleRate : TotalSamples - LoopEnd)); }
+                    catch { return -1; }
+                }
+            }
+        }
         public string SamplesToPlayString => HMSSamplesDisplay ?
             SamplesToPlay + " " + App.Str("TT_samples") + " (" + (SampleRate > 0 ? new Time((double)SamplesToPlay / SampleRate) : new Time(0)).ToString(SamplesDisplayMaxDec, true).TrimStart("00:", 1) + ")" :
             SamplesToPlay + " " + App.Str("TT_samples") + " (" + (SampleRate > 0 ? new Time((double)SamplesToPlay / SampleRate) : new Time(0)).TotalSeconds.ToString(SamplesDisplayMaxDec, true) + " " + App.Str("TT_seconds") + ")";

@@ -28,7 +28,7 @@
     <SolidColorBrush x:Key="ButtonBackgroundBrush">#FFFDFDFD</SolidColorBrush>
     <SolidColorBrush x:Key="ButtonBackgroundBrush_Disabled">#50FDFDFD</SolidColorBrush>
     <SolidColorBrush x:Key="ButtonMouseOverBrush">#FFE6F2FA</SolidColorBrush>
-    
+
     <SolidColorBrush x:Key="SBButtonMouseOverBrush">#FFD7D7D7</SolidColorBrush>
     <SolidColorBrush x:Key="SBButtonPressedBrush">#FFB5B5B5</SolidColorBrush>
 
@@ -529,47 +529,47 @@
             <Canvas.Resources/>
             <!--Unknown tag: metadata-->
             <!--Unknown tag: sodipodi:namedview-->
-                <Path  Fill="White">
-                    <Path.Data>
-                        <PathGeometry Figures="M5.5 12.5v-12h6.4l3.6 3.7v8.3H5.5z" FillRule="NonZero"/>
-                    </Path.Data>
-                </Path>
-                <Path  Fill="{StaticResource RadioButtonForeground}">
-                    <Path.Data>
-                        <PathGeometry Figures="M11.7 1L15 4.4V12H6V1H11.7 M12.1 0H5v13h11V4L12.1 0z" FillRule="NonZero"/>
-                    </Path.Data>
-                </Path>
-                <Path  Fill="White">
-                    <Path.Data>
-                        <PathGeometry Figures="M11.5 4.5v-4h0.3l3.7 3.7v0.3H11.5z" FillRule="NonZero"/>
-                    </Path.Data>
-                </Path>
-                <Path  Fill="{StaticResource RadioButtonForeground}">
-                    <Path.Data>
-                        <PathGeometry Figures="M12 1.4L14.6 4H12V1.4 M12 0h-1v5h5V4L12 0z" FillRule="NonZero"/>
-                    </Path.Data>
-                </Path>
-                <Path  Fill="White">
-                    <Path.Data>
-                        <PathGeometry Figures="M0.5 15.5v-12h6.4l3.6 3.7v8.3H0.5z" FillRule="NonZero"/>
-                    </Path.Data>
-                </Path>
-                <Path  Fill="{StaticResource RadioButtonForeground}">
-                    <Path.Data>
-                        <PathGeometry Figures="M6.7 4L10 7.4V15H1V4H6.7 M7.1 3H0v13h11V7L7.1 3z" FillRule="NonZero"/>
-                    </Path.Data>
-                </Path>
-                <Path  Fill="White">
-                    <Path.Data>
-                        <PathGeometry Figures="M6.5 7.5v-4h0.3l3.7 3.7v0.3H6.5z" FillRule="NonZero"/>
-                    </Path.Data>
-                </Path>
-                <Path  Fill="{StaticResource RadioButtonForeground}">
-                    <Path.Data>
-                        <PathGeometry Figures="M7 4.4L9.6 7H7V4.4 M7 3H6v5h5V7L7 3z" FillRule="NonZero"/>
-                    </Path.Data>
-                </Path>
-            </Canvas>
+            <Path  Fill="White">
+                <Path.Data>
+                    <PathGeometry Figures="M5.5 12.5v-12h6.4l3.6 3.7v8.3H5.5z" FillRule="NonZero"/>
+                </Path.Data>
+            </Path>
+            <Path  Fill="{StaticResource RadioButtonForeground}">
+                <Path.Data>
+                    <PathGeometry Figures="M11.7 1L15 4.4V12H6V1H11.7 M12.1 0H5v13h11V4L12.1 0z" FillRule="NonZero"/>
+                </Path.Data>
+            </Path>
+            <Path  Fill="White">
+                <Path.Data>
+                    <PathGeometry Figures="M11.5 4.5v-4h0.3l3.7 3.7v0.3H11.5z" FillRule="NonZero"/>
+                </Path.Data>
+            </Path>
+            <Path  Fill="{StaticResource RadioButtonForeground}">
+                <Path.Data>
+                    <PathGeometry Figures="M12 1.4L14.6 4H12V1.4 M12 0h-1v5h5V4L12 0z" FillRule="NonZero"/>
+                </Path.Data>
+            </Path>
+            <Path  Fill="White">
+                <Path.Data>
+                    <PathGeometry Figures="M0.5 15.5v-12h6.4l3.6 3.7v8.3H0.5z" FillRule="NonZero"/>
+                </Path.Data>
+            </Path>
+            <Path  Fill="{StaticResource RadioButtonForeground}">
+                <Path.Data>
+                    <PathGeometry Figures="M6.7 4L10 7.4V15H1V4H6.7 M7.1 3H0v13h11V7L7.1 3z" FillRule="NonZero"/>
+                </Path.Data>
+            </Path>
+            <Path  Fill="White">
+                <Path.Data>
+                    <PathGeometry Figures="M6.5 7.5v-4h0.3l3.7 3.7v0.3H6.5z" FillRule="NonZero"/>
+                </Path.Data>
+            </Path>
+            <Path  Fill="{StaticResource RadioButtonForeground}">
+                <Path.Data>
+                    <PathGeometry Figures="M7 4.4L9.6 7H7V4.4 M7 3H6v5h5V7L7 3z" FillRule="NonZero"/>
+                </Path.Data>
+            </Path>
+        </Canvas>
     </Viewbox>
     <Viewbox x:Key="Paste" x:Shared="False" Stretch="Uniform" Height="16">
         <Canvas  Canvas.Left="0" Canvas.Top="0" Width="16" Height="16">
@@ -579,19 +579,19 @@
             <Canvas.Resources/>
             <!--Unknown tag: metadata-->
             <!--Unknown tag: sodipodi:namedview-->
-                <Path  Fill="{StaticResource RadioButtonForeground}">
-                    <Path.Data>
-                        <PathGeometry Figures="M7.4 0C6.7 0 6.1 0.5 5.9 1.2H1.5v13.6h4.7V16h8.3V6.5h-1.2V1.2H8.9C8.7 0.5 8.2 0 7.4 0z M7.4 1.2   C7.7 1.2 8 1.4 8 1.8v0.6h1.8v1.2H5V2.4h1.8V1.8C6.8 1.4 7.1 1.2 7.4 1.2z M2.7 2.4h1.2v2.4H11V2.4h1.2v4.1H6.2v7.1H2.7V2.4z    M7.4 7.7h5.9v7.1H7.4V7.7z" FillRule="NonZero"/>
-                    </Path.Data>
-                </Path>
-            </Canvas>
+            <Path  Fill="{StaticResource RadioButtonForeground}">
+                <Path.Data>
+                    <PathGeometry Figures="M7.4 0C6.7 0 6.1 0.5 5.9 1.2H1.5v13.6h4.7V16h8.3V6.5h-1.2V1.2H8.9C8.7 0.5 8.2 0 7.4 0z M7.4 1.2   C7.7 1.2 8 1.4 8 1.8v0.6h1.8v1.2H5V2.4h1.8V1.8C6.8 1.4 7.1 1.2 7.4 1.2z M2.7 2.4h1.2v2.4H11V2.4h1.2v4.1H6.2v7.1H2.7V2.4z    M7.4 7.7h5.9v7.1H7.4V7.7z" FillRule="NonZero"/>
+                </Path.Data>
+            </Path>
+        </Canvas>
     </Viewbox>
     <Viewbox x:Key="Check" x:Shared="False" Stretch="Uniform" Height="16">
         <Canvas  Canvas.Left="0" Canvas.Top="0" Width="500" Height="500">
             <Polygon Points="170.4,437 0,266.6 44.4,222.1 170.4,348.1 455.6,63 500,107.4  "  FillRule="NonZero" Fill="{StaticResource RadioButtonForeground}"/>
         </Canvas>
     </Viewbox>
-    
+
     <Viewbox x:Key="RAM" x:Shared="False" Stretch="Uniform" Height="14">
         <Canvas  Canvas.Left="0" Canvas.Top="0" Width="500" Height="500">
             <Canvas.RenderTransform>
@@ -743,6 +743,23 @@
                 <Path Fill="{StaticResource StatusBarIconBrush}">
                     <Path.Data>
                         <PathGeometry Figures="M57.7 0v500h384.6V126.8l-5.4-6L321.5 5.4l-6-5.4H57.7z M96.2 38.5h192.3v115.4h115.4v307.7H96.2V38.5z    M326.9 66.1l49.3 49.3h-49.3V66.1z" FillRule="NonZero"/>
+                    </Path.Data>
+                </Path>
+            </Canvas>
+        </Canvas>
+    </Viewbox>
+    <Viewbox x:Key="Size" x:Shared="False" Stretch="Uniform" Height="14">
+        <Canvas Canvas.Left="0" Canvas.Top="0" Width="500" Height="500">
+            <Canvas.RenderTransform>
+                <TranslateTransform X="0" Y="0"/>
+            </Canvas.RenderTransform>
+            <Canvas.Resources/>
+            <!--Unknown tag: metadata-->
+            <!--Unknown tag: sodipodi:namedview-->
+            <Canvas>
+                <Path Fill="{StaticResource StatusBarIconBrush}">
+                    <Path.Data>
+                        <PathGeometry Figures="M424.2 261.4c0 96.2-78 174.2-174.2 174.2s-174.2-78-174.2-174.2S153.8 87.1 250 87.1   c24.2 0 47.2 5.2 68.2 14.1l-54.5 58.3l163.2-5.4L413 0l-48.2 51.4c-34-18.7-73.2-29.6-114.9-29.6   c-132.3 0-239.6 107.3-239.6 239.6S117.7 500.9 250 500.9s239.6-107.3 239.6-239.6H424.2z" FillRule="NonZero"/>
                     </Path.Data>
                 </Path>
             </Canvas>
@@ -1098,7 +1115,7 @@
             </Canvas>
         </Canvas>
     </Viewbox>
-    
+
     <Viewbox x:Key="Close" x:Shared="False" Stretch="Uniform" Height="12">
         <Canvas  Canvas.Left="0" Canvas.Top="0" Width="500" Height="500">
             <Canvas.RenderTransform>
@@ -1885,6 +1902,10 @@
         </Setter>
     </Style>
     <Style x:Key="{x:Type ToggleButton}" TargetType="{x:Type ToggleButton}">
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="OverridesDefaultStyle" Value="False"/>
+        <Setter Property="ToolTipService.InitialShowDelay" Value="1000"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="Background" Value="White"/>
         <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
         <Setter Property="Padding" Value="3"/>
@@ -1894,9 +1915,9 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
                     <Border x:Name="Background" Background="{TemplateBinding Background}" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}">
-                            <ContentPresenter x:Name="contentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
+                        <ContentPresenter x:Name="contentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" Margin="{TemplateBinding Padding}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Background" Property="Background" Value="{StaticResource HighlightBackground_Gray}"/>
                         </Trigger>
@@ -1932,6 +1953,9 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+    <Style x:Key="{x:Type TextBlock}" TargetType="{x:Type TextBlock}">
+        <Setter Property="ToolTipService.InitialShowDelay" Value="1000"/>
     </Style>
     <Style x:Key="{x:Type TextBox}" TargetType="{x:Type TextBox}">
         <Setter Property="SnapsToDevicePixels" Value="True"/>
@@ -2133,19 +2157,22 @@
         <Setter Property="Background" Value="White"/>
         <Setter Property="BorderBrush" Value="{StaticResource ToolTipBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="4"/>
         <Setter Property="HasDropShadow" Value="True"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToolTip">
                     <Border Name="Border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" Margin="5">
-                        <Border.Effect>
-                            <DropShadowEffect Color="{TemplateBinding BorderBrush}" BlurRadius="10" ShadowDepth="0" Opacity="0.2" Direction="0" RenderingBias="Quality"/>
-                        </Border.Effect>
-                        <ContentPresenter Margin="4" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="HasDropShadow" Value="True">
                             <Setter TargetName="Border" Property="SnapsToDevicePixels" Value="true"/>
+                            <Setter TargetName="Border" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="{TemplateBinding BorderBrush}" BlurRadius="10" ShadowDepth="0" Opacity="0.2" Direction="0" RenderingBias="Quality"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.313"/>
@@ -2720,7 +2747,7 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-    </Style>    
+    </Style>
     <ControlTemplate x:Key="HorizontalSlider" TargetType="{x:Type Slider}">
         <Grid>
             <Grid.RowDefinitions>
@@ -2758,7 +2785,7 @@
                 <Setter Property="Opacity" Value="0.313"/>
             </Trigger>
         </ControlTemplate.Triggers>
-    </ControlTemplate>    
+    </ControlTemplate>
     <ControlTemplate x:Key="VerticalSlider" TargetType="{x:Type Slider}">
         <Grid>
             <Grid.ColumnDefinitions>
@@ -2796,7 +2823,7 @@
                 <Setter Property="Opacity" Value="0.313"/>
             </Trigger>
         </ControlTemplate.Triggers>
-    </ControlTemplate>    
+    </ControlTemplate>
     <Style TargetType="{x:Type Slider}">
         <Setter Property="SnapsToDevicePixels" Value="true"/>
         <Setter Property="OverridesDefaultStyle" Value="true"/>

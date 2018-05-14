@@ -277,37 +277,83 @@ namespace VGMGUI
         void WriteInfo(MediaInfos info)
         {
             object value;
+            bool overflow = false;
 
             switch (info)
             {
                 case MediaInfos.LoopCount:
                     if ((value = LoopCountBox.Text.ToInt()) != null)
                     {
-                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems) fichier.LoopCount = (int)value;
+                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems)
+                        {
+                            int oldValue = fichier.LoopCount;
+                            fichier.LoopCount = (int)value;
+                            if (fichier.SamplesToPlay == -1)
+                            {
+                                fichier.LoopCount = oldValue;
+                                overflow = true;
+                            }
+                        }
                     }
                     break;
                 case MediaInfos.StartEndLoop:
                     if ((value = StartEndLoopCheckBox.IsChecked) != null)
                     {
-                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems) fichier.StartEndLoop = (bool)value;
+                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems)
+                        {
+                            bool oldValue = fichier.StartEndLoop;
+                            fichier.StartEndLoop = (bool)value;
+                            if (fichier.SamplesToPlay == -1)
+                            {
+                                fichier.StartEndLoop = oldValue;
+                                overflow = true;
+                            }
+                        }
                     }
                     break;
                 case MediaInfos.FadeOut:
                     if ((value = FadeOutCheckBox.IsChecked) != null)
                     {
-                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems) fichier.FadeOut = (bool)value;
+                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems)
+                        {
+                            bool oldValue = fichier.FadeOut;
+                            fichier.FadeOut = (bool)value;
+                            if (fichier.SamplesToPlay == -1)
+                            {
+                                fichier.FadeOut = oldValue;
+                                overflow = true;
+                            }
+                        }
                     }
                     break;
                 case MediaInfos.FadeDelay:
                     if ((value = FadeDelayBox.Text.ToDouble()) != null)
                     {
-                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems) fichier.FadeDelay = (double)value;
+                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems)
+                        {
+                            double oldValue = fichier.FadeDelay;
+                            fichier.FadeDelay = (double)value;
+                            if (fichier.SamplesToPlay == -1)
+                            {
+                                fichier.FadeDelay = oldValue;
+                                overflow = true;
+                            }
+                        }
                     }
                     break;
                 case MediaInfos.FadeTime:
                     if ((value = FadeTimeBox.Text.ToDouble()) != null)
                     {
-                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems) fichier.FadeTime = (double)value;
+                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems)
+                        {
+                            double oldValue = fichier.FadeTime;
+                            fichier.FadeTime = (double)value;
+                            if (fichier.SamplesToPlay == -1)
+                            {
+                                fichier.FadeTime = oldValue;
+                                overflow = true;
+                            }
+                        }
                     }
                     break;
                 case MediaInfos.Destination:
@@ -323,27 +369,72 @@ namespace VGMGUI
                     //LoopCount=====================================================================
                     if ((value = LoopCountBox.Text.ToInt()) != null)
                     {
-                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems) fichier.LoopCount = (int)value;
+                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems)
+                        {
+                            int oldValue = fichier.LoopCount;
+                            fichier.LoopCount = (int)value;
+                            if (fichier.SamplesToPlay == -1)
+                            {
+                                fichier.LoopCount = oldValue;
+                                overflow = true;
+                            }
+                        }
                     }
                     //StartEndLoop=====================================================================
                     if ((value = StartEndLoopCheckBox.IsChecked) != null)
                     {
-                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems) fichier.StartEndLoop = (bool)value;
+                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems)
+                        {
+                            bool oldValue = fichier.StartEndLoop;
+                            fichier.StartEndLoop = (bool)value;
+                            if (fichier.SamplesToPlay == -1)
+                            {
+                                fichier.StartEndLoop = oldValue;
+                                overflow = true;
+                            }
+                        }
                     }
                     //FadeOut=====================================================================
                     if ((value = FadeOutCheckBox.IsChecked) != null)
                     {
-                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems) fichier.FadeOut = (bool)value;
+                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems)
+                        {
+                            bool oldValue = fichier.FadeOut;
+                            fichier.FadeOut = (bool)value;
+                            if (fichier.SamplesToPlay == -1)
+                            {
+                                fichier.FadeOut = oldValue;
+                                overflow = true;
+                            }
+                        }
                     }
                     //FadeDelay=====================================================================
                     if ((value = FadeDelayBox.Text.ToDouble()) != null)
                     {
-                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems) fichier.FadeDelay = (double)value;
+                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems)
+                        {
+                            double oldValue = fichier.FadeDelay;
+                            fichier.FadeDelay = (double)value;
+                            if (fichier.SamplesToPlay == -1)
+                            {
+                                fichier.FadeDelay = oldValue;
+                                overflow = true;
+                            }
+                        }
                     }
                     //FadeTime=====================================================================
                     if ((value = FadeTimeBox.Text.ToDouble()) != null)
                     {
-                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems) fichier.FadeTime = (double)value;
+                        foreach (Fichier fichier in tasklist.FILEList.SelectedItems)
+                        {
+                            double oldValue = fichier.FadeTime;
+                            fichier.FadeTime = (double)value;
+                            if (fichier.SamplesToPlay == -1)
+                            {
+                                fichier.FadeTime = oldValue;
+                                overflow = true;
+                            }
+                        }
                     }
                     //Destination=====================================================================
                     value = null;
@@ -355,6 +446,8 @@ namespace VGMGUI
                     }
                     break;
             }
+
+            if (overflow) MessageBox.Show(App.Str("ERR_Overflow"), App.Str("TT_Warning"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
         /// <summary>

@@ -1067,6 +1067,7 @@ namespace VGMGUI
             SettingsData["Search"]["SearchFilter"] = RestoreSearchFilter;
             SettingsData["Search"]["SearchColumn"] = SearchColumn.ToString();
             SettingsData["Search"]["CaseSensitive"] = SearchCaseSensitive.ToString();
+            SettingsData["Search"]["No"] = SearchNo.ToString();
 
             await TryWriteSettings();
 
@@ -1232,6 +1233,36 @@ namespace VGMGUI
                     break;
             }
             UpdateStatusBar(streamingType: true);
+        }
+
+        private void SizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            Height = 675;
+            Width = 1100;
+
+            var columns = (tasklist.FILEList.View as GridView).Columns;
+
+            columns[0].Width = 27;
+            columns[1].Width = 200;
+            columns[2].Width = 112;
+            columns[3].Width = 80;
+            columns[4].Width = 200;
+            columns[5].Width = 200;
+            columns[6].Width = 70;
+            columns[7].Width = 70;
+            columns[8].Width = 60;
+            columns[9].Width = 50;
+            columns[10].Width = 180;
+            columns[11].Width = 90;
+            columns[12].Width = 300;
+            columns[13].Width = 70;
+            columns[14].Width = 150;
+
+            TopGrid.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
+            TopGrid.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
+
+            RightGrid.RowDefinitions[0].Height = new GridLength(2, GridUnitType.Star);
+            RightGrid.RowDefinitions[1].Height = new GridLength(1.27, GridUnitType.Star);
         }
 
         #region AudioPlayer

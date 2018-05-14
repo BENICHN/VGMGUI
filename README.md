@@ -1,4 +1,4 @@
-# VGMGUI
+﻿# VGMGUI
 A graphic interface of vgmstream
 
 ![Main interface](https://raw.githubusercontent.com/BenNatNB/VGMGUI/master/VGMGUI/Documentation/EN/VGMGUI.png)
@@ -39,4 +39,15 @@ A graphic interface of vgmstream
    - Files with spaces in their output path can now be converted
    - Fixed bug that prevents downloading another version of VLC than 2.2.8
    - Improved pause and cancel features for conversion, scanning and playback
+   - Other...
+### 1.2.1
+ - Enable the [ ! ] button in the searchbox to hide files that contains the entered keywords instead of hiding the others (reverse search)
+ - Tooltips added to list items to see all data they contain
+ - The new button in the status bar allows you to resize elements and window as default
+ - Bug fixes and stability improvements
+   - Replaced ⬤ character by an ellipse int the status bar because some devices does not support this symbol
+   - The temporary file created when downloading VLC is no longer deleted when the application is closed, which makes it possible to extract VLC
+   - The output sample quantity is now checked (error if this number is too big for an int) for each file when changing the output settings
+   - Fixed "Rise of..." and "Descend of..." commands when the number exceeds the maximal or minimal index of the list
+   - Fixed error when clicking outside a SwitchableTextBox with `<Multiple>`
    - Other...
