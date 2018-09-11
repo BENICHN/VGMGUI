@@ -194,11 +194,11 @@ namespace VGMGUI
 
     public class AskingFile : INotifyPropertyChanged
     {
-        public AskingFile(Fichier file = null) => File = file;
+        public AskingFile(Fichier fichier = null) => Fichier = fichier;
 
-        public Fichier File { get; set; }
+        public Fichier Fichier { get; set; }
 
-        public string Name => File.FinalDestination;
+        public string Name => Fichier.FinalDestination;
 
         public FileActions Action => Overwrite ? FileActions.Overwrite : Number ? FileActions.Number : FileActions.Ignore;
 
@@ -227,6 +227,8 @@ namespace VGMGUI
         public event PropertyChangedEventHandler PropertyChanged;
 
         public void NotifyPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        public static implicit operator AskingFile(Fichier fichier) => new AskingFile(fichier);
     }
 
     public enum FileActions { Overwrite, Number, Ignore }

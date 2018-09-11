@@ -1,8 +1,10 @@
-﻿using System;
+﻿using BenLib;
+using BenLib.WPF;
+using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -10,14 +12,15 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Threading;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Shell;
-using System.IO;
-using BenLib;
-using BenLib.WPF;
+using System.Windows.Threading;
 using Vlc.DotNet.Core.Interops.Signatures;
-using Clipboard = System.Windows.Forms.Clipboard;
+using Z.Linq;
+using static BenLib.Animating;
 using static VGMGUI.Settings;
+using Clipboard = System.Windows.Forms.Clipboard;
 
 namespace VGMGUI
 {
@@ -28,7 +31,7 @@ namespace VGMGUI
     {
         #region Champs & Propriétés
 
-        DispatcherTimer RAMTimer = new DispatcherTimer() { Interval = new TimeSpan(0, 0, 0, 1) };
+        private DispatcherTimer RAMTimer = new DispatcherTimer() { Interval = new TimeSpan(0, 0, 0, 1) };
 
         #region Playing
 
@@ -54,6 +57,9 @@ namespace VGMGUI
         public bool Preconversion { get => m_preconversion; set => m_preconversion = MainProgress.IsIndeterminate = value; }
         private bool m_preconversion;
 
+        private System.Windows.Shapes.Path[] m_conversionIcon;
+        private int m_conversionErrorsCount;
+
         /// <summary>
         /// Annule la conversion.
         /// </summary>
@@ -67,7 +73,7 @@ namespace VGMGUI
         /// <summary>
         /// Contient les fichiers cochés et valides à convertir.
         /// </summary>
-        public List<Fichier> FilesToConvertTMP { get; set; } = new List<Fichier>();
+        public List<Fichier> FilesToConvertTMP { get; set; }
 
         /// <summary>
         /// Contient les fichiers cochés et valides à convertir.
@@ -77,7 +83,7 @@ namespace VGMGUI
         /// <summary>
         /// Contient les fichiers nécessitant une demande (écraser/ignorer/numéroter)
         /// </summary>
-        public ObservableCollection<AskingFile> FilesToAsk = new ObservableCollection<AskingFile>();
+        public IEnumerable<AskingFile> FilesToAsk { get; set; }
 
         /// <summary>
         /// Indique si une conversion est en cours.
@@ -93,6 +99,16 @@ namespace VGMGUI
         /// Nombre de fichiers convertis ou à convertir.
         /// </summary>
         public int ConversionCount { get; set; }
+
+        public int ConversionErrorsCount
+        {
+            get => m_conversionErrorsCount;
+            set
+            {
+                m_conversionErrorsCount = value;
+                conversionErrorsLabel.Content = value > 0 ? $"|  {value} {App.Str(value == 1 ? "WW_Error" : "WW_Errors")}" : string.Empty;
+            }
+        }
 
         /// <summary>
         /// Nombre d'instances de <see cref="ConvertFile"/> en cours.
@@ -112,7 +128,7 @@ namespace VGMGUI
         {
             InitializeComponent();
 
-            ApplySettings(SettingsData.Clone() as IniParser.Model.IniData, true);
+            ApplySettings((IniParser.Model.IniData)SettingsData.Clone(), true);
 
             DataContext = this;
 
@@ -168,88 +184,86 @@ namespace VGMGUI
 
         #region Méthodes
 
-        /// <summary>
-        /// Obtient le chemin du futur fichier converti.
-        /// </summary>
-        /// <param name="fichier">Le fichier dont on doit obtenir le chemin.</param>
-        /// <returns>Le chemin du futur fichier.</returns>
-        string GetOrCreateDestinationFile(Fichier fichier, bool showexception = false)
+        private void SetFinalDestinations(IEnumerable<Fichier> collection, string CBText, string TBText)
         {
-            try
+            void CheckFolder(string folder)
             {
-                if (!File.Exists(fichier.Path))
-                {
-                    fichier.SetInvalid("ERR_FileNotFound");
-                    return null;
-                }
-                string destination = String.Empty;
-                if (fichier.Destination == App.Str("DEST_SourceFolder")) destination = Path.GetDirectoryName(fichier.Path);
-                else if (fichier.Destination == App.Str("DEST_Principal"))
-                {
-                    if (MainDestCB.Text == App.Str("DEST_SourceFolder")) destination = Path.Combine(Path.GetDirectoryName(fichier.Path), MainDestTB.Text);
-                    else destination = Path.Combine(MainDestCB.Text, MainDestTB.Text);
-                }
-                else destination = fichier.Destination;
-                if (!Directory.Exists(destination)) Directory.CreateDirectory(destination);
-                else if (!IO.WriteAccess(destination)) throw new UnauthorizedAccessException(App.Str("ERR_UnauthorizedAccess1") + destination + App.Str("ERR_UnauthorizedAccess2"));
-                destination = Path.Combine(destination, Path.GetFileNameWithoutExtension(fichier.Path)) + ".wav";
-                if (FilesToConvertTMP.Any(f => f.FinalDestination.Equals(destination))) destination = Number(destination, FilesToConvertTMP);
-                if (File.Exists(destination)) FilesToAsk.Add(new AskingFile(fichier));
-                return destination;
+                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+                else if (!IO.WriteAccess(folder)) throw new UnauthorizedAccessException(App.Str("ERR_UnauthorizedAccess1") + folder + App.Str("ERR_UnauthorizedAccess2"));
             }
-            catch (Exception ex)
+
+            IEnumerable<Fichier> GetFilesToConvertTMP()
             {
-                if (showexception) MessageBox.Show(ex.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-                else fichier.SetInvalid(ex.Message);
-                return null;
+                IEnumerable<Fichier> AddToFilesToConvertTMP(IEnumerable<Fichier> enumerable, string destFolder)
+                {
+                    CheckFolder(destFolder);
+                    foreach (var fichier in enumerable)
+                    {
+                        fichier.FinalDestination = Path.Combine(destFolder, Path.GetFileNameWithoutExtension(fichier.Path)) + ".wav";
+                        Dispatcher.Invoke(() => fichier.SetValid());
+                        yield return fichier;
+                    }
+                }
+
+                foreach (var group in collection.Where(fichier => File.Exists(fichier.Path)).GroupBy(fichier => fichier.Destination))
+                {
+                    switch (App.Res(group.Key))
+                    {
+                        case "DEST_Principal":
+                            {
+                                if (CBText == App.Str("DEST_SourceFolder"))
+                                {
+                                    var pgs = group.GroupBy(fichier => fichier.Folder);
+                                    foreach (var fichier in pgs.SelectMany(grp => AddToFilesToConvertTMP(grp, Path.Combine(grp.Key, TBText)))) yield return fichier;
+                                }
+                                else foreach (var fichier in AddToFilesToConvertTMP(group, Path.Combine(CBText, TBText))) yield return fichier;
+                            }
+                            break;
+                        case "DEST_SourceFolder":
+                            {
+                                var gs = group.GroupBy(fichier => fichier.Folder);
+                                foreach (var fichier in gs.SelectMany(grp => AddToFilesToConvertTMP(grp, grp.Key))) yield return fichier;
+                            }
+                            break;
+                        default:
+                            foreach (var fichier in AddToFilesToConvertTMP(group, group.Key)) yield return fichier;
+                            break;
+                    }
+                }
             }
+
+            var ftc = GetFilesToConvertTMP().ToList();
+
+            FilesToAsk = ftc.GroupBy(fichier => fichier.FinalDestination).Where(group =>
+            {
+                var enumerator = group.GetEnumerator();
+                enumerator.MoveNext();
+                var firstFile = enumerator.Current;
+
+                if (!enumerator.MoveNext()) return File.Exists(group.Key);
+                else
+                {
+                    firstFile.ToNumber = true;
+                    do { enumerator.Current.ToNumber = true; } while (enumerator.MoveNext());
+                    return false;
+                }
+            }).Select(group => new AskingFile(group.First()));
+
+            foreach (var fichier in collection.Except(ftc)) Dispatcher.Invoke(() => fichier.SetInvalid("ERR_FileNotFound"));
+
+            FilesToConvertTMP = ftc;
         }
 
-        /// <summary>
-        /// Obtient le chemin du futur fichier converti.
-        /// </summary>
-        /// <param name="fichier">Le fichier dont on doit obtenir le chemin.</param>
-        /// <returns>Le chemin du futur fichier.</returns>
-        Task<string> GetOrCreateDestinationFileAsync(Fichier fichier, bool showexception = false)
+        private Task SetFinalDestinationsAsync(IEnumerable<Fichier> collection)
         {
             string CBText = MainDestCB.Text, TBText = MainDestTB.Text;
-            return Task.Run(() =>
-            {
-                try
-                {
-                    if (!File.Exists(fichier.Path))
-                    {
-                        Dispatcher.Invoke(() => fichier.SetInvalid("ERR_FileNotFound"));
-                        return null;
-                    }
-                    string destination = String.Empty;
-                    if (fichier.Destination == App.Str("DEST_SourceFolder")) destination = Path.GetDirectoryName(fichier.Path);
-                    else if (fichier.Destination == App.Str("DEST_Principal"))
-                    {
-                        if (CBText == App.Str("DEST_SourceFolder")) destination = Path.Combine(Path.GetDirectoryName(fichier.Path), TBText);
-                        else destination = Path.Combine(CBText, TBText);
-                    }
-                    else destination = fichier.Destination;
-                    if (!Directory.Exists(destination)) Directory.CreateDirectory(destination);
-                    else if (!IO.WriteAccess(destination)) throw new UnauthorizedAccessException(App.Str("ERR_UnauthorizedAccess1") + destination + App.Str("ERR_UnauthorizedAccess2"));
-                    destination = Path.Combine(destination, Path.GetFileNameWithoutExtension(fichier.Path)) + ".wav";
-                    if (FilesToConvertTMP.Any(f => f.FinalDestination.Equals(destination))) destination = Number(destination, FilesToConvertTMP);
-                    if (File.Exists(destination)) FilesToAsk.Add(new AskingFile(fichier));
-                    return destination;
-                }
-                catch (Exception ex)
-                {
-                    if (showexception) MessageBox.Show(ex.Message, App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-                    else Dispatcher.Invoke(() => fichier.SetInvalid(ex.Message));
-                    return null;
-                }
-            });
+            return Task.Run(() => SetFinalDestinations(collection, CBText, TBText));
         }
 
         /// <summary>
         /// Ouvre une <see cref="SettingsWindow"/> et applique les paramètres retournés.
         /// </summary>
-        void OpenSettingsWindow()
+        private void OpenSettingsWindow()
         {
             if (new SettingsWindow().ShowDialog()) ApplySettings(SettingsData);
         }
@@ -289,7 +303,7 @@ namespace VGMGUI
         /// <summary>
         /// Effectue certaines actions en fonction de des arguments de l'application.
         /// </summary>
-        async Task ApplyArgs()
+        private async Task ApplyArgs()
         {
             bool? playout = null;
             bool playnext = false;
@@ -303,12 +317,10 @@ namespace VGMGUI
 
             Dictionary<string, FichierOutData> FilesToAdd = new Dictionary<string, FichierOutData>();
 
-            async void playfilecallback(object sender, EventArgs e)
+            async void PlayFileCallback(object sender, EventArgs e)
             {
-                var ftp = tasklist.Files.Where(f => f.Path == filetoplay).ToList();
-                if (ftp.Count > 0) await PlayFile(ftp[0], playout);
-
-                tasklist.AddingCompleted -= playfilecallback;
+                await PlayFile(tasklist.Files.FirstOrDefault(f => f.Path == filetoplay), playout);
+                tasklist.AddingCompleted -= PlayFileCallback;
             }
 
             foreach (string arg in App.Args)
@@ -406,19 +418,21 @@ namespace VGMGUI
             }
 
             if (FilesToAdd.Count > 0) await tasklist.AddFiles(FilesToAdd);
-            if (filetoplay != null) tasklist.AddingCompleted += playfilecallback;
+            if (filetoplay != null) tasklist.AddingCompleted += PlayFileCallback;
         }
 
         /// <summary>
         /// Modifie certains éléments graphiques en fonction de <see cref="Keyboard.Modifiers"/>.
         /// </summary>
-        void ApplyKeyboardModifiers()
+        private void ApplyKeyboardModifiers()
         {
             switch (Keyboard.Modifiers)
             {
                 case ModifierKeys.Alt:
                     AP.UpButton.SetResourceReference(ToolTipProperty, "AP_MashUp");
                     AP.DownButton.SetResourceReference(ToolTipProperty, "AP_MashDown");
+                    AP.RemButton.SetResourceReference(ToolTipProperty, "AP_DeleteDFiles");
+                    AP.AddButton.SetResourceReference(ToolTipProperty, "AP_AddFilesSN");
                     break;
                 case ModifierKeys.Control:
                     AP.UpButton.SetResourceReference(ToolTipProperty, "AP_CustomUp");
@@ -441,10 +455,18 @@ namespace VGMGUI
                 case ModifierKeys.Alt | ModifierKeys.Control:
                     AP.UpButton.SetResourceReference(ToolTipProperty, "AP_CustomUpMash");
                     AP.DownButton.SetResourceReference(ToolTipProperty, "AP_CustomDownMash");
+                    AP.AddButton.SetResourceReference(ToolTipProperty, "AP_AddFoldersSN");
                     break;
                 case ModifierKeys.Alt | ModifierKeys.Shift:
                     AP.UpButton.SetResourceReference(ToolTipProperty, "AP_FirstMash");
                     AP.DownButton.SetResourceReference(ToolTipProperty, "AP_LastMash");
+                    AP.RemButton.SetResourceReference(ToolTipProperty, "AP_DeleteSNFiles");
+                    break;
+                case ModifierKeys.Control | ModifierKeys.Shift:
+                    AP.AddButton.SetResourceReference(ToolTipProperty, "AP_AddFolders");
+                    break;
+                case ModifierKeys.Alt | ModifierKeys.Control | ModifierKeys.Shift:
+                    AP.AddButton.SetResourceReference(ToolTipProperty, "AP_AddFoldersSN");
                     break;
                 default:
                     AP.UpButton.SetResourceReference(ToolTipProperty, "AP_Up");
@@ -473,7 +495,7 @@ namespace VGMGUI
         /// <param name="Out">true si la sortie doit être lue; false si l'entrée doit être lue; null pour utiliser les boutons "Apperçu dans le lecteur".</param>
         /// <param name="cancellationToken">Jeton d'annulation qui peut être utilisé par d'autres objets ou threads pour être informés de l'annulation.</param>
         /// <returns>Le Stream contenant les données audio.</returns>
-        async Task<Stream> VGFileToStream(Fichier fichier, bool? Out = null)
+        private async Task<Stream> VGFileToStream(Fichier fichier, bool? Out = null)
         {
             var result = await VGMStream.GetStreamWithOtherFormats(fichier, Settings.StreamingType == StreamingType.Cache && App.VLCVersion.Major >= 3, Out ?? (bool)ALSRadioButton.IsChecked, PlayingCTS.Token);
 
@@ -483,7 +505,7 @@ namespace VGMGUI
             }
             else if (!fichier.Analyzed)
             {
-                await tasklist.AnalyzeFiles(new[] { fichier }, false);
+                await tasklist.AnalyzeFile(fichier, false);
                 fichier.SetValid();
             }
 
@@ -497,7 +519,7 @@ namespace VGMGUI
         /// <param name="Out">true si la sortie doit être lue; false si l'entrée doit être lue; null pour utiliser les boutons "Apperçu dans le lecteur".</param>
         /// <param name="force">true pour ignorer <see cref="Buffering"/>; sinon false.</param>
         /// <returns>Tâche qui représente l'opération de lecture asynchrone.</returns>
-        async Task PlayFile(Fichier file, bool? Out = null, bool force = false)
+        private async Task PlayFile(Fichier file, bool? Out = null, bool force = false)
         {
             if ((!Buffering || force) && file != null && (AP.Player.State == MediaStates.Stopped || AP.Player.State == MediaStates.NothingSpecial || force))
             {
@@ -518,8 +540,8 @@ namespace VGMGUI
                         if (stream != null)
                         {
                             AP.SetAudio(stream);
-                            if (tasklist.FILEList.Items.Contains(AP.CurrentPlaying)) AP.Playlist = (from Fichier fichier in tasklist.FILEList.Items select fichier).ToList();
-                            else if (tasklist.Files.Contains(AP.CurrentPlaying)) AP.Playlist = tasklist.Files.ToList();
+                            if (tasklist.FILEList.Items.Contains(AP.CurrentPlaying)) AP.Playlist = tasklist.FILEList.Items.OfType<Fichier>().ToArray();
+                            else if (tasklist.Files.Contains(AP.CurrentPlaying)) AP.Playlist = tasklist.Files.ToArray();
                             await AP.Play();
                             file.Played = true;
                         }
@@ -544,7 +566,7 @@ namespace VGMGUI
         {
             if (AP.CurrentPlaying != null && AP.Playlist != null)
             {
-                if (tasklist.FILEList.Items.Contains(AP.CurrentPlaying)) AP.Playlist = (from Fichier fichier in tasklist.FILEList.Items select fichier).ToList();
+                if (tasklist.FILEList.Items.Contains(AP.CurrentPlaying)) AP.Playlist = tasklist.FILEList.Items.OfType<Fichier>().ToArray();
                 else if (!tasklist.Files.Contains(AP.CurrentPlaying)) AP.Playlist = null;
             }
         }
@@ -554,68 +576,62 @@ namespace VGMGUI
         /// <summary>
         /// Lit le fichier précédent dans la liste.
         /// </summary>
-        async Task Previous()
+        private async Task Previous()
         {
             if (Passing || AP.Playlist == null || AP.CurrentPlaying == null) return;
-            try
-            {
-                Passing = true;
-                int cp = AP.Playlist.IndexOf(AP.CurrentPlaying);
-                if (cp > -1)
-                {
-                    if (cp == 0) cp = AP.Playlist.Count; //Permet de jouer le dernier fichier de la liste si le premier est en cours de lecture
+            Passing = true;
 
-                    await PlayFile(AP.Playlist[cp - 1], force: true);
-                }
+            int cp = AP.Playlist.IndexOf(AP.CurrentPlaying);
+            if (cp > -1)
+            {
+                if (cp == 0) cp = AP.Playlist.Count; //Permet de jouer le dernier fichier de la liste si le premier est en cours de lecture
+
+                await PlayFile(AP.Playlist[cp - 1], force: true);
             }
-            finally { Passing = false; }
+
+            Passing = false;
         }
 
         /// <summary>
         /// Lit le fichier suivant dans la liste.
         /// </summary>
-        async Task Next()
+        private async Task Next()
         {
             if (Passing || AP.Playlist == null || AP.CurrentPlaying == null) return;
-            try
-            {
-                Passing = true;
-                int cp = AP.Playlist.IndexOf(AP.CurrentPlaying);
-                if (cp > -1)
-                {
-                    if (cp == AP.Playlist.Count - 1) cp = -1; //Permet de jouer le premier fichier de la liste si le dernier est en cours de lecture
+            Passing = true;
 
-                    await PlayFile(AP.Playlist[cp + 1], force: true);
-                }
+            int cp = AP.Playlist.IndexOf(AP.CurrentPlaying);
+            if (cp > -1)
+            {
+                if (cp == AP.Playlist.Count - 1) cp = -1; //Permet de jouer le premier fichier de la liste si le dernier est en cours de lecture
+
+                await PlayFile(AP.Playlist[cp + 1], force: true);
             }
-            finally { Passing = false; }
+
+            Passing = false;
         }
 
         /// <summary>
         /// Lit le fichier suivant dans la liste ou un fichier aléatoire.
         /// </summary>
-        async Task NextWithRandom()
+        private async Task NextWithRandom()
         {
             switch (AP.LoopType)
             {
                 case LoopTypes.Random:
                     if (Passing || AP.Playlist == null || AP.Playlist.Count <= 0 || AP.CurrentPlaying == null) return;
-                    try
+                    Passing = true;
+
+                    var playlist = AP.Playlist.Where(f => !f.Played).ToArray();
+                    if (playlist.Length == 0)
                     {
-                        Passing = true;
-                        var playlist = AP.Playlist.Where(f => !f.Played).ToList();
-                        if (playlist.Count == 0)
-                        {
-                            foreach (Fichier fichier in AP.Playlist) fichier.Played = fichier == AP.CurrentPlaying;
-                            playlist = AP.Playlist.Where(f => !f.Played).ToList();
-                        }
-                        if (playlist.Count != 0)
-                        {
-                            await PlayFile(playlist[new Random().Next(0, playlist.Count - 1)], force: true);
-                        }
-                        break;
+                        foreach (Fichier fichier in AP.Playlist) fichier.Played = fichier == AP.CurrentPlaying;
+                        playlist = AP.Playlist.Where(f => !f.Played).ToArray();
                     }
-                    finally { Passing = false; }
+                    if (playlist.Length != 0) await PlayFile(playlist[new Random().Next(0, playlist.Length - 1)], force: true);
+
+                    Passing = false;
+                    break;
                 default:
                     await Next();
                     break;
@@ -625,27 +641,23 @@ namespace VGMGUI
         /// <summary>
         /// Lit le fichier suivant dans la liste ou un fichier aléatoire.
         /// </summary>
-        async Task PreviousWithRandom()
+        private async Task PreviousWithRandom()
         {
             switch (AP.LoopType)
             {
                 case LoopTypes.Random:
                     if (Passing || AP.Playlist == null || AP.Playlist.Count <= 0 || AP.CurrentPlaying == null) return;
-                    try
+                    Passing = true;
+
+                    var playlist = AP.Playlist.Where(f => !f.Played).ToArray();
+                    if (playlist.Length == 0)
                     {
-                        Passing = true;
-                        var playlist = AP.Playlist.Where(f => !f.Played).ToList();
-                        if (playlist.Count == 0)
-                        {
-                            foreach (Fichier fichier in AP.Playlist) fichier.Played = fichier == AP.CurrentPlaying;
-                            playlist = AP.Playlist.Where(f => !f.Played).ToList();
-                        }
-                        if (playlist.Count != 0)
-                        {
-                            await PlayFile(playlist[new Random().Next(0, playlist.Count - 1)], force: true);
-                        }
+                        foreach (Fichier fichier in AP.Playlist) fichier.Played = fichier == AP.CurrentPlaying;
+                        playlist = AP.Playlist.Where(f => !f.Played).ToArray();
                     }
-                    finally { Passing = false; }
+                    if (playlist.Length != 0) await PlayFile(playlist[new Random().Next(0, playlist.Length - 1)], force: true);
+
+                    Passing = false;
                     break;
                 default:
                     await Previous();
@@ -656,7 +668,7 @@ namespace VGMGUI
         /// <summary>
         /// Annule <see cref="PlayingCTS"/> et arrête la lecture.
         /// </summary>
-        async Task CancelAndStop()
+        private async Task CancelAndStop()
         {
             if (Buffering) PlayingCTS.Cancel();
             else await AP.Stop(true);
@@ -695,7 +707,7 @@ namespace VGMGUI
         /// </summary>
         /// <param name="fichier">Le fichier à convertir.</param>
         /// <returns>Tâche qui représente l'opération de conversion asynchrone.</returns>
-        async Task ConvertFile(Fichier fichier)
+        private async Task ConvertFile(Fichier fichier)
         {
             try
             {
@@ -704,8 +716,8 @@ namespace VGMGUI
                 await ConversionPTS.Token.WaitWhilePausedAsync().WithCancellation(ConversionCTS.Token);
 
                 var data = await VGMStream.ConvertFileWithOtherFormats(fichier, ConversionCTS.Token, ConversionPTS.Token);
-
-                if (data != null && !fichier.Analyzed) await tasklist.AnalyzeFile(fichier, data);
+                if (data == null) ConversionErrorsCount++;
+                else if (!fichier.Analyzed) await tasklist.AnalyzeFile(fichier, data);
 
                 await ConversionPTS.Token.WaitWhilePausedAsync().WithCancellation(ConversionCTS.Token);
 
@@ -722,6 +734,8 @@ namespace VGMGUI
                 MainProgress.Value = ConversionProgress;
                 tii_main.ProgressValue = (double)ConversionProgress / ConversionCount;
 
+                conversionInfosLabel.Content = $"{ConversionProgress} / {ConversionCount} - {(100 * (double)ConversionProgress / ConversionCount).ToString("00.00")} %";
+
                 if (CurrentConverting == 0 && (ConversionCTS.IsCancellationRequested || FilesToConvert.Count == 0)) //S'exécute à la toute fin de la conversion
                 {
                     await Finish();
@@ -732,11 +746,12 @@ namespace VGMGUI
         /// <summary>
         /// Démarre la conversoin.
         /// </summary>
-        void StartConversion()
+        private void StartConversion()
         {
-            if (FilesToAsk.Count > 0)
+            var fta = new ObservableCollection<AskingFile>(FilesToAsk);
+            if (fta.Count > 0)
             {
-                AskWindow askWindow = new AskWindow(FilesToAsk);
+                var askWindow = new AskWindow(fta);
                 var files = askWindow.ShowDialog();
                 if (files == null) FilesToConvertTMP = new List<Fichier>();
                 else
@@ -746,22 +761,23 @@ namespace VGMGUI
                         switch (file.Action)
                         {
                             case FileActions.Overwrite:
-                                if (file.File.FinalDestination == file.File.Path)
+                                if (file.Fichier.FinalDestination == file.Fichier.Path)
                                 {
-                                    file.File.SetInvalid("ERR_SameSourceAndDest");
-                                    FilesToConvertTMP.Remove(file.File);
+                                    file.Fichier.SetInvalid("ERR_SameSourceAndDest");
+                                    FilesToConvertTMP.Remove(file.Fichier);
                                 }
+                                else file.Fichier.ToNumber = false;
                                 break;
                             case FileActions.Number:
-                                file.File.FinalDestination = Number(file.File.FinalDestination);
+                                file.Fichier.ToNumber = true;
                                 break;
                             case FileActions.Ignore:
-                                FilesToConvertTMP.Remove(file.File);
+                                FilesToConvertTMP.Remove(file.Fichier);
                                 break;
                         }
                     }
                 }
-                FilesToAsk = new ObservableCollection<AskingFile>();
+                FilesToAsk = null;
             }
 
             FilesToConvert = new Queue<Fichier>(FilesToConvertTMP);
@@ -782,6 +798,7 @@ namespace VGMGUI
                 StartButton.SetResourceReference(ToolTipProperty, Keyboard.Modifiers == ModifierKeys.Control ? "MW_CancelToolTip" : ConversionPTS.IsPaused ? "MW_ResumeToolTip" : "MW_PauseToolTip");
 
                 Preconversion = false;
+                AnimateConversionIcon(false, false, true);
 
                 if (ConversionMultithreading) //Start
                 {
@@ -799,74 +816,34 @@ namespace VGMGUI
                 }
                 else ConvertFile(FilesToConvert.Dequeue()); //Singlethreading
             }
-            else Preconversion = false;
-        }
-
-        static string Number(string fileName)
-        {
-            string result;
-            for (int i = 1; true; i++)
+            else
             {
-                if (!File.Exists(result = Path.Combine(
-                    Path.GetDirectoryName(fileName),
-                    $"{Path.GetFileNameWithoutExtension(fileName)} ({i}) {Path.GetExtension(fileName)}")))
-                {
-                    break;
-                }
+                Preconversion = false;
+                AnimateConversionIcon(true, true, true);
             }
-            return result;
-        }
-
-        static string Number(string fileName, IEnumerable<string> files)
-        {
-            string result;
-            for (int i = 1; true; i++)
-            {
-                if (!files.Contains((result = Path.Combine(
-                    Path.GetDirectoryName(fileName),
-                    $"{Path.GetFileNameWithoutExtension(fileName)} ({i}) {Path.GetExtension(fileName)}"))))
-                {
-                    break;
-                }
-            }
-            return result;
-        }
-
-        static string Number(string fileName, IEnumerable<Fichier> files)
-        {
-            string result = null;
-            for (int i = 1; true; i++)
-            {
-                if (!files.Any(f => f.FinalDestination.Equals((result = Path.Combine(
-                    Path.GetDirectoryName(fileName),
-                    $"{Path.GetFileNameWithoutExtension(fileName)} ({i}) {Path.GetExtension(fileName)}")))))
-                {
-                    break;
-                }
-            }
-            return result;
         }
 
         /// <summary>
         /// Se produit une fois la conversion terminée.
         /// </summary>
-        async Task Finish()
+        private async Task Finish()
         {
             if (ConversionCTS.IsCancellationRequested)
             {
-                if (MessageBox.Show(App.Str("Q_DeleteCanceled"), String.Empty, MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) == MessageBoxResult.Yes)
+                if (MessageBox.Show(App.Str("Q_DeleteCanceled"), string.Empty, MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) == MessageBoxResult.Yes)
                 {
-                    foreach (Fichier f in FilesToConvertTMP)
-                    {
-                        if (f.OriginalState == "FSTATE_Canceled") File.Delete(f.FinalDestination);
-                    }
+                    foreach (var fichier in FilesToConvertTMP) if (fichier.OriginalState == "FSTATE_Canceled") File.Delete(fichier.FinalDestination);
                 }
             }
             else MessageBox.Show(App.Str("INFO_ConversionCompleted"), App.Str("INFO_Info"), MessageBoxButton.OK, MessageBoxImage.Information);
 
-            ConversionCount = 0;
+            ConversionCount = ConversionErrorsCount = 0;
             MainProgress.Value = tii_main.ProgressValue = 0;
-            FilesToConvertTMP = new List<Fichier>();
+            conversionInfosLabel.Content = App.Str("ST_Pending");
+
+            foreach (var fichier in tasklist.Files) fichier.ToNumber = null;
+
+            FilesToConvertTMP = null;
             FilesToConvert = new Queue<Fichier>();
             tii_main.ProgressState = TaskbarItemProgressState.None;
             MainProgress.Maximum = 100;
@@ -879,6 +856,8 @@ namespace VGMGUI
             StartButton.SetResourceReference(ContentProperty, "MW_StartConversion");
             StartButton.SetResourceReference(ToolTipProperty, "MW_StartConversionToolTip");
 
+            AnimateConversionIcon(true, true, true);
+
             await VGMStream.DeleteTempFilesByType(VGMStreamProcessTypes.Conversion);
             GC.Collect();
         }
@@ -888,57 +867,49 @@ namespace VGMGUI
         /// <summary>
         /// Suspend la conversion.
         /// </summary>
-        void PauseConversion(bool editUI = true)
+        private async Task PauseConversion(bool editUI = true)
         {
             ConversionPTS.IsPaused = true;
 
-            foreach (Process process in (from KeyValuePair<Process, VGMStreamProcessTypes> kvp in VGMStream.RunningProcess where kvp.Value == VGMStreamProcessTypes.Conversion select kvp.Key).ToList())
-            {
-                process.TrySuspend();
-            }
+            foreach (var kvp in VGMStream.RunningProcess.Where(kvp => kvp.Value == VGMStreamProcessTypes.Conversion).ToArray()) kvp.Key.TrySuspend();
 
             if (editUI)
             {
-                foreach (Fichier fichier in tasklist.Files.Where(f => f.OriginalState == "FSTATE_Conversion").ToList())
-                {
-                    fichier.OriginalState = "FSTATE_Suspended";
-                }
+                foreach (var fichier in tasklist.Files.Where(f => f.OriginalState == "FSTATE_Conversion").ToArray()) fichier.OriginalState = "FSTATE_Suspended";
 
                 StartButton.SetResourceReference(ContentProperty, "MW_Resume");
                 StartButton.SetResourceReference(ToolTipProperty, "MW_ResumeToolTip");
+
+                await AnimateConversionIcon(true, true, false);
             }
         }
 
         /// <summary>
         /// Reprend la conversion.
         /// </summary>
-        void ResumeConversion(bool editUI = true)
+        private async Task ResumeConversion(bool editUI = true)
         {
             ConversionPTS.IsPaused = false;
 
-            foreach (Process process in (from KeyValuePair<Process, VGMStreamProcessTypes> kvp in VGMStream.RunningProcess where kvp.Value == VGMStreamProcessTypes.Conversion select kvp.Key).ToList())
-            {
-                process.TryResume();
-            }
+            foreach (var kvp in VGMStream.RunningProcess.Where(kvp => kvp.Value == VGMStreamProcessTypes.Conversion).ToArray()) kvp.Key.TryResume();
 
             if (editUI)
             {
-                foreach (Fichier fichier in tasklist.Files.Where(f => f.OriginalState == "FSTATE_Suspended").ToList())
-                {
-                    fichier.OriginalState = "FSTATE_Conversion";
-                }
+                foreach (var fichier in tasklist.Files.Where(f => f.OriginalState == "FSTATE_Suspended").ToArray()) fichier.OriginalState = "FSTATE_Conversion";
 
                 StartButton.SetResourceReference(ContentProperty, "MW_Pause");
                 StartButton.SetResourceReference(ToolTipProperty, "MW_PauseToolTip");
+
+                await AnimateConversionIcon(false, true, false);
             }
         }
 
         /// <summary>
         /// Annule la conversion.
         /// </summary>
-        void StopConversion()
+        private void StopConversion()
         {
-            if (MessageBox.Show(App.Str("Q_Cancel"), String.Empty, MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) == MessageBoxResult.Yes)
+            if (MessageBox.Show(App.Str("Q_Cancel"), string.Empty, MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) == MessageBoxResult.Yes)
             {
                 ConversionCTS.Cancel();
                 ResumeConversion(false);
@@ -948,10 +919,10 @@ namespace VGMGUI
         /// <summary>
         /// Suspend ou reprend la conversion.
         /// </summary>
-        void PauseOrResumeConversion()
+        private async Task PauseOrResumeConversion()
         {
-            if (!ConversionPTS.IsPaused) PauseConversion();
-            else ResumeConversion();
+            if (!ConversionPTS.IsPaused) await PauseConversion();
+            else await ResumeConversion();
         }
 
         #endregion
@@ -1067,7 +1038,7 @@ namespace VGMGUI
             SettingsData["Search"]["SearchFilter"] = RestoreSearchFilter;
             SettingsData["Search"]["SearchColumn"] = SearchColumn.ToString();
             SettingsData["Search"]["CaseSensitive"] = SearchCaseSensitive.ToString();
-            SettingsData["Search"]["No"] = SearchNo.ToString();
+            SettingsData["Search"]["Regex"] = SearchRegex.ToString();
 
             await TryWriteSettings();
 
@@ -1093,6 +1064,7 @@ namespace VGMGUI
             LoopCountLabel.GetBindingExpression(ContentProperty).UpdateTarget();
             FadeDelayLabel.GetBindingExpression(ContentProperty).UpdateTarget();
             FadeTimeLabel.GetBindingExpression(ContentProperty).UpdateTarget();
+            m_conversionIcon = ((ConversionIcon.Content as Viewbox).Child as Canvas).Children.OfType<System.Windows.Shapes.Path>().ToArray();
         }
 
         private void Window_Activated(object sender, EventArgs e) => ApplyKeyboardModifiers();
@@ -1137,36 +1109,7 @@ namespace VGMGUI
         {
             if (!Preconversion)
             {
-                if (CurrentConverting <= 0)
-                {
-                    Preconversion = true;
-
-                    if ((File.Exists(App.VGMStreamPath) || await App.AskVGMStream()))
-                    {
-                        if (!MainDestTB.Text.ContainsAny(Path.GetInvalidFileNameChars()) && !IO.ReservedFilenames.Contains(MainDestTB.Text.ToUpper()))
-                        {
-                            foreach (Fichier fichier in tasklist.Files)
-                            {
-                                if (fichier.Checked)
-                                {
-                                    if ((fichier.FinalDestination = await GetOrCreateDestinationFileAsync(fichier)) != null)
-                                    {
-                                        FilesToConvertTMP.Add(fichier);
-                                        fichier.SetValid(); // <=> fichier.State = "En attente"
-                                    }
-                                }
-                            } //Remplissage de "FilesToConvert"
-
-                            StartConversion();
-                        }
-                        else
-                        {
-                            MessageBox.Show($"{App.Str("ERR_InvalidDestination")}{Environment.NewLine + Environment.NewLine}{App.Str("ERR_UnauthorizedCharacters")}{Environment.NewLine + Environment.NewLine}{App.Str("ERR_SystemReservedFilenames")}", App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-                            Preconversion = false;
-                        }
-                    }
-                    else Preconversion = false;
-                }
+                if (CurrentConverting <= 0) await LaunchConversion(await tasklist.Files.WhereAsync(fichier => fichier.Checked));
                 else
                 {
                     switch (Keyboard.Modifiers)
@@ -1175,9 +1118,69 @@ namespace VGMGUI
                             StopConversion();
                             break;
                         default:
-                            PauseOrResumeConversion();
+                            await PauseOrResumeConversion();
                             break;
                     }
+                }
+            }
+        }
+
+        public async Task LaunchConversion(IEnumerable<Fichier> files)
+        {
+            Preconversion = true;
+
+            if ((File.Exists(App.VGMStreamPath) || await App.AskVGMStream()))
+            {
+                if (!MainDestTB.Text.ContainsAny(Path.GetInvalidFileNameChars()) && !IO.ReservedFilenames.Contains(MainDestTB.Text.ToUpper()))
+                {
+                    if (files.Any())
+                    {
+                        AnimateConversionIcon(false, true, false);
+                        await SetFinalDestinationsAsync(files);
+                        StartConversion();
+                    }
+                    else Preconversion = false;
+                }
+                else
+                {
+                    MessageBox.Show($"{App.Str("ERR_InvalidDestination")}{Environment.NewLine + Environment.NewLine}{App.Str("ERR_UnauthorizedCharacters")}{Environment.NewLine + Environment.NewLine}{App.Str("ERR_SystemReservedFilenames")}", App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
+                    Preconversion = false;
+                }
+            }
+            else Preconversion = false;
+        }
+
+        private async Task AnimateConversionIcon(bool stop, bool rotation, bool color)
+        {
+            if (stop)
+            {
+                var gear = m_conversionIcon[0];
+                double angle = gear.RenderTransform is RotateTransform rotateTransform ? rotateTransform.Angle : 0;
+                var arrow1 = m_conversionIcon[1];
+                var arrow2 = m_conversionIcon[2];
+
+                IEnumerable<Task> GetAnimations()
+                {
+                    if (rotation) yield return AnimateDouble("ConversionRotation", value => gear.RenderTransform = new RotateTransform(value), angle, 360, TimeSpan.FromSeconds(0.75), default, false, false, new QuadraticEase { EasingMode = EasingMode.EaseOut }, 60);
+                    if (color) yield return AnimateColor("ConversionColor", value => arrow1.Fill = arrow2.Fill = new SolidColorBrush(value), (arrow1.Fill as SolidColorBrush).Color, (Application.Current.Resources["StatusBarIconBrush"] as SolidColorBrush).Color, TimeSpan.FromSeconds(1), default, false, false, null, 60);
+                }
+
+                await Task.WhenAll(GetAnimations());
+            }
+            else
+            {
+                if (rotation)
+                {
+                    var gear = m_conversionIcon[0];
+                    await AnimateDouble("ConversionRotation", value => gear.RenderTransform = new RotateTransform(value), 0, 360, TimeSpan.FromSeconds(1.5), RepeatBehavior.Forever, false, false, null, 60);
+                }
+                if (color)
+                {
+                    var arrow1 = m_conversionIcon[1];
+                    var arrow2 = m_conversionIcon[2];
+                    await AnimateColor("ConversionColor", value => arrow1.Fill = arrow2.Fill = new SolidColorBrush(value), (arrow1.Fill as SolidColorBrush).Color, (Application.Current.Resources["ForegroundBrush"] as SolidColorBrush).Color, TimeSpan.FromSeconds(1), default, false, false, null, 60);
+                    arrow1.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "ForegroundBrush");
+                    arrow2.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "ForegroundBrush");
                 }
             }
         }
@@ -1323,7 +1326,7 @@ namespace VGMGUI
             }
         }
 
-        private void AddButton_Click(object sender, RoutedEventArgs e) => tasklist.OpenFileDialog(Keyboard.Modifiers == ModifierKeys.Control);
+        private void AddButton_Click(object sender, RoutedEventArgs e) => tasklist.OpenFileDialog((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control, (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt);
 
         private void RemButton_Click(object sender, RoutedEventArgs e)
         {
@@ -1334,6 +1337,12 @@ namespace VGMGUI
                     break;
                 case ModifierKeys.Shift:
                     tasklist.RemoveAll();
+                    break;
+                case ModifierKeys.Alt:
+                    tasklist.RemoveDFiles();
+                    break;
+                case ModifierKeys.Shift | ModifierKeys.Alt:
+                    tasklist.RemoveSNFiles();
                     break;
                 default:
                     tasklist.RemoveSelectedItems();
@@ -1367,7 +1376,7 @@ namespace VGMGUI
             switch (Keyboard.Modifiers)
             {
                 case ModifierKeys.Shift:
-                    if (await VGMStream.DownloadVLC()) MessageBox.Show(App.Str("WW_VLCDownloaded"), String.Empty, MessageBoxButton.OK, MessageBoxImage.Information);
+                    if (await VGMStream.DownloadVLC()) MessageBox.Show(App.Str("WW_VLCDownloaded"), string.Empty, MessageBoxButton.OK, MessageBoxImage.Information);
                     break;
                 default:
                     await VGMStream.DownloadVGMStream();

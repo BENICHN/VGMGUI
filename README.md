@@ -51,3 +51,17 @@ A graphic interface of vgmstream
    - Fixed "Rise of..." and "Descend of..." commands when the number exceeds the maximal or minimal index of the list
    - Fixed error when clicking outside a SwitchableTextBox with `<Multiple>`
    - Other...
+### 1.3.0
+ - Replaced the [ ! ] button in the searchbox by a [ .* ] regex button
+ - Informations about conversion in status bar
+ - Files copy and paste feature
+ - Removed DKCTF CSMP additional format, now supported by vgmstream (DKCTFCSMP.cs stays avaliable)
+ - When adding files, click on the errors count to view them
+ - It's now possible to remove files with the same name or the same path in the list or prevent adding files with the same name (ignore case, including extension)
+ - Bug fixes and stability improvements
+    - Optimizations in the determination of the files destinations
+    - Until now, when a temporary file was created, .NET generated a .tmp file and VGMGUI created a file with the same name and changed the extension but DIDN'T deleted the .tmp file resulting in a multiplication of empty .tmp files. This bug is now fixed
+    - LINQ and collections optimizations
+    - Fixed player volume
+    - Fixed loop icon
+    - Other...

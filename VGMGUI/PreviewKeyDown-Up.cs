@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using Vlc.DotNet.Core.Interops.Signatures;
@@ -10,13 +9,13 @@ namespace VGMGUI
     {
         private async void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            Key key = (e.Key == Key.System ? e.SystemKey : e.Key);
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
 
             ApplyKeyboardModifiers();
 
             if (!tasklist.SearchBox.TextBox.IsFocused)
             {
-                if (AP.IsMouseOver)
+                if (AP.IsMouseOver && !AP.IsKeyboardFocusWithin)
                 {
                     e.Handled = true;
                     switch (key)
@@ -44,7 +43,7 @@ namespace VGMGUI
                             await PreviousWithRandom();
                             break;
                         case Key.Insert:
-                            tasklist.OpenFileDialog(Keyboard.Modifiers == ModifierKeys.Control);
+                            tasklist.OpenFileDialog((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control, (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt);
                             break;
                         case Key.Delete:
                             switch (Keyboard.Modifiers)
@@ -54,6 +53,12 @@ namespace VGMGUI
                                     break;
                                 case ModifierKeys.Shift:
                                     tasklist.RemoveAll();
+                                    break;
+                                case ModifierKeys.Alt:
+                                    tasklist.RemoveDFiles();
+                                    break;
+                                case ModifierKeys.Control | ModifierKeys.Alt:
+                                    tasklist.RemoveSNFiles();
                                     break;
                                 default:
                                     tasklist.RemoveSelectedItems();
@@ -71,7 +76,32 @@ namespace VGMGUI
                     }
 
                 }
-                else if (tasklist.IsMouseOver)
+                if (tasklist.IsMouseOver && !tasklist.IsKeyboardFocusWithin)
+                {
+                    switch (key)
+                    {
+                        case Key.F:
+                            if (Keyboard.Modifiers == ModifierKeys.Control)
+                            {
+                                e.Handled = true;
+                                if (tasklist.SearchBox.Visibility == Visibility.Visible) tasklist.SearchBox.TextBox.Focus();
+                                else tasklist.SearchBox.Visibility = Visibility.Visible;
+                            }
+                            break;
+                        case Key.C:
+                            if (Keyboard.Modifiers == ModifierKeys.Control) tasklist.CopySelectedFiles();
+                            break;
+                        case Key.X:
+                            if (Keyboard.Modifiers == ModifierKeys.Control) tasklist.CutSelectedFiles();
+                            break;
+                        case Key.V:
+                            if (Keyboard.Modifiers == ModifierKeys.Control) tasklist.PasteFiles();
+                            break;
+                    }
+
+                    if (!tasklist.IsKeyboardFocusWithin) tasklist.FILEList_PreviewKeyDown(sender, e);
+                }
+                if (tasklist.IsMouseOver && !AP.IsKeyboardFocusWithin)
                 {
                     switch (key)
                     {
@@ -100,17 +130,7 @@ namespace VGMGUI
                             e.Handled = true;
                             await PreviousWithRandom();
                             break;
-                        case Key.F:
-                            if (Keyboard.Modifiers == ModifierKeys.Control)
-                            {
-                                e.Handled = true;
-                                if (tasklist.SearchBox.Visibility == Visibility.Visible) tasklist.SearchBox.TextBox.Focus();
-                                else tasklist.SearchBox.Visibility = Visibility.Visible;
-                            }
-                            break;
                     }
-
-                    if (!tasklist.IsKeyboardFocusWithin) tasklist.FILEList_PreviewKeyDown(sender, e);
                 }
             }
 
@@ -152,10 +172,16 @@ namespace VGMGUI
                     switch (Keyboard.Modifiers)
                     {
                         case ModifierKeys.Control | ModifierKeys.Shift:
-                            tasklist.OpenFileDialog(true);
+                            tasklist.OpenFileDialog(true, false);
                             break;
                         case ModifierKeys.Control:
-                            tasklist.OpenFileDialog(false);
+                            tasklist.OpenFileDialog(false, false);
+                            break;
+                        case ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Shift:
+                            tasklist.OpenFileDialog(true, true);
+                            break;
+                        case ModifierKeys.Control | ModifierKeys.Alt:
+                            tasklist.OpenFileDialog(false, true);
                             break;
                     }
                     break;
@@ -163,7 +189,7 @@ namespace VGMGUI
                     switch (Keyboard.Modifiers)
                     {
                         case ModifierKeys.Control | ModifierKeys.Alt:
-                            if (await VGMStream.DownloadVLC()) MessageBox.Show(App.Str("WW_VLCDownloaded"), String.Empty, MessageBoxButton.OK, MessageBoxImage.Information);
+                            if (await VGMStream.DownloadVLC()) MessageBox.Show(App.Str("WW_VLCDownloaded"), string.Empty, MessageBoxButton.OK, MessageBoxImage.Information);
                             break;
                         case ModifierKeys.Control:
                             await VGMStream.DownloadVGMStream();
@@ -174,7 +200,7 @@ namespace VGMGUI
                     StartButton_Click(StartButton, new RoutedEventArgs());
                     break;
 
-                #if DEBUG
+#if DEBUG
 
                 case Key.X:
                     if (Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Alt))
@@ -191,7 +217,7 @@ namespace VGMGUI
                     }
                     break;
 
-                #endif
+#endif
             }
         }
 
@@ -202,7 +228,7 @@ namespace VGMGUI
     {
         public void FILEList_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            Key key = (e.Key == Key.System ? e.SystemKey : e.Key);
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
 
             switch (key)
             {
@@ -215,6 +241,12 @@ namespace VGMGUI
                                 break;
                             case ModifierKeys.Shift:
                                 RemoveAll();
+                                break;
+                            case ModifierKeys.Alt:
+                                RemoveDFiles();
+                                break;
+                            case ModifierKeys.Shift | ModifierKeys.Alt:
+                                RemoveSNFiles();
                                 break;
                             default:
                                 RemoveSelectedItems();
@@ -279,7 +311,7 @@ namespace VGMGUI
                     }
                     break;
                 case Key.Insert:
-                        OpenFileDialog(Keyboard.Modifiers == ModifierKeys.Control);
+                    OpenFileDialog((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control, (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt);
                     break;
                 case Key.F:
                     if (Keyboard.Modifiers == ModifierKeys.Control)
@@ -291,6 +323,15 @@ namespace VGMGUI
                 case Key.Escape:
                     SearchBox.Visibility = Visibility.Collapsed;
                     break;
+                case Key.C:
+                    if (Keyboard.Modifiers == ModifierKeys.Control) CopySelectedFiles();
+                    break;
+                case Key.X:
+                    if (Keyboard.Modifiers == ModifierKeys.Control) CutSelectedFiles();
+                    break;
+                case Key.V:
+                    if (Keyboard.Modifiers == ModifierKeys.Control) PasteFiles();
+                    break;
             }
         }
     }
@@ -299,7 +340,7 @@ namespace VGMGUI
     {
         private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            Key key = (e.Key == Key.System ? e.SystemKey : e.Key);
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
 
             switch (key)
             {
@@ -316,7 +357,7 @@ namespace VGMGUI
         {
             if (!stbx_max_conversion.IsFocused)
             {
-                Key key = (e.Key == Key.System ? e.SystemKey : e.Key);
+                var key = e.Key == Key.System ? e.SystemKey : e.Key;
 
                 switch (key)
                 {
@@ -331,7 +372,7 @@ namespace VGMGUI
                         Cancel();
                         e.Handled = true;
                         break;
-                    default:return;
+                    default: return;
                 }
             }
         }
@@ -341,7 +382,7 @@ namespace VGMGUI
     {
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            Key key = (e.Key == Key.System ? e.SystemKey : e.Key);
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
 
             switch (key)
             {

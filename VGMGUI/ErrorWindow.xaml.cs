@@ -10,6 +10,7 @@ namespace VGMGUI
     /// </summary>
     public partial class ErrorWindow : Window
     {
+        public static bool Open { get; private set; }
         public static ObservableCollection<string> BadFiles { get; set; } = new ObservableCollection<string>();
 
         public ErrorWindow()
@@ -25,8 +26,13 @@ namespace VGMGUI
 
         public static void ShowErrors(string resTitle = "TITLE_ErrorWindow")
         {
-            ErrorWindow box = new ErrorWindow() { Title = App.Str(resTitle) };
-            box.ShowDialog();
+            if (!Open)
+            {
+                ErrorWindow box = new ErrorWindow() { Title = App.Str(resTitle) };
+                Open = true;
+                box.ShowDialog();
+                Open = false;
+            }
         }
     }
 }

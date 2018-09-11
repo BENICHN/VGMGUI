@@ -28,23 +28,31 @@
                                 </Label>
                                 <Label Content=" ("/>
                                 <Label>
-                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/cancel_291202#term=error&amp;page=1&amp;position=11" RequestNavigate="Hyperlink_RequestNavigate">1</Hyperlink>
+                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/cancel_291202" RequestNavigate="Hyperlink_RequestNavigate">1</Hyperlink>
                                 </Label>
                                 <Label Content=", "/>
                                 <Label>
-                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/bricks-layout_43703#term=layout&amp;page=1&amp;position=47" RequestNavigate="Hyperlink_RequestNavigate">2</Hyperlink>
+                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/bricks-layout_43703" RequestNavigate="Hyperlink_RequestNavigate">2</Hyperlink>
                                 </Label>
                                 <Label Content=", "/>
                                 <Label>
-                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/couple-of-arrows-changing-places_25344#term=random&amp;page=1&amp;position=7" RequestNavigate="Hyperlink_RequestNavigate">3</Hyperlink>
+                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/couple-of-arrows-changing-places_25344" RequestNavigate="Hyperlink_RequestNavigate">3</Hyperlink>
                                 </Label>
                                 <Label Content=", "/>
                                 <Label>
-                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/update-arrows_1064#term=loop&amp;page=1&amp;position=54" RequestNavigate="Hyperlink_RequestNavigate">4</Hyperlink>
+                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/update-arrows_1064" RequestNavigate="Hyperlink_RequestNavigate">4</Hyperlink>
                                 </Label>
                                 <Label Content=", "/>
                                 <Label>
-                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/shuffle-mode-arrows_61171#term=random&amp;page=1&amp;position=21" RequestNavigate="Hyperlink_RequestNavigate">5</Hyperlink>
+                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/shuffle-mode-arrows_61171" RequestNavigate="Hyperlink_RequestNavigate">5</Hyperlink>
+                                </Label>
+                                <Label Content=", "/>
+                                <Label>
+                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/settings_149295" RequestNavigate="Hyperlink_RequestNavigate">6</Hyperlink>
+                                </Label>
+                                <Label Content=", "/>
+                                <Label>
+                                    <Hyperlink NavigateUri="https://www.flaticon.com/free-icon/process-arrows_3728" RequestNavigate="Hyperlink_RequestNavigate">7</Hyperlink>
                                 </Label>
                                 <Label Content=")"/>
                             </StackPanel>

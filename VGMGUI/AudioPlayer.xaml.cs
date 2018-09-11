@@ -1,15 +1,15 @@
-﻿using System;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
+﻿using BenLib;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using BenLib;
-using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using Vlc.DotNet.Core;
 using Vlc.DotNet.Core.Interops.Signatures;
-using System.ComponentModel;
 
 namespace VGMGUI
 {
@@ -49,7 +49,7 @@ namespace VGMGUI
         /// </summary>
         public Fichier CurrentPlaying { get; set; }
 
-        public List<Fichier> Playlist { get; set; }
+        public IList<Fichier> Playlist { get; set; }
 
         /// <summary>
         /// Se produit quand <see cref="LoopType"/> change de valeur.
@@ -143,6 +143,8 @@ namespace VGMGUI
             Player.LengthChanged += (sender, e) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("LengthString"));
         }
 
+        ~AudioPlayer() => Player.TryDispose();
+
         #endregion
 
         #region Méthodes
@@ -172,14 +174,7 @@ namespace VGMGUI
                         {
                             if (await SetMedia(m_cts.Token))
                             {
-                                try
-                                {
-                                    await Player.PlayAsync(5000, m_cts.Token);
-                                    positionslider.IsEnabled = true;
-                                    Player.Audio.Volume = m_volume;
-                                    Player.Audio.IsMute = m_mute;
-                                    if (CurrentPlaying != null) CurrentPlaying.FontWeight = FontWeights.Bold;
-                                }
+                                try { await Player.PlayAsync(5000, m_cts.Token); }
                                 catch { await Stop(true); }
                             }
                         }
@@ -191,8 +186,12 @@ namespace VGMGUI
 
                 if (Player.State == MediaStates.Playing)
                 {
+                    positionslider.IsEnabled = true;
+                    if (CurrentPlaying != null) CurrentPlaying.FontWeight = FontWeights.Bold;
                     PlayButtonSetPause();
-                    App.MainWindow.TBISetPause();
+                    App.VGMainWindow.TBISetPause();
+                    Player.Audio.Volume = Volume;
+                    Player.Audio.IsMute = Mute;
                     result = true;
                 }
                 else
@@ -228,7 +227,7 @@ namespace VGMGUI
                 positionslider.IsEnabled = Loading = false;
 
                 PlayButtonSetPlay(false);
-                App.MainWindow.TBISetPlay(false);
+                App.VGMainWindow.TBISetPlay(false);
 
                 if (CurrentPlaying != null) CurrentPlaying.FontWeight = FontWeights.Normal;
                 if (end)
@@ -254,7 +253,7 @@ namespace VGMGUI
             if (Player.State == MediaStates.Paused) return true;
             await Player.PauseAsync();
             PlayButtonSetPlay(true);
-            App.MainWindow.TBISetPlay(true);
+            App.VGMainWindow.TBISetPlay(true);
             return Player.State == MediaStates.Paused;
         }
 
@@ -273,12 +272,12 @@ namespace VGMGUI
         /// <param name="value">La valeur à soustraire (%).</param>
         public async Task PositionPlus(float value = 5)
         {
-            await Task.Run((Action)(() =>
+            await Task.Run(() =>
             {
-                var postPosition = this.Player.Position + value / 100;
+                var postPosition = Player.Position + value / 100;
                 if (postPosition > 1) postPosition = 1;
-                this.Player.Position = postPosition;
-            }));
+                Player.Position = postPosition;
+            });
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Position"));
         }
 
@@ -288,12 +287,12 @@ namespace VGMGUI
         /// <param name="value">La valeur à additionner (%).</param>
         public async Task PositionMinus(float value = 5)
         {
-            await Task.Run((Action)(() =>
+            await Task.Run(() =>
             {
-                var postPosition = this.Player.Position - value / 100;
+                var postPosition = Player.Position - value / 100;
                 if (postPosition < 0) postPosition = 0;
-                this.Player.Position = postPosition;
-            }));
+                Player.Position = postPosition;
+            });
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Position"));
         }
 
@@ -361,7 +360,7 @@ namespace VGMGUI
         /// <summary>
         /// Transforme <see cref="PlayButton"/> en bouton de lecture.
         /// </summary>
-        void PlayButtonSetPlay(bool resume)
+        private void PlayButtonSetPlay(bool resume)
         {
             PlayButton.Content = Application.Current.Resources["Play"];
             PlayButton.SetResourceReference(ToolTipProperty, resume ? "AP_Resume" : "AP_Play");
@@ -370,7 +369,7 @@ namespace VGMGUI
         /// <summary>
         /// Transforme <see cref="PlayButton"/> en bouton de pause.
         /// </summary>
-        void PlayButtonSetPause()
+        private void PlayButtonSetPause()
         {
             PlayButton.Content = Application.Current.Resources["Pause"];
             PlayButton.SetResourceReference(ToolTipProperty, "AP_Pause");
@@ -409,15 +408,13 @@ namespace VGMGUI
             {
                 case LoopTypes.None:
                     LoopButton.SetResourceReference(ToolTipProperty, "AP_LOOP_None");
-                    LoopButton.Content = Application.Current.Resources["Loop"];
-                    foreach (System.Windows.Shapes.Path path in ((LoopButton.Content as Viewbox).Child as Canvas).Children) path.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "RadioButtonForeground");
+                    LoopButton.Content = Application.Current.Resources["LoopB"];
                     Settings.SettingsData.Global["LoopType"] = "None";
                     await Settings.TryWriteSettings();
                     break;
                 case LoopTypes.All:
                     LoopButton.SetResourceReference(ToolTipProperty, "AP_LOOP_All");
-                    LoopButton.Content = Application.Current.Resources["Loop"];
-                    foreach (System.Windows.Shapes.Path path in ((LoopButton.Content as Viewbox).Child as Canvas).Children) path.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "ForegroundBrush");
+                    LoopButton.Content = Application.Current.Resources["LoopF"];
                     Settings.SettingsData.Global["LoopType"] = "All";
                     await Settings.TryWriteSettings();
                     break;

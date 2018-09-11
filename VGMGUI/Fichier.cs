@@ -1,21 +1,23 @@
-﻿using System;
+﻿using BenLib;
+using System;
 using System.ComponentModel;
+using System.IO;
+using System.Runtime.Serialization;
+using System.Threading;
 using System.Windows;
 using System.Windows.Media;
-using System.Threading;
-using System.IO;
-using BenLib;
 using static VGMGUI.Settings;
 
 namespace VGMGUI
 {
-    public class Fichier : INotifyPropertyChangedExtended<object>, INotifyPropertyChanged
+    [Serializable]
+    public class Fichier : INotifyPropertyChangedExtended<object>, INotifyPropertyChanged, ISerializable
     {
         #region Champs & Propriétés
 
         public event PropertyChangedExtendedEventHandler<object> PropertyChangedExtended;
         public event PropertyChangedEventHandler PropertyChanged;
-        
+
         #region List
 
         /// <summary>
@@ -31,7 +33,7 @@ namespace VGMGUI
             }
         }
         private bool m_checked = true;
-        
+
         /// <summary>
         /// Indique si le fichier est sélectionné dans une liste.
         /// </summary>
@@ -109,12 +111,26 @@ namespace VGMGUI
         /// <summary>
         /// Permet de réguler l'accès au fichier.
         /// </summary>
-        public FileStream Stream { get; set; }
+        private FileStream m_stream;
+
+        public bool StreamOpen
+        {
+            get => m_streamOpen;
+            set
+            {
+                if (m_streamOpen ^ value)
+                {
+                    if (value) m_stream = new FileStream(Path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    else m_stream.TryDispose();
+                }
+                m_streamOpen = value;
+            }
+        }
 
         #endregion
 
         #region UI
-        
+
         /// <summary>
         /// Icône du fichier.
         /// </summary>
@@ -140,7 +156,7 @@ namespace VGMGUI
         /// <summary>
         /// Icône par défaut du fichier.
         /// </summary>
-        public ImageSource DefaultIcon => Imaging.ShellIcon.GetFileIconAndType(Path, null, Imaging.SystemIconSize.Small).Icon;
+        public ImageSource DefaultIcon => Imaging.ShellIcon.GetFileIconAndType(Path, FileAttributes.Normal, Imaging.SystemIconSize.Small).Icon;
 
         /// <summary>
         /// Couleur de la police pour ce fichier.
@@ -154,7 +170,7 @@ namespace VGMGUI
                 NotifyPropertyChanged("TextBrush");
             }
         }
-        private Brush m_textbrush = Application.Current.Resources["ListViewTxtBrush"] as SolidColorBrush;        
+        private Brush m_textbrush = Application.Current.Resources["ListViewTxtBrush"] as SolidColorBrush;
 
         /// <summary>
         /// Épaisseur de la police pour ce fichier.
@@ -269,7 +285,7 @@ namespace VGMGUI
                 }
             }
         }
-        private string m_encoding = String.Empty;
+        private string m_encoding = string.Empty;
 
         /// <summary>
         /// Structure du stream.
@@ -287,7 +303,7 @@ namespace VGMGUI
                 }
             }
         }
-        private string m_layout = String.Empty;
+        private string m_layout = string.Empty;
 
         #region Bitrate
 
@@ -342,7 +358,7 @@ namespace VGMGUI
                 }
             }
         }
-        private string m_format = String.Empty;
+        private string m_format = string.Empty;
 
         /// <summary>
         /// Format audio du fichier.
@@ -750,7 +766,7 @@ namespace VGMGUI
         /// Données de sortie du fichier.
         /// </summary>
         public FichierOutData OutData => new FichierOutData() { OriginalDestination = OriginalDestination, FadeDelay = FadeDelay, FadeOut = FadeOut, FadeTime = FadeTime, LoopCount = LoopCount, StartEndLoop = StartEndLoop };
-        
+
         #region Destination
 
         /// <summary>
@@ -774,6 +790,7 @@ namespace VGMGUI
             }
         }
         private string m_destination = App.Str(DefaultOutData.OriginalDestination) != null || Directory.Exists(DefaultOutData.OriginalDestination) ? DefaultOutData.OriginalDestination : "DEST_Principal";
+        private bool m_streamOpen;
 
         /// <summary>
         /// Dossier de destination du fichier.
@@ -805,6 +822,8 @@ namespace VGMGUI
         /// </summary>
         public string FinalDestination { get; set; }
 
+        public bool? ToNumber { get; set; }
+
         #endregion
 
         #endregion
@@ -824,6 +843,58 @@ namespace VGMGUI
             LoopCount = outData.LoopCount ?? LoopCount;
             StartEndLoop = outData.StartEndLoop ?? StartEndLoop;
             App.LanguageChanged += App_LanguageChanged;
+        }
+
+        public Fichier(SerializationInfo info, StreamingContext context)
+        {
+            Path = info.GetString("Path");
+            Analyzed = info.GetBoolean("Analyzed");
+            if (info.GetBoolean("Invalid")) SetInvalid(info.GetString("OriginalState"));
+            else OriginalState = info.GetString("OriginalState");
+            Channels = info.GetInt32("Channels");
+            Encoding = info.GetString("Encoding");
+            Layout = info.GetString("Layout");
+            Bitrate = info.GetInt32("Bitrate");
+            OriginalFormat = info.GetString("OriginalFormat");
+            Interleave = info.GetInt32("Interleave");
+            LoopFlag = info.GetBoolean("LoopFlag");
+            LoopStart = info.GetInt32("LoopStart");
+            LoopEnd = info.GetInt32("LoopEnd");
+            SampleRate = info.GetInt32("SampleRate");
+            TotalSamples = info.GetInt32("TotalSamples");
+            FadeDelay = info.GetDouble("FadeDelay");
+            FadeTime = info.GetDouble("FadeTime");
+            FadeOut = info.GetBoolean("FadeOut");
+            LoopCount = info.GetInt32("LoopCount");
+            StartEndLoop = info.GetBoolean("StartEndLoop");
+            OriginalDestination = info.GetString("OriginalDestination");
+            StreamOpen = info.GetBoolean("StreamOpen");
+        }
+
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            info.AddValue("Path", Path);
+            info.AddValue("Analyzed", Analyzed);
+            info.AddValue("Invalid", Invalid);
+            info.AddValue("OriginalState", OriginalState);
+            info.AddValue("Channels", Channels);
+            info.AddValue("Encoding", Encoding);
+            info.AddValue("Layout", Layout);
+            info.AddValue("Bitrate", Bitrate);
+            info.AddValue("OriginalFormat", OriginalFormat);
+            info.AddValue("Interleave", Interleave);
+            info.AddValue("LoopFlag", LoopFlag);
+            info.AddValue("LoopStart", LoopStart);
+            info.AddValue("LoopEnd", LoopEnd);
+            info.AddValue("SampleRate", SampleRate);
+            info.AddValue("TotalSamples", TotalSamples);
+            info.AddValue("FadeDelay", FadeDelay);
+            info.AddValue("FadeTime", FadeTime);
+            info.AddValue("FadeOut", FadeOut);
+            info.AddValue("LoopCount", LoopCount);
+            info.AddValue("StartEndLoop", StartEndLoop);
+            info.AddValue("OriginalDestination", OriginalDestination);
+            info.AddValue("StreamOpen", StreamOpen);
         }
 
         #endregion
@@ -869,7 +940,7 @@ namespace VGMGUI
 
         #region Events
 
-        private void App_LanguageChanged(object sender, PropertyChangedExtendedEventArgs<string> e) => NotifyPropertyChanged(String.Empty);
+        private void App_LanguageChanged(object sender, PropertyChangedExtendedEventArgs<string> e) => NotifyPropertyChanged(string.Empty);
 
         #endregion
     }

@@ -1,4 +1,5 @@
-﻿using BenLib;
+﻿using AsyncIO.FileSystem.Extensions;
+using BenLib;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,18 +12,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using Z.Linq;
-using AsyncIO.FileSystem.Extensions;
-using static VGMGUI.Settings;
 using Vlc.DotNet.Core;
+using Z.Linq;
+using static VGMGUI.Settings;
 
 namespace VGMGUI
 {
-    public class VGMStream
+    public static class VGMStream
     {
-        public static readonly byte[] RIFF = { 82, 73, 70, 70 };
-        public static readonly byte[] WAVE = { 87, 65, 86, 69 };
-
         public static int ScanningCount { get; private set; }
         public static int StreamingCount { get; private set; }
         public static int ConversionCount { get; private set; }
@@ -36,18 +33,22 @@ namespace VGMGUI
         public static CancellationTokenSource VLCCTS { get; private set; }
         public static CancellationTokenSource VGMStreamCTS { get; private set; }
 
+        private static SemaphoreSlim NumberSemaphore { get; } = new SemaphoreSlim(1);
+
         /// <summary>
         /// Liste des fichiers temporaires.
         /// </summary>
-        public static Queue<KeyValuePair<string, VGMStreamProcessTypes?>> TempFiles { get; private set; } = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>();
+        public static Queue<(string FileName, VGMStreamProcessTypes? Type)> TempFiles { get; private set; } = new Queue<(string FileName, VGMStreamProcessTypes? Type)>();
 
         public static string CreateTempFile(string extension, VGMStreamProcessTypes? type, bool enqueue = true)
         {
             string fn;
-            while (File.Exists(fn = Path.ChangeExtension(Path.GetTempFileName(), extension))) continue;
-            if (enqueue) TempFiles.Enqueue(new KeyValuePair<string, VGMStreamProcessTypes?>(fn, type));
+            while (File.Exists(fn = Path.ChangeExtension(IO.GetTempFilePath(), extension))) continue;
+            if (enqueue) TempFiles.Enqueue((fn, type));
             return fn;
         }
+
+        public static Task<string> CreateTempFileAsync(string extension, VGMStreamProcessTypes? type, bool enqueue = true) => Task.Run(() => CreateTempFile(extension, type, enqueue));
 
         /// <summary>
         /// Supprime les fichiers de <see cref="TempFiles"/> si possible. En cas d'erreur, le fichier est remis dans la file.
@@ -55,42 +56,40 @@ namespace VGMGUI
         /// <returns></returns>
         public static async Task<bool> DeleteTempFiles(bool cache)
         {
-            var filesToEnqueue = new List<KeyValuePair<string, VGMStreamProcessTypes?>>();
-            var baseQueue = cache ? new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(TempFiles) : TempFiles;
-            var queue = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(baseQueue);
+            var queue = cache ? new Queue<(string, VGMStreamProcessTypes?)>(TempFiles) : TempFiles;
 
-            while (queue.Count > 0)
-            {
-                KeyValuePair<string, VGMStreamProcessTypes?> kvp = default;
-                if (!(await FileAsync.TryDeleteAsync((kvp = queue.Dequeue()).Key)).Result) filesToEnqueue.Add(kvp);
-            }
-
-            if (cache) TempFiles = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(kvp => baseQueue.Contains(kvp) == filesToEnqueue.Contains(kvp)));
-            else foreach (var file in filesToEnqueue) queue.Enqueue(file);
-
+            var filesToEnqueue = await Task.Run(() => DeleteCore()).ToArray();
+            foreach (var file in filesToEnqueue) TempFiles.Enqueue(file);
             return filesToEnqueue.IsNullOrEmpty();
+
+            IEnumerable<(string FileName, VGMStreamProcessTypes? Ytpe)> DeleteCore()
+            {
+                while (queue.Count > 0)
+                {
+                    (string FileName, VGMStreamProcessTypes? Type) file = queue.Dequeue();
+                    if (!IO.TryDelete(file.FileName).Result) yield return file;
+                }
+            }
         }
 
         public static Task<bool> DeleteTempFilesIfNotUsed() => DeleteTempFilesByTypeIfNotUsed(VGMStreamProcessTypes.Conversion, VGMStreamProcessTypes.Streaming, VGMStreamProcessTypes.Metadata, null);
 
         public static async Task<bool> DeleteTempFilesByName(params string[] files)
         {
-            bool result = true;
-            var filesToEnqueue = new List<string>();
+            var filesToEnqueue = await Task.Run(() => DeleteCore()).Select(file => file.FileName).ToArray();
+            TempFiles = new Queue<(string FileName, VGMStreamProcessTypes? Type)>(await TempFiles.WhereAsync(file => files.Contains(file.FileName) == filesToEnqueue.Contains(file.FileName)));
+            return filesToEnqueue.IsNullOrEmpty();
 
-            foreach (string file in files)
+            IEnumerable<(string FileName, VGMStreamProcessTypes? Type)> DeleteCore()
             {
-                if (!(await FileAsync.TryDeleteAsync(file)).Result)
+                foreach (string file in files)
                 {
-                    filesToEnqueue.Add(file);
-                    result = false;
+                    if (!IO.TryDelete(file).Result) yield return (file, null);
                 }
             }
-
-            TempFiles = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(kvp => files.Contains(kvp.Key) == filesToEnqueue.Contains(kvp.Key)));
-
-            return result;
         }
+
+        public static async Task<bool> DeleteTempFilesByName(IEnumerable<string> files) => files.IsNullOrEmpty() ? true : await DeleteTempFilesByName(files.ToArray());
 
         /// <summary>
         /// Supprime les fichiers de <see cref="TempFiles"/> si possible. En cas d'erreur, le fichier est remis dans la file.
@@ -98,72 +97,65 @@ namespace VGMGUI
         /// <returns></returns>
         public static async Task<bool> DeleteTempFilesByExtension(params string[] extensions)
         {
-            var filesToEnqueue = new List<KeyValuePair<string, VGMStreamProcessTypes?>>();
-            var baseQueue = extensions.IsNullOrEmpty() ? new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(TempFiles) : new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(async kvp => await extensions.AnyAsync(extension => Path.GetExtension(kvp.Key).TrimStart('.').Equals(extension.TrimStart('.')))));
-            var queue = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(baseQueue);
-
-            while (queue.Count > 0)
-            {
-                KeyValuePair<string, VGMStreamProcessTypes?> kvp = default;
-                if (!(await FileAsync.TryDeleteAsync((kvp = queue.Dequeue()).Key)).Result) filesToEnqueue.Add(kvp);
-            }
-
-            TempFiles = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(kvp => baseQueue.Contains(kvp) == filesToEnqueue.Contains(kvp)));
-
+            var filesToDelete = TempFiles.Where(file => extensions.Contains(Path.GetExtension(file.FileName).TrimStart('.'))).Select(file => file.FileName).ToArray();
+            var filesToEnqueue = await Task.Run(() => DeleteCore()).ToArray();
+            TempFiles = new Queue<(string FileName, VGMStreamProcessTypes? Type)>(await TempFiles.WhereAsync(file => filesToDelete.Contains(file.FileName) == filesToEnqueue.Contains(file.FileName)));
             return filesToEnqueue.IsNullOrEmpty();
+
+            IEnumerable<string> DeleteCore()
+            {
+                foreach (var file in filesToDelete)
+                {
+                    if (!IO.TryDelete(file).Result) yield return file;
+                }
+            }
         }
 
         public static async Task<bool> DeleteTempFilesByType(params VGMStreamProcessTypes?[] types)
         {
-            var filesToEnqueue = new List<KeyValuePair<string, VGMStreamProcessTypes?>>();
-            var baseQueue = types.IsNullOrEmpty() ? new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(TempFiles) : new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(async kvp => await types.AnyAsync(type => kvp.Value.Equals(type))));
-            var queue = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(baseQueue);
-
-            while (queue.Count > 0)
-            {
-                KeyValuePair<string, VGMStreamProcessTypes?> kvp = default;
-                if (!(await FileAsync.TryDeleteAsync((kvp = queue.Dequeue()).Key)).Result) filesToEnqueue.Add(kvp);
-            }
-
-            TempFiles = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(kvp => baseQueue.Contains(kvp) == filesToEnqueue.Contains(kvp)));
-
+            var filesToDelete = TempFiles.Where(file => types.Contains(file.Type)).Select(file => file.FileName).ToArray();
+            var filesToEnqueue = await Task.Run(() => DeleteCore()).ToArray();
+            TempFiles = new Queue<(string FileName, VGMStreamProcessTypes? Type)>(await TempFiles.WhereAsync(file => filesToDelete.Contains(file.FileName) == filesToEnqueue.Contains(file.FileName)));
             return filesToEnqueue.IsNullOrEmpty();
+
+            IEnumerable<string> DeleteCore()
+            {
+                foreach (var file in filesToDelete)
+                {
+                    if (!IO.TryDelete(file).Result) yield return file;
+                }
+            }
         }
 
         public static async Task<bool> DeleteTempFilesByTypeIfNotUsed(params VGMStreamProcessTypes?[] types)
         {
-            var filesToEnqueue = new List<KeyValuePair<string, VGMStreamProcessTypes?>>();
-            var baseQueue = types.IsNullOrEmpty() ?
-                new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(TempFiles) :
-                new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(async kvp => await types.AnyAsync(type =>
+            var typesToDelete = types.Where(type =>
             {
-                if (kvp.Value.Equals(type))
+                switch (type)
                 {
-                    switch (type)
-                    {
-                        case VGMStreamProcessTypes.Conversion:
-                            return !IsConverting;
-                        case VGMStreamProcessTypes.Metadata:
-                            return !IsScanning;
-                        case VGMStreamProcessTypes.Streaming:
-                            return !IsStreaming;
-                        case null:
-                            return !IsDownloading;
-                    }
+                    case VGMStreamProcessTypes.Conversion:
+                        return !IsConverting;
+                    case VGMStreamProcessTypes.Metadata:
+                        return !IsScanning;
+                    case VGMStreamProcessTypes.Streaming:
+                        return !IsStreaming;
+                    default:
+                        return !IsDownloading;
                 }
-                return false;
-            })));
-            var queue = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(baseQueue);
+            }).ToArray();
 
-            while (queue.Count > 0)
-            {
-                KeyValuePair<string, VGMStreamProcessTypes?> kvp = default;
-                if (!(await FileAsync.TryDeleteAsync((kvp = queue.Dequeue()).Key)).Result) filesToEnqueue.Add(kvp);
-            }
-
-            TempFiles = new Queue<KeyValuePair<string, VGMStreamProcessTypes?>>(await TempFiles.WhereAsync(kvp => baseQueue.Contains(kvp) == filesToEnqueue.Contains(kvp)));
-
+            var filesToDelete = TempFiles.Where(file => typesToDelete.Contains(file.Type)).Select(file => file.FileName).ToArray();
+            var filesToEnqueue = await Task.Run(() => DeleteCore()).ToArray();
+            TempFiles = new Queue<(string FileName, VGMStreamProcessTypes? Type)>(await TempFiles.WhereAsync(file => filesToDelete.Contains(file.FileName) == filesToEnqueue.Contains(file.FileName)));
             return filesToEnqueue.IsNullOrEmpty();
+
+            IEnumerable<string> DeleteCore()
+            {
+                foreach (var file in filesToDelete)
+                {
+                    if (!IO.TryDelete(file).Result) yield return file;
+                }
+            }
         }
 
         /// <summary>
@@ -187,7 +179,7 @@ namespace VGMGUI
         {
             if (cancellationToken.IsCancellationRequested || !File.Exists(fichier.Path)) return null;
 
-            string fn = useFile ? CreateTempFile("wav", VGMStreamProcessTypes.Streaming) : null; //Nom du fichier temporaire
+            string fn = useFile ? await CreateTempFileAsync("wav", VGMStreamProcessTypes.Streaming) : null; //Nom du fichier temporaire
 
             try
             {
@@ -323,10 +315,35 @@ namespace VGMGUI
             else return result = await GetStream(fichier, useFile, Out, cancellationToken);
         }
 
-        public static async Task<IEnumerable<string>> ConvertFileWithOtherFormats(Fichier fichier, CancellationToken cancellationToken = default, PauseToken pauseToken = default)
+        public static async Task<string[]> ConvertFileWithOtherFormats(Fichier fichier, CancellationToken cancellationToken = default, PauseToken pauseToken = default)
         {
             CancellationTokenRegistration registration = cancellationToken.Register(fichier.Cancel);
-            IEnumerable<string> result = null;
+            string[] result = null;
+
+            await NumberSemaphore.WaitAsync(cancellationToken);
+            await pauseToken.WaitWhilePausedAsync();
+
+            await Task.Run(() =>
+            {
+                if (File.Exists(fichier.FinalDestination))
+                {
+                    if (fichier.ToNumber == true)
+                    {
+                        var nf = IO.Number(fichier.FinalDestination);
+                        File.Create(nf).Close();
+                        fichier.FinalDestination = nf;
+                    }
+                    else if (fichier.ToNumber == null)
+                    {
+                        File.Move(fichier.FinalDestination, IO.Number(fichier.FinalDestination));
+                        File.Create(fichier.FinalDestination).Close();
+                    }
+                    else File.Create(fichier.FinalDestination).Close();
+                }
+                else File.Create(fichier.FinalDestination).Close();
+            });
+
+            NumberSemaphore.Release();
 
             try
             {
@@ -404,21 +421,13 @@ namespace VGMGUI
         public static Fichier GetFile(IEnumerable<string> data, FichierOutData outData = default, bool needMetadataFor = true, bool openStream = true)
         {
             bool err = true; //s contains "metadata for " ?
-            string[] linedata = null;
             Fichier f = new Fichier(null, outData) { Analyzed = true };
 
             foreach (string line in data)
             {
                 if (line != null)
                 {
-                    if (err && line.Contains("metadata for "))
-                    {
-                        linedata = new string[2] { "metadata for", line.Replace("metadata for ", String.Empty) };
-                    }
-                    else
-                    {
-                        linedata = line.Split(new[] { ": " }, 2, StringSplitOptions.RemoveEmptyEntries);
-                    }
+                    var linedata = err && line.Contains("metadata for ") ? new string[2] { "metadata for", line.Replace("metadata for ", string.Empty) } : line.Split(new[] { ": " }, 2, StringSplitOptions.RemoveEmptyEntries);
 
                     if (linedata.Length == 2)
                     {
@@ -429,29 +438,28 @@ namespace VGMGUI
                             case "metadata for":
                                 {
                                     string filename = value;
-                                    FileInfo fi = new FileInfo(filename);
 
                                     f.Path = filename;
-                                    if (openStream) f.Stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                    f.StreamOpen = openStream;
 
                                     err = false;
                                 }
                                 break;
                             case "sample rate":
                                 {
-                                    value = value.Replace(" Hz", String.Empty);
-                                    if (value.IsIntegrer()) { f.SampleRate = int.Parse(value); }
+                                    value = value.Replace(" Hz", string.Empty);
+                                    if (value.IsInt().Result) f.SampleRate = int.Parse(value);
                                 }
                                 break;
                             case "bitrate":
                                 {
-                                    value = value.Replace(" kbps", String.Empty);
-                                    if (value.IsIntegrer()) { f.Bitrate = int.Parse(value); }
+                                    value = value.Replace(" kbps", string.Empty);
+                                    if (value.IsInt().Result) f.Bitrate = int.Parse(value);
                                 }
                                 break;
                             case "channels":
                                 {
-                                    if (value.IsIntegrer()) { f.Channels = int.Parse(value); }
+                                    if (value.IsInt().Result) f.Channels = int.Parse(value);
                                 }
                                 break;
                             case "interleave":
@@ -493,7 +501,7 @@ namespace VGMGUI
                             case "metadata from":
                                 {
                                     if (value == "FFmpeg supported file format") value = "FMT_FFmpeg";
-                                    f.OriginalFormat = value.Replace(new[] { " Header", " header" }, String.Empty);
+                                    f.OriginalFormat = value.Replace(new[] { " Header", " header" }, string.Empty);
                                 }
                                 break;
                         }
@@ -513,7 +521,7 @@ namespace VGMGUI
             VGMStreamCTS = new CancellationTokenSource();
             var result = false;
             var tempPath = IO.GetTempDirectory();
-            var arcFile = CreateTempFile("zip", null);
+            var arcFile = await CreateTempFileAsync("zip", null);
             var address = @"https://raw.githubusercontent.com/bnnm/vgmstream-builds/master/bin/vgmstream-latest-test-u.zip";
             var waitingWindow = new WaitingWindow();
             var client = new WebClient();
@@ -597,7 +605,7 @@ namespace VGMGUI
             var downloadResult = false;
             var extractResult = false;
             var tempPath = IO.GetTempDirectory();
-            var arcFile = CreateTempFile("zip", null, false);
+            var arcFile = await CreateTempFileAsync("zip", null, false);
             var dirAddress = Environment.Is64BitProcess ? @"http://download.videolan.org/vlc/last/win64/" : @"http://download.videolan.org/vlc/last/win32/";
             var client = new WebClient();
 
@@ -630,7 +638,7 @@ namespace VGMGUI
 
                     if (addresses.Count == 0) return false;
 
-                    var address = dirAddress + addresses[0].Value.Replace(new[] { "<a href=\"", "\">" }, String.Empty);
+                    var address = dirAddress + addresses[0].Value.Replace(new[] { "<a href=\"", "\">" }, string.Empty);
 
                     waitingWindow.SetResourceReference(WaitingWindow.TextProperty, "WW_DownloadOf");
                     waitingWindow.Labels.Children.Add(new TextBox() { IsReadOnly = true, BorderThickness = new Thickness(0), Text = address });
@@ -722,7 +730,7 @@ namespace VGMGUI
             RedirectStandardError = true,
             CreateNoWindow = true,
             UseShellExecute = false,
-            Arguments = $"-o \"{(Uri.IsWellFormedUriString(new Uri(outFile).AbsoluteUri, UriKind.RelativeOrAbsolute) ? outFile : Path.ChangeExtension(inFile, "wav"))}\"{(startEndLoop ? " -E" : String.Empty)} -l {loopCount} {(fadeOut ? $"-f {fadeTime.ToString(Literal.DecimalSeparatorPoint)} -d {fadeDelay.ToString(Literal.DecimalSeparatorPoint)}" : "-F")} \"{inFile}\""
+            Arguments = $"-o \"{(Uri.IsWellFormedUriString(new Uri(outFile).AbsoluteUri, UriKind.RelativeOrAbsolute) ? outFile : Path.ChangeExtension(inFile, "wav"))}\"{(startEndLoop ? " -E" : string.Empty)} -l {loopCount} {(fadeOut ? $"-f {fadeTime.ToString(Literal.DecimalSeparatorPoint)} -d {fadeDelay.ToString(Literal.DecimalSeparatorPoint)}" : "-F")} \"{inFile}\""
         };
 
         /// <summary>
@@ -741,7 +749,7 @@ namespace VGMGUI
                         RedirectStandardError = true,
                         CreateNoWindow = true,
                         UseShellExecute = false,
-                        Arguments = $"-P{(startEndLoop ? " -E" : String.Empty)} -l {loopCount} {(fadeOut ? $"-f {fadeTime.ToString(Literal.DecimalSeparatorPoint)} -d {fadeDelay.ToString(Literal.DecimalSeparatorPoint)}" : "-F")} \"{inFile}\""
+                        Arguments = $"-P{(startEndLoop ? " -E" : string.Empty)} -l {loopCount} {(fadeOut ? $"-f {fadeTime.ToString(Literal.DecimalSeparatorPoint)} -d {fadeDelay.ToString(Literal.DecimalSeparatorPoint)}" : "-F")} \"{inFile}\""
                     };
                 case VGMStreamProcessTypes.Metadata:
                     return new ProcessStartInfo(App.VGMStreamPath)

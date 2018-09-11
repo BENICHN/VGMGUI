@@ -1,23 +1,25 @@
-﻿using System;
-using System.ComponentModel;
+﻿using BenLib;
+using BenLib.WPF;
+using Microsoft.WindowsAPICodePack.Dialogs;
+using Microsoft.WindowsAPICodePack.Dialogs.Controls;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Media;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Threading;
-using System.IO;
-using BenLib;
-using BenLib.WPF;
-using System.Linq;
-using Microsoft.WindowsAPICodePack.Dialogs;
-using Microsoft.WindowsAPICodePack.Dialogs.Controls;
 using System.Windows.Input;
-using System.Globalization;
+using System.Windows.Media;
+using System.Windows.Threading;
 using static VGMGUI.Settings;
+using Clipboard = System.Windows.Forms.Clipboard;
 
 namespace VGMGUI
 {
@@ -33,7 +35,7 @@ namespace VGMGUI
         /// <summary>
         /// Liste des fichiers.
         /// </summary>
-        ItemsChangeObservableCollection<Fichier, object> filesCollection = new ItemsChangeObservableCollection<Fichier, object>();
+        private ItemsChangeObservableCollection<Fichier, object> filesCollection = new ItemsChangeObservableCollection<Fichier, object>();
 
         /// <summary>
         /// Liste des fichiers.
@@ -47,12 +49,12 @@ namespace VGMGUI
         /// <summary>
         /// Indique si <see cref="SelectAll_Checked"/> ou <see cref="SelectAll_UnChecked"/> a été appelé par <see cref="SelectOne_Checked"/> ou <see cref="SelectOne_UnChecked"/>
         /// </summary>
-        bool m_selectone;
+        private bool m_selectone;
 
         /// <summary>
         /// Indique si <see cref="SelectOne_UnChecked"/> ou <see cref="SelectOne_Checked"/> a été appelé par <see cref="SelectAll_Checked"/> ou <see cref="SelectAll_UnChecked"/>
         /// </summary>
-        bool m_selectall;
+        private bool m_selectall;
 
         #endregion
 
@@ -63,7 +65,7 @@ namespace VGMGUI
         /// <summary>
         /// Propriété <see cref="ScrollViewer.ComputedVerticalScrollBarVisibilityProperty"/> de <see cref="ScrollViewer"/> mise à jour manuellement.
         /// </summary>
-        Visibility? m_verticalScrollBarVisibility = null;
+        private Visibility? m_verticalScrollBarVisibility = null;
 
         /// <summary>
         /// Obtient la vue par défaut de <see cref="FILEList"/>
@@ -96,12 +98,14 @@ namespace VGMGUI
         /// <summary>
         /// Fenêtre montrant la progression de l'ajout de fichiers.
         /// </summary>
-        WaitingWindow WaitingWindow { get; set; }
+        private WaitingWindow WaitingWindow { get; set; }
 
         /// <summary>
         /// Annule l'ajout ou l'analyse.
         /// </summary>
-        CancellationTokenSource AddingCTS { get; set; } = new CancellationTokenSource();
+        private CancellationTokenSource AddingCTS { get; set; } = new CancellationTokenSource();
+
+        private readonly Button m_waitingWindowLabel = new Button { Margin = new Thickness(0, 1, 0, 0), Content = $"0 {App.Str("WW_Errors")}", Background = Brushes.Transparent };
 
         #region Adding
 
@@ -127,15 +131,12 @@ namespace VGMGUI
             private set
             {
                 m_addingErrorCount = value;
-                if (WaitingWindow != null && WaitingWindow.Labels.Children.Count > 1 && WaitingWindow.Labels.Children[1] is Label label)
+                if (value == 1)
                 {
-                    if (value == 1)
-                    {
-                        label.Content = $"{value} {App.Str("WW_Error")}";
-                        label.SetResourceReference(ForegroundProperty, "ErrorBrush");
-                    }
-                    else label.Content = $"{value} {App.Str("WW_Errors")}";
+                    m_waitingWindowLabel.Content = $"{value} {App.Str("WW_Error")}";
+                    m_waitingWindowLabel.SetResourceReference(ForegroundProperty, "ErrorBrush");
                 }
+                else m_waitingWindowLabel.Content = $"{value} {App.Str("WW_Errors")}";
             }
         }
 
@@ -180,15 +181,12 @@ namespace VGMGUI
             private set
             {
                 m_analyzingErrorCount = value;
-                if (WaitingWindow != null && WaitingWindow.Labels.Children.Count > 1 && WaitingWindow.Labels.Children[1] is Label label)
+                if (value == 1)
                 {
-                    if (value == 1)
-                    {
-                        label.Content = $"{value} {App.Str("WW_Error")}";
-                        label.SetResourceReference(ForegroundProperty, "ErrorBrush");
-                    }
-                    else label.Content = $"{value} {App.Str("WW_Errors")}";
+                    m_waitingWindowLabel.Content = $"{value} {App.Str("WW_Error")}";
+                    m_waitingWindowLabel.SetResourceReference(ForegroundProperty, "ErrorBrush");
                 }
+                else m_waitingWindowLabel.Content = $"{value} {App.Str("WW_Errors")}";
             }
         }
 
@@ -225,7 +223,7 @@ namespace VGMGUI
                 if (SearchFilter.IsNullOrEmpty()) return true;
                 else if (o is Fichier fichier)
                 {
-                    string property = String.Empty;
+                    string property = string.Empty;
                     switch (SearchColumn)
                     {
                         case FileListColumn.Name:
@@ -271,22 +269,31 @@ namespace VGMGUI
                             property = fichier.DateString;
                             break;
                     }
-                    return property.Contains(SearchFilter, SearchCaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase) ^ SearchNo;
+                    try { return SearchRegex ? new Regex(SearchFilter, SearchCaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase).IsMatch(property) : property.Contains(SearchFilter, SearchCaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase); }
+                    catch (ArgumentException) { return false; }
                 }
                 else return false;
             });
 
+            m_waitingWindowLabel.Style = Resources["HyperLinkLabel"] as Style;
+
             #region EventHandlers
 
             filesCollection.CollectionChanged += filesCollection_CollectionChanged;
+            m_waitingWindowLabel.Click += (sender, e) => ErrorWindow.ShowErrors();
 
             App.FileListItemCMItems.FindCollectionItem<MenuItem>("DeleteMI").Click += DeleteMI;
+            App.FileListItemCMItems.FindCollectionItem<MenuItem>("CopyMI").Click += CopyMI;
+            App.FileListItemCMItems.FindCollectionItem<MenuItem>("CutMI").Click += CutMI;
+            App.FileListItemCMItems.FindCollectionItem<MenuItem>("PasteMI").Click += PasteMI;
             App.FileListItemCMItems.FindCollectionItem<MenuItem>("CheckMI").Click += CheckMI;
             App.FileListItemCMItems.FindCollectionItem<MenuItem>("UnCheckMI").Click += UnCheckMI;
             App.FileListItemCMItems.FindCollectionItem<MenuItem>("AnalyseMI").Click += AnalyzeMI;
             App.FileListItemCMItems.FindCollectionItem<MenuItem>("OpenFPMI").Click += OpenFPMI;
             App.FileListItemCMItems.FindCollectionItem<MenuItem>("CopyFPMI").Click += CopyFPMI;
             App.FileListItemCMItems.FindCollectionItem<MenuItem>("PropertiesMI").Click += PropertiesMI;
+
+            App.FileListMItems.FindCollectionItem<MenuItem>("F_PasteMI").Click += PasteMI;
 
             StaticPropertyChanged += Settings_StaticPropertyChanged;
 
@@ -331,7 +338,7 @@ namespace VGMGUI
                         #region WaitingWindow
 
                         WaitingWindow = new WaitingWindow { Maximum = AddingCount };
-                        WaitingWindow.Labels.Children.Add(new Label() { Margin = new Thickness(0, 1, 0, 0), Content = $"0 {App.Str("WW_Errors")}" });
+                        WaitingWindow.Labels.Children.Add(m_waitingWindowLabel);
                         WaitingWindow.SetResourceReference(WaitingWindow.TextProperty, "WW_Running");
                         WaitingWindow.SetResourceReference(Window.TitleProperty, "WW_FilesAdding");
                         WaitingWindow.CancelButton.Click += CancelAdding;
@@ -398,7 +405,7 @@ namespace VGMGUI
                     filesCollection.Add(new Fichier(fileName, outData)
                     {
                         Index = filesCollection.Count,
-                        Stream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read)
+                        StreamOpen = true
                     });
                 }
 
@@ -458,7 +465,7 @@ namespace VGMGUI
                         if (displayWaitingWindow)
                         {
                             WaitingWindow = new WaitingWindow { Maximum = AnalyzingCount };
-                            WaitingWindow.Labels.Children.Add(new Label() { Margin = new Thickness(0, 1, 0, 0), Content = $"0 {App.Str("WW_Errors")}" });
+                            WaitingWindow.Labels.Children.Add(m_waitingWindowLabel);
                             WaitingWindow.SetResourceReference(WaitingWindow.TextProperty, "WW_Running");
                             WaitingWindow.SetResourceReference(Window.TitleProperty, "WW_FilesAnalyze");
                             WaitingWindow.CancelButton.Click += CancelAdding;
@@ -512,7 +519,7 @@ namespace VGMGUI
         /// </summary>
         /// <param name="file">Fichier à analyser.</param>
         /// <param name="displayWaitingWindow">true si la fenêtre d'attente doit être affichée pendant l'analyse; sinon, false.</param>
-        public void AnalyzeFile(Fichier file, bool displayWaitingWindow = false) => AnalyzeFiles(new[] { file }, displayWaitingWindow);
+        public Task AnalyzeFile(Fichier file, bool displayWaitingWindow = false) => AnalyzeFiles(new[] { file }, displayWaitingWindow);
 
         #region Core
 
@@ -545,7 +552,7 @@ namespace VGMGUI
                         fc.LoopEnd = f.LoopEnd;
                         fc.SampleRate = f.SampleRate;
                         fc.TotalSamples = f.TotalSamples;
-                        fc.NotifyPropertyChanged(String.Empty);
+                        fc.NotifyPropertyChanged(string.Empty);
 
                         //if (sel) FILEList.SelectedItems.Add(f);
                     }
@@ -620,6 +627,7 @@ namespace VGMGUI
                 WaitingWindow.CancelButton.Click -= CancelAdding;
                 WaitingWindow.Closing -= CancelAdding;
                 WaitingWindow.Close();
+                WaitingWindow.Labels.Children.Clear();
             }
             catch { }
 
@@ -639,10 +647,7 @@ namespace VGMGUI
         /// <summary>
         /// Supprime tous les fichiers de la liste si <see cref="CanRemove"/> est true.
         /// </summary>
-        public void RemoveAll()
-        {
-            foreach (Fichier fichier in filesCollection.ToList()) filesCollection.Remove(fichier);
-        }
+        public void RemoveAll() { if (CanRemove) filesCollection.Clear(); }
 
         /// <summary>
         /// Supprime les fichiers sélectionnés si <see cref="CanRemove"/> est true.
@@ -651,12 +656,8 @@ namespace VGMGUI
         {
             if (CanRemove)
             {
-                try
-                {
-                    var SI = GetSelectedFiles();
-                    foreach (Fichier fichier in SI) filesCollection.Remove(fichier);
-                }
-                finally { UpdateIndexes(); }
+                foreach (Fichier fichier in GetSelectedFiles().ToArray()) filesCollection.Remove(fichier);
+                UpdateIndexes();
             }
         }
 
@@ -667,12 +668,36 @@ namespace VGMGUI
         {
             if (CanRemove)
             {
-                try
+                filesCollection.RemoveAll(f => f.Invalid);
+                UpdateIndexes();
+            }
+        }
+
+        public void RemoveDFiles()
+        {
+            if (CanRemove)
+            {
+                foreach (var group in filesCollection.GroupBy(fichier => fichier.Path))
                 {
-                    var wrongfiles = filesCollection.Where(f => f.Invalid).ToList();
-                    foreach (Fichier fichier in wrongfiles) filesCollection.Remove(fichier);
+                    var enumerator = group.GetEnumerator();
+                    enumerator.MoveNext();
+                    while (enumerator.MoveNext()) filesCollection.Remove(enumerator.Current);
                 }
-                finally { UpdateIndexes(); }
+                UpdateIndexes();
+            }
+        }
+
+        public void RemoveSNFiles()
+        {
+            if (CanRemove)
+            {
+                foreach (var group in filesCollection.GroupBy(fichier => Path.GetFileName(fichier.Path).ToLower()))
+                {
+                    var enumerator = group.GetEnumerator();
+                    enumerator.MoveNext();
+                    while (enumerator.MoveNext()) filesCollection.Remove(enumerator.Current);
+                }
+                UpdateIndexes();
             }
         }
 
@@ -683,20 +708,15 @@ namespace VGMGUI
         /// </summary>
         public void Reselect()
         {
-            var selectedfiles = GetSelectedFiles();
-
+            var selectedfiles = GetSelectedFiles().ToArray();
             FILEList.SelectedItems.Clear();
-
-            foreach (Fichier fichier in selectedfiles) FILEList.SelectedItems.Add(fichier);
+            foreach (var fichier in selectedfiles) FILEList.SelectedItems.Add(fichier);
         }
 
         /// <summary>
         /// Met à jour la propriété <see cref="Fichier.Index"/>.
         /// </summary>
-        private void UpdateIndexes()
-        {
-            foreach (Fichier fichier in filesCollection) fichier.Index = filesCollection.IndexOf(fichier);
-        }
+        private void UpdateIndexes() => filesCollection.ForEach((i, fichier) => fichier.Index = i);
 
         /// <summary>
         /// Déplace les fichiers sélectionnés à un endroit spécifié de la liste
@@ -715,35 +735,25 @@ namespace VGMGUI
 
                 if (valid)
                 {
-                    SortedDictionary<int, Fichier> SIDict = direction == MoveDirection.Up || direction == MoveDirection.First || direction == MoveDirection.CustomUp || direction == MoveDirection.MashUp || direction == MoveDirection.FirstMash || direction == MoveDirection.CustomUpMash ? new SortedDictionary<int, Fichier>() : new SortedDictionary<int, Fichier>(new DescendingComparer<int>());
-
-                    foreach (Fichier fichier in FILEList.SelectedItems) SIDict.Add(fichier.Index, fichier);
+                    var SIDict = (direction.IsUp() ? GetSelectedFiles().OrderBy(fichier => fichier.Index) : GetSelectedFiles().OrderByDescending(fichier => fichier.Index)).ToDictionary(fichier => fichier.Index, fichier => fichier);
 
                     switch (direction)
                     {
                         case MoveDirection.Up:
-                            {
-                                dir = -1;
-                            }
+                            dir = -1;
                             break;
                         case MoveDirection.Down:
-                            {
-                                dir = 1;
-                            }
+                            dir = 1;
                             break;
                         case MoveDirection.Last:
-                            {
-                                dir = filesCollection.Count - filesCollection.IndexOf(SIDict.Values.First()) - 1;
-                            }
+                            dir = filesCollection.Count - filesCollection.IndexOf(SIDict.Values.First()) - 1;
                             break;
                         case MoveDirection.First:
-                            {
-                                dir = 0 - filesCollection.IndexOf(SIDict.Values.First());
-                            }
+                            dir = 0 - filesCollection.IndexOf(SIDict.Values.First());
                             break;
                         case MoveDirection.CustomUp:
                             {
-                                InputBoxResult ibr = InputBox.Show(App.Str("INPBOX_RiseOf"), String.Empty, ContentTypes.UnsignedIntegrer, new SolidColorBrush(Color.FromRgb(250, 250, 250)));
+                                InputBoxResult ibr = InputBox.Show(App.Str("INPBOX_RiseOf"), string.Empty, ContentTypes.UnsignedInteger, new SolidColorBrush(Color.FromRgb(250, 250, 250)).GetAsTypedFrozen());
                                 if (ibr.Result == InputBoxDialogResult.OK)
                                 {
                                     try { dir = int.Parse(ibr.Text); }
@@ -756,7 +766,7 @@ namespace VGMGUI
                             break;
                         case MoveDirection.CustomDown:
                             {
-                                InputBoxResult ibr = InputBox.Show(App.Str("INPBOX_DescendOf"), String.Empty, ContentTypes.UnsignedIntegrer, new SolidColorBrush(Color.FromRgb(250, 250, 250)));
+                                InputBoxResult ibr = InputBox.Show(App.Str("INPBOX_DescendOf"), string.Empty, ContentTypes.UnsignedInteger, new SolidColorBrush(Color.FromRgb(250, 250, 250)).GetAsTypedFrozen());
                                 if (ibr.Result == InputBoxDialogResult.OK)
                                 {
                                     try { dir = int.Parse(ibr.Text); }
@@ -774,7 +784,7 @@ namespace VGMGUI
 
                                 if (direction == MoveDirection.CustomUpMash)
                                 {
-                                    InputBoxResult ibr = InputBox.Show(App.Str("INPBOX_MashRiseOf"), String.Empty, ContentTypes.UnsignedIntegrer, new SolidColorBrush(Color.FromRgb(250, 250, 250)));
+                                    InputBoxResult ibr = InputBox.Show(App.Str("INPBOX_MashRiseOf"), string.Empty, ContentTypes.UnsignedInteger, new SolidColorBrush(Color.FromRgb(250, 250, 250)).GetAsTypedFrozen());
                                     if (ibr.Result == InputBoxDialogResult.OK)
                                     {
                                         try { i = int.Parse(ibr.Text); }
@@ -802,7 +812,7 @@ namespace VGMGUI
 
                                 if (direction == MoveDirection.CustomDownMash)
                                 {
-                                    InputBoxResult ibr = InputBox.Show(App.Str("INPBOX_MashDescendOf"), String.Empty, ContentTypes.UnsignedIntegrer, new SolidColorBrush(Color.FromRgb(250, 250, 250)));
+                                    InputBoxResult ibr = InputBox.Show(App.Str("INPBOX_MashDescendOf"), string.Empty, ContentTypes.UnsignedInteger, new SolidColorBrush(Color.FromRgb(250, 250, 250)).GetAsTypedFrozen());
                                     if (ibr.Result == InputBoxDialogResult.OK)
                                     {
                                         try { i = int.Parse(ibr.Text); }
@@ -835,18 +845,37 @@ namespace VGMGUI
                         }
                     }
 
-                    if (direction == MoveDirection.Up || direction == MoveDirection.First || direction == MoveDirection.CustomUp || direction == MoveDirection.MashUp || direction == MoveDirection.FirstMash || direction == MoveDirection.CustomUpMash)
-                    {
-                        FILEList.ScrollIntoView(SIDict.First().Value);
-                    }
-                    else
-                    {
-                        FILEList.ScrollIntoView(SIDict.Last().Value);
-                    }
+                    FILEList.ScrollIntoView((direction.IsUp() ? SIDict.First() : SIDict.Last()).Value);
                 }
             }
             catch { return; }
             finally { UpdateIndexes(); }
+        }
+
+        public void CopySelectedFiles() => Clipboard.SetData("FichierCollection", GetSelectedFiles().ToArray());
+
+        public void CutSelectedFiles()
+        {
+            CopySelectedFiles();
+            RemoveSelectedItems();
+        }
+
+        public void PasteFiles()
+        {
+            if (Clipboard.GetData("FichierCollection") is Fichier[] array)
+            {
+                var index = FILEList.SelectedIndex;
+                if (index < 0) index = filesCollection.Count;
+
+                for (int i = 0; i < array.Length; i++)
+                {
+                    var fichier = array[i];
+                    filesCollection.Insert(index + i, fichier);
+                    FILEList.SelectedItems.Add(fichier);
+                }
+
+                FILEList.ScrollIntoView(array.Last());
+            }
         }
 
         #endregion
@@ -854,7 +883,7 @@ namespace VGMGUI
         /// <summary>
         /// Ouvre une nouvelle <see cref="CommonOpenFileDialog"/> si <see cref="CanAdd"/> est true.
         /// </summary>
-        public void OpenFileDialog(bool folderSelect)
+        public void OpenFileDialog(bool folderSelect, bool sn)
         {
             if (CanAdd)
             {
@@ -882,26 +911,23 @@ namespace VGMGUI
                 {
                     if (fileDialog.IsFolderPicker)
                     {
-                        bool subFolders = (fileDialog.Controls.FirstOrDefault(control => control.Name == "ISFChbx") as CommonFileDialogCheckBox).IsChecked;
-                        var files = new List<string>();
-                        var folders = fileDialog.FileNames.Where(folder => Directory.Exists(folder)).ToList();
-                        foreach (string folder in folders)
-                        {
-                            try
-                            {
-                                if (subFolders) files.AddRange(IO.DirSearch(folder, (ex) => ErrorWindow.BadFiles.Add(ex.Message)));
-                                else files.AddRange(Directory.GetFiles(folder));
-                            }
-                            catch { ErrorWindow.BadFiles.Add(folder); }
-                        }
+                        bool subFolders = ((CommonFileDialogCheckBox)fileDialog.Controls.FirstOrDefault(control => control.Name == "ISFChbx")).IsChecked;
+                        var files = fileDialog.FileNames.Where(folder => Directory.Exists(folder)).SelectMany(folder => IO.DirSearch(folder, subFolders, (ex) => ErrorWindow.BadFiles.Add(ex.Message)));
+
                         if (ErrorWindow.BadFiles.Count > 0) //Show errors
                         {
                             ErrorWindow.ShowErrors("TITLE_ErrorWindow2");
                             ErrorWindow.BadFiles = new System.Collections.ObjectModel.ObservableCollection<string>();
                         }
+
+                        if (sn) files = files.GroupBy(s => Path.GetFileName(s).ToLower()).Select(group => group.First());
                         AddFiles(files);
                     }
-                    else AddFiles(fileDialog.FileNames);
+                    else
+                    {
+                        if (sn) AddFiles(fileDialog.FileNames.GroupBy(s => Path.GetFileName(s).ToLower()).Select(group => group.First()));
+                        else AddFiles(fileDialog.FileNames);
+                    }
                 }
                 if (!App.AutoCulture)
                 {
@@ -922,7 +948,7 @@ namespace VGMGUI
         /// Obtient une liste à partir des fichiers sélectionnés.
         /// </summary>
         /// <returns>Liste contenant les fichiers sélectionnés.</returns>
-        public List<Fichier> GetSelectedFiles() => (from Fichier fichier in FILEList.SelectedItems select fichier).ToList();
+        public IEnumerable<Fichier> GetSelectedFiles() => FILEList.SelectedItems.OfType<Fichier>();
 
         /// <summary>
         /// Applique le filtre de chaque fichier de <see cref="filesCollection"/> et rafraîchit <see cref="View"/>.
@@ -1017,16 +1043,10 @@ namespace VGMGUI
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             DependencyPropertyDescriptor.FromProperty(ScrollViewer.ComputedVerticalScrollBarVisibilityProperty, typeof(ScrollViewer)).AddValueChanged(ScrollViewer, ScrollViewer_ComputedVerticalScrollBarVisibilityChanged);
-            SearchFilter = SearchBox.Visibility == Visibility.Visible ? RestoreSearchFilter : String.Empty;
+            SearchFilter = SearchBox.Visibility == Visibility.Visible ? RestoreSearchFilter : string.Empty;
         }
 
-        private void filesCollection_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            if (e.Action == NotifyCollectionChangedAction.Remove)
-            {
-                foreach (Fichier fichier in e.OldItems) fichier.Stream?.Close();
-            }
-        }
+        private void filesCollection_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e) { if (e.Action == NotifyCollectionChangedAction.Remove) foreach (Fichier fichier in e.OldItems) fichier.StreamOpen = false; }
 
         private void ScrollViewer_ComputedVerticalScrollBarVisibilityChanged(object sender, EventArgs e)
         {
@@ -1044,7 +1064,7 @@ namespace VGMGUI
 
         private async void SearchBox_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            SearchFilter = (bool)e.NewValue ? RestoreSearchFilter : String.Empty;
+            SearchFilter = (bool)e.NewValue ? RestoreSearchFilter : string.Empty;
             await Search();
         }
 
@@ -1052,7 +1072,7 @@ namespace VGMGUI
         {
             switch (e.PropertyName)
             {
-                case "SearchNo":
+                case "SearchRegex":
                 case "SearchCaseSensitive":
                 case "SearchColumn":
                     await Search();
@@ -1283,13 +1303,8 @@ namespace VGMGUI
 
         private void FILEList_Drop(object sender, DragEventArgs e)
         {
-            var files = ((string[])e.Data.GetData(DataFormats.FileDrop, false)).ToList();
-            foreach (string folder in files.Where(folder => Directory.Exists(folder)).ToList())
-            {
-                files.Remove(folder);
-                if (Keyboard.Modifiers == ModifierKeys.Shift) files.AddRange(Directory.GetFiles(folder, "*", SearchOption.AllDirectories));
-                else files.AddRange(Directory.GetFiles(folder));
-            }
+            var files = ((string[])e.Data.GetData(DataFormats.FileDrop, false)).Replace(file => Directory.Exists(file), folder => IO.DirSearch(folder, (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift));
+            if ((Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt) files = files.GroupBy(s => Path.GetFileName(s).ToLower()).Select(group => group.First());
             AddFiles(files);
         }
 
@@ -1305,10 +1320,15 @@ namespace VGMGUI
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             var column = parameter.ToString().ToEnum<FileListColumn>();
-            return SearchColumn == column ? SearchFilter : String.Empty;
+            return SearchColumn == column ? SearchFilter : string.Empty;
         }
-
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => null;
+    }
+
+    public static partial class Extensions
+    {
+        public static bool IsUp(this MoveDirection moveDirection) => moveDirection == MoveDirection.Up || moveDirection == MoveDirection.First || moveDirection == MoveDirection.CustomUp || moveDirection == MoveDirection.MashUp || moveDirection == MoveDirection.FirstMash || moveDirection == MoveDirection.CustomUpMash;
+        public static bool IsDown(this MoveDirection moveDirection) => !IsUp(moveDirection);
     }
 
     public enum MoveDirection { Up, Down, First, Last, CustomUp, CustomDown, MashUp, MashDown, FirstMash, LastMash, CustomUpMash, CustomDownMash }

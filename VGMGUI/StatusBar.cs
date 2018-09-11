@@ -1,10 +1,10 @@
-﻿using System;
+﻿using BenLib.WPF;
+using System;
 using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using BenLib.WPF;
 using static VGMGUI.Settings;
 
 namespace VGMGUI
@@ -18,10 +18,11 @@ namespace VGMGUI
         private static bool s_counter = true;
         private static bool s_RAM = true;
         private static bool s_samplesDisplay = true;
-        private static bool s_SearchDelay = true;
-        private static bool s_PreAnalyse = true;
-        private static bool s_StreamingType = true;
-        private static bool s_Size = true;
+        private static bool s_searchDelay = true;
+        private static bool s_preAnalyse = true;
+        private static bool s_streamingType = true;
+        private static bool s_size = true;
+        private static bool s_conversion = true;
 
         public static bool Display
         {
@@ -77,12 +78,12 @@ namespace VGMGUI
         }
         public static bool SearchDelay
         {
-            get => s_SearchDelay;
+            get => s_searchDelay;
             set
             {
-                if (value != s_SearchDelay)
+                if (value != s_searchDelay)
                 {
-                    s_SearchDelay = value;
+                    s_searchDelay = value;
                     SettingsData["StatusBar"]["SearchDelay"] = value.ToString();
                     StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("SearchDelay"));
                 }
@@ -90,12 +91,12 @@ namespace VGMGUI
         }
         public static bool PreAnalyse
         {
-            get => s_PreAnalyse;
+            get => s_preAnalyse;
             set
             {
-                if (value != s_PreAnalyse)
+                if (value != s_preAnalyse)
                 {
-                    s_PreAnalyse = value;
+                    s_preAnalyse = value;
                     SettingsData["StatusBar"]["PreAnalyse"] = value.ToString();
                     StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("PreAnalyse"));
                 }
@@ -103,12 +104,12 @@ namespace VGMGUI
         }
         public static bool StreamingType
         {
-            get => s_StreamingType;
+            get => s_streamingType;
             set
             {
-                if (value != s_StreamingType)
+                if (value != s_streamingType)
                 {
-                    s_StreamingType = value;
+                    s_streamingType = value;
                     SettingsData["StatusBar"]["StreamingType"] = value.ToString();
                     StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("StreamingType"));
                 }
@@ -116,14 +117,27 @@ namespace VGMGUI
         }
         public static bool Size
         {
-            get => s_Size;
+            get => s_size;
             set
             {
-                if (value != s_Size)
+                if (value != s_size)
                 {
-                    s_Size = value;
+                    s_size = value;
                     SettingsData["StatusBar"]["Size"] = value.ToString();
                     StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("Size"));
+                }
+            }
+        }
+        public static bool Conversion
+        {
+            get => s_conversion;
+            set
+            {
+                if (value != s_conversion)
+                {
+                    s_conversion = value;
+                    SettingsData["StatusBar"]["Conversion"] = value.ToString();
+                    StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("Conversion"));
                 }
             }
         }

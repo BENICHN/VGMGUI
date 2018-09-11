@@ -39,6 +39,8 @@
     <sys:String x:Key="ST_objectSelectedOutOf">object selected out of</sys:String>
     <sys:String x:Key="ST_RAMUsage">RAM Usage:</sys:String>
     <sys:String x:Key="ST_Size">Reset size of elements and window</sys:String>
+    <sys:String x:Key="ST_Conversion">Conversion: </sys:String>
+    <sys:String x:Key="ST_Pending">Pending</sys:String>
 
     <sys:String x:Key="ERR_InvalidDestination">Main destination is invalid.</sys:String>
     <sys:String x:Key="ERR_UnauthorizedCharacters">Unauthorized characters: \ / : * ? " &lt; gt; |</sys:String>
@@ -81,7 +83,7 @@
     <sys:String x:Key="TBI_Stop">Stop</sys:String>
 
     <sys:String x:Key="SRCH_Case">Case-sensitive</sys:String>
-    <sys:String x:Key="SRCH_No">Show only / Hide matching elements</sys:String>
+    <sys:String x:Key="SRCH_Regex">Regular expressions</sys:String>
 
     <sys:String x:Key="ASKW_H1">Some files already exist in the destination</sys:String>
     <sys:String x:Key="ASKW_H2">What do you want to do?</sys:String>
@@ -116,6 +118,8 @@
 
     <sys:String x:Key="AP_AddFiles">Add files (Ctrl+O / Inser)</sys:String>
     <sys:String x:Key="AP_AddFolders">Add folders (Ctrl+Maj+O / Ctrl+Inser)</sys:String>
+    <sys:String x:Key="AP_AddFilesSN">Add files excluding files with the same name (Ctrl+Alt+O / Alt+Inser)</sys:String>
+    <sys:String x:Key="AP_AddFoldersSN">Add folders excluding files with the same name (Ctrl+Alt+Maj+O / Ctrl+Alt+Inser)</sys:String>
     <sys:String x:Key="AP_Play">Play (Space)</sys:String>
     <sys:String x:Key="AP_Resume">Resume (Space)</sys:String>
     <sys:String x:Key="AP_Pause">Pause (Space)</sys:String>
@@ -147,6 +151,8 @@
     <sys:String x:Key="AP_Delete">Delete (Del)</sys:String>
     <sys:String x:Key="AP_DeleteAll">Delete all (Maj+Del)</sys:String>
     <sys:String x:Key="AP_DeleteInvalidFiles">Delete invalid files (Ctrl+Del)</sys:String>
+    <sys:String x:Key="AP_DeleteDFiles">Delete files with the same path (Alt+Suppr)</sys:String>
+    <sys:String x:Key="AP_DeleteSNFiles">Delete files with the same name (Ctrl+Alt+Suppr)</sys:String>
 
     <sys:String x:Key="MW_Copy">Copy informations</sys:String>
     <sys:String x:Key="MW_Paste">Paste informations</sys:String>
@@ -230,6 +236,7 @@
     <sys:String x:Key="STGS_CLRS_Error">Error color:</sys:String>
     <sys:String x:Key="STGS_STSBAR">Status bar (Ctrl+Maj+B)</sys:String>
     <sys:String x:Key="STGS_STSBAR_Count">Element counter</sys:String>
+    <sys:String x:Key="STGS_STSBAR_Conversion">Informations sur la conversion</sys:String>
     <sys:String x:Key="STGS_STSBAR_RAM">RAM Usage</sys:String>
     <sys:String x:Key="STGS_STSBAR_StreamingType">Streaming mode</sys:String>
     <sys:String x:Key="STGS_STSBAR_StreamingTypeLive">Live (VLC 3.0)</sys:String>

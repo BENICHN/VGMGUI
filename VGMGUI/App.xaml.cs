@@ -22,7 +22,7 @@ namespace VGMGUI
     /// </summary>
     public partial class App : Application
     {
-        public new static MainWindow MainWindow { get; private set; }
+        public static MainWindow VGMainWindow { get; private set; }
         private static bool ShowMainWindow { get; set; }
 
         public static string[] InvalidFileNameChars => Path.GetInvalidFileNameChars().Select(c => c.ToString()).ToArray();
@@ -48,6 +48,7 @@ namespace VGMGUI
 
         public static string[] Args { get; set; }
 
+        public static ItemCollection FileListMItems => (Current.Resources["FileListCM"] as ContextMenu).Items;
         public static ItemCollection FileListItemCMItems => (Current.Resources["FileListItemCM"] as ContextMenu).Items;
         public static ItemCollection AskItemCMItems => (Current.Resources["AskItemCM"] as ContextMenu).Items;
         public static ItemCollection ErrorItemCMItems => (Current.Resources["ErrorItemCM"] as ContextMenu).Items;
@@ -74,21 +75,14 @@ namespace VGMGUI
             catch { SettingsData = new IniData(); }
         }
 
-        public static async Task<bool> AskVGMStream()
-        {
-            if (MessageBox.Show(Str("ERR_VGMStreamNotFound"), Str("TT_Error"), MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes)
-            {
-                return await VGMStream.DownloadVGMStream();
-            }
-            else return false;
-        }
+        public static async Task<bool> AskVGMStream() => MessageBox.Show(Str("ERR_VGMStreamNotFound"), Str("TT_Error"), MessageBoxButton.YesNo, MessageBoxImage.Error) == MessageBoxResult.Yes ? await VGMStream.DownloadVGMStream() : false;
 
         public static void SetLanguage(string culture)
         {
             if (culture == "Auto")
             {
                 var installedCulture = CultureInfo.InstalledUICulture.ToString();
-                switch(installedCulture.Split('-')[0])
+                switch (installedCulture.Split('-')[0])
                 {
                     case "fr":
                         culture = "fr-FR";
@@ -134,20 +128,12 @@ namespace VGMGUI
         public static string Str(string resource) => !resource.IsNullOrEmpty() ? Current.Resources[resource] as string : null;
         public static string Str(string resource, string culture) => !resource.IsNullOrEmpty() ? new ResourceDictionary() { Source = new Uri("..\\Lang\\" + culture + ".xaml", UriKind.Relative) }[resource] as string : null;
 
-        public static string Res(string str, bool findByCulture = true, string indice = "")
-        {
-            if (findByCulture)
-            {
-                var res = (from DictionaryEntry entry in new ResourceDictionary() { Source = new Uri("..\\Lang\\" + CurrentCulture + ".xaml", UriKind.Relative) } where entry.Value.Equals(str) && (entry.Key as string).Contains(indice) select entry).ToList();
-                return res.Count == 1 ? res[0].Key as String : null;
-            }
-            return Current.Resources.ToDictionary().FirstOrDefault(kvp => kvp.Value.Equals(str)).Key as string;
-        }
+        public static string Res(string str, bool findByCulture = true, string indice = "") => findByCulture ? Res(str, CurrentCulture.ToString(), indice) : Current.Resources.ToDictionary().FirstOrDefault(kvp => kvp.Value.Equals(str)).Key as string;
         public static string Res(string str, Dictionary<object, object> dictionary, string indice = "") => dictionary.FirstOrDefault(kvp => kvp.Value.Equals(str) && (kvp.Key as string).Contains(indice)).Key as string;
         public static string Res(string str, string culture, string indice = "")
         {
-            var res = (from DictionaryEntry entry in new ResourceDictionary() { Source = new Uri("..\\Lang\\" + culture + ".xaml", UriKind.Relative) } where entry.Value.Equals(str) && (entry.Key as string).Contains(indice) select entry).ToList();
-            return res.Count == 1 ? res[0].Key as String : null;
+            var res = new ResourceDictionary() { Source = new Uri("..\\Lang\\" + culture + ".xaml", UriKind.Relative) }.OfType<DictionaryEntry>().Where(entry => entry.Value.Equals(str) && (entry.Key as string).Contains(indice)).ToArray();
+            return res.Length == 1 ? res[0].Key as string : null;
         }
 
         private async void Application_Startup(object sender, StartupEventArgs e)
@@ -235,9 +221,9 @@ namespace VGMGUI
                     }
                 }
 
-                MainWindow = new MainWindow();
-                MainWindow.Closed += (sndr, args) => Shutdown();
-                MainWindow.Show();
+                VGMainWindow = new MainWindow();
+                VGMainWindow.Closed += (sndr, args) => Shutdown();
+                VGMainWindow.Show();
             }
         }
 

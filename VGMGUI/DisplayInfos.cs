@@ -1,13 +1,13 @@
-﻿using System;
+﻿using BenLib;
+using BenLib.WPF;
+using Microsoft.WindowsAPICodePack.Dialogs;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.WindowsAPICodePack.Dialogs;
-using BenLib;
-using BenLib.WPF;
-using System.Text;
-using System.IO;
 
 namespace VGMGUI
 {
@@ -36,7 +36,7 @@ namespace VGMGUI
         /// </summary>
         /// <param name="boolean">La valeur du bool.</param>
         /// <returns>L'image "Checkicon" si le bool est true; sinon, L'image "Wrong".</returns>
-        Viewbox BoolToImage(bool boolean)
+        private Viewbox BoolToImage(bool boolean)
         {
             if (boolean) return Application.Current.Resources["Checkicon"] as Viewbox;
             else return Application.Current.Resources["Wrong"] as Viewbox;
@@ -45,57 +45,57 @@ namespace VGMGUI
         /// <summary>
         /// Efface toutes les informations affichées dans "Entrée" et "Sortie".
         /// </summary>
-        void ClearDisplayedData()
+        private void ClearDisplayedData()
         {
-            FormatTB.Text = String.Empty;
-            EncodingTB.Text = String.Empty;
-            SampleRateTB.Text = String.Empty;
-            TotalsamplesTB.Text = String.Empty;
+            FormatTB.Text = string.Empty;
+            EncodingTB.Text = string.Empty;
+            SampleRateTB.Text = string.Empty;
+            TotalsamplesTB.Text = string.Empty;
             if (LoopHeaderSP.Children[0].GetType() == typeof(Viewbox)) LoopHeaderSP.Children.RemoveAt(0);
-            LoopStartTB.Text = String.Empty;
-            LoopEndTB.Text = String.Empty;
+            LoopStartTB.Text = string.Empty;
+            LoopEndTB.Text = string.Empty;
             LoopCountBox.Empty = true;
             StartEndLoopCheckBox.IsChecked = false;
             FadeOutCheckBox.IsChecked = true;
             FadeDelayBox.Empty = true;
             FadeTimeBox.Empty = true;
-            ChannelsTB.Text = String.Empty;
-            LayoutTB.Text = String.Empty;
-            InterleaveTB.Text = String.Empty;
-            BitrateTB.Text = String.Empty;
-            DestCB.Text = String.Empty;
+            ChannelsTB.Text = string.Empty;
+            LayoutTB.Text = string.Empty;
+            InterleaveTB.Text = string.Empty;
+            BitrateTB.Text = string.Empty;
+            DestCB.Text = string.Empty;
         }
 
         /// <summary>
         /// Affiche une information des fichiers sélectionnés.
         /// </summary>
         /// <param name="info">L'information à afficher.</param>
-        void DisplayInfo(MediaInfos info)
+        private void DisplayInfo(MediaInfos info)
         {
             switch (info)
             {
                 case MediaInfos.Format:
-                    if (Infos[0].Count == 0) FormatTB.Text = String.Empty;
+                    if (Infos[0].Count == 0) FormatTB.Text = string.Empty;
                     else if (Infos[0].Count == 1) FormatTB.Text = Infos[0].Keys.First().ToString();
                     else FormatTB.Text = App.Str("MW_Multiple");
                     break;
                 case MediaInfos.Encoding:
-                    if (Infos[1].Count == 0) EncodingTB.Text = String.Empty;
+                    if (Infos[1].Count == 0) EncodingTB.Text = string.Empty;
                     else if (Infos[1].Count == 1) EncodingTB.Text = Infos[1].Keys.First().ToString();
                     else EncodingTB.Text = App.Str("MW_Multiple");
                     break;
                 case MediaInfos.Channels:
-                    if (Infos[2].Count == 0) ChannelsTB.Text = String.Empty;
+                    if (Infos[2].Count == 0) ChannelsTB.Text = string.Empty;
                     else if (Infos[2].Count == 1) ChannelsTB.Text = Infos[2].Keys.First().ToString();
                     else ChannelsTB.Text = App.Str("MW_Multiple");
                     break;
                 case MediaInfos.SampleRate:
-                    if (Infos[3].Count == 0) SampleRateTB.Text = String.Empty;
+                    if (Infos[3].Count == 0) SampleRateTB.Text = string.Empty;
                     else if (Infos[3].Count == 1) SampleRateTB.Text = Infos[3].Keys.First().ToString();
                     else SampleRateTB.Text = App.Str("MW_Multiple");
                     break;
                 case MediaInfos.TotalSamples:
-                    if (Infos[4].Count == 0) TotalsamplesTB.Text = String.Empty;
+                    if (Infos[4].Count == 0) TotalsamplesTB.Text = string.Empty;
                     else if (Infos[4].Count == 1) TotalsamplesTB.Text = Infos[4].Keys.First().ToString();
                     else TotalsamplesTB.Text = App.Str("MW_Multiple");
                     break;
@@ -105,12 +105,12 @@ namespace VGMGUI
                     else { if (LoopHeaderSP.Children[0].GetType() == typeof(Viewbox)) { LoopHeaderSP.Children.RemoveAt(0); } LoopHeaderSP.Children.Insert(0, Application.Current.Resources["Circle"] as Viewbox); }
                     break;
                 case MediaInfos.LoopStartString:
-                    if (Infos[6].Count == 0) LoopStartTB.Text = String.Empty;
+                    if (Infos[6].Count == 0) LoopStartTB.Text = string.Empty;
                     else if (Infos[6].Count == 1) LoopStartTB.Text = Infos[6].Keys.First().ToString();
                     else LoopStartTB.Text = App.Str("MW_Multiple");
                     break;
                 case MediaInfos.LoopEndString:
-                    if (Infos[7].Count == 0) LoopEndTB.Text = String.Empty;
+                    if (Infos[7].Count == 0) LoopEndTB.Text = string.Empty;
                     else if (Infos[7].Count == 1) LoopEndTB.Text = Infos[7].Keys.First().ToString();
                     else LoopEndTB.Text = App.Str("MW_Multiple");
                     break;
@@ -135,7 +135,7 @@ namespace VGMGUI
                     else FadeTimeBox.Text = App.Str("MW_Multiple");
                     break;
                 case MediaInfos.Destination:
-                    if (Infos[12].Count == 0) DestCB.Text = String.Empty;
+                    if (Infos[12].Count == 0) DestCB.Text = string.Empty;
                     else if (Infos[12].Count == 1)
                     {
                         if (Directory.Exists((string)Infos[12].Keys.First()))
@@ -153,45 +153,45 @@ namespace VGMGUI
                     else FadeOutCheckBox.IsChecked = null;
                     break;
                 case MediaInfos.Layout:
-                    if (Infos[14].Count == 0) LayoutTB.Text = String.Empty;
+                    if (Infos[14].Count == 0) LayoutTB.Text = string.Empty;
                     else if (Infos[14].Count == 1) LayoutTB.Text = Infos[14].Keys.First().ToString();
                     else LayoutTB.Text = App.Str("MW_Multiple");
                     break;
                 case MediaInfos.Interleave:
-                    if (Infos[15].Count == 0) InterleaveTB.Text = String.Empty;
+                    if (Infos[15].Count == 0) InterleaveTB.Text = string.Empty;
                     else if (Infos[15].Count == 1) InterleaveTB.Text = Infos[15].Keys.First().ToString();
                     else InterleaveTB.Text = App.Str("MW_Multiple");
                     break;
                 case MediaInfos.Bitrate:
-                    if (Infos[16].Count == 0) BitrateTB.Text = String.Empty;
+                    if (Infos[16].Count == 0) BitrateTB.Text = string.Empty;
                     else if (Infos[16].Count == 1) BitrateTB.Text = Infos[16].Keys.First().ToString();
                     else BitrateTB.Text = App.Str("MW_Multiple");
                     break;
                 case MediaInfos.SamplesToPlay:
-                    if (Infos[17].Count == 0) SamplesToPlayTB.Text = String.Empty;
+                    if (Infos[17].Count == 0) SamplesToPlayTB.Text = string.Empty;
                     else if (Infos[17].Count == 1) SamplesToPlayTB.Text = Infos[17].Keys.First().ToString();
                     else SamplesToPlayTB.Text = App.Str("MW_Multiple");
                     break;
                 case MediaInfos.All:
                     {
                         //Format=====================================================================
-                        if (Infos[0].Count == 0) FormatTB.Text = String.Empty;
+                        if (Infos[0].Count == 0) FormatTB.Text = string.Empty;
                         else if (Infos[0].Count == 1) FormatTB.Text = Infos[0].Keys.First().ToString();
                         else FormatTB.Text = App.Str("MW_Multiple");
                         //Encoding=====================================================================
-                        if (Infos[1].Count == 0) EncodingTB.Text = String.Empty;
+                        if (Infos[1].Count == 0) EncodingTB.Text = string.Empty;
                         else if (Infos[1].Count == 1) EncodingTB.Text = Infos[1].Keys.First().ToString();
                         else EncodingTB.Text = App.Str("MW_Multiple");
                         //Channels=====================================================================
-                        if (Infos[2].Count == 0) ChannelsTB.Text = String.Empty;
+                        if (Infos[2].Count == 0) ChannelsTB.Text = string.Empty;
                         else if (Infos[2].Count == 1) ChannelsTB.Text = Infos[2].Keys.First().ToString();
                         else ChannelsTB.Text = App.Str("MW_Multiple");
                         //SampleRate=====================================================================
-                        if (Infos[3].Count == 0) SampleRateTB.Text = String.Empty;
+                        if (Infos[3].Count == 0) SampleRateTB.Text = string.Empty;
                         else if (Infos[3].Count == 1) SampleRateTB.Text = Infos[3].Keys.First().ToString();
                         else SampleRateTB.Text = App.Str("MW_Multiple");
                         //TotalSamples=====================================================================
-                        if (Infos[4].Count == 0) TotalsamplesTB.Text = String.Empty;
+                        if (Infos[4].Count == 0) TotalsamplesTB.Text = string.Empty;
                         else if (Infos[4].Count == 1) TotalsamplesTB.Text = Infos[4].Keys.First().ToString();
                         else TotalsamplesTB.Text = App.Str("MW_Multiple");
                         //LoopFlag=====================================================================
@@ -199,11 +199,11 @@ namespace VGMGUI
                         else if (Infos[5].Count == 1) { if (LoopHeaderSP.Children[0].GetType() == typeof(Viewbox)) { LoopHeaderSP.Children.RemoveAt(0); } LoopHeaderSP.Children.Insert(0, BoolToImage((bool)Infos[5].Keys.First())); }
                         else { if (LoopHeaderSP.Children[0].GetType() == typeof(Viewbox)) { LoopHeaderSP.Children.RemoveAt(0); } LoopHeaderSP.Children.Insert(0, Application.Current.Resources["Circle"] as Viewbox); }
                         //LoopStartString=====================================================================
-                        if (Infos[6].Count == 0) LoopStartTB.Text = String.Empty;
+                        if (Infos[6].Count == 0) LoopStartTB.Text = string.Empty;
                         else if (Infos[6].Count == 1) LoopStartTB.Text = Infos[6].Keys.First().ToString();
                         else LoopStartTB.Text = App.Str("MW_Multiple");
                         //LoopEndString=====================================================================
-                        if (Infos[7].Count == 0) LoopEndTB.Text = String.Empty;
+                        if (Infos[7].Count == 0) LoopEndTB.Text = string.Empty;
                         else if (Infos[7].Count == 1) LoopEndTB.Text = Infos[7].Keys.First().ToString();
                         else LoopEndTB.Text = App.Str("MW_Multiple");
                         //LoopCount=====================================================================
@@ -223,7 +223,7 @@ namespace VGMGUI
                         else if (Infos[11].Count == 1) FadeTimeBox.Text = Infos[11].Keys.First().ToString();
                         else FadeTimeBox.Text = App.Str("MW_Multiple");
                         //Destination=====================================================================
-                        if (Infos[12].Count == 0) DestCB.Text = String.Empty;
+                        if (Infos[12].Count == 0) DestCB.Text = string.Empty;
                         else if (Infos[12].Count == 1)
                         {
                             if (Directory.Exists((string)Infos[12].Keys.First()))
@@ -239,19 +239,19 @@ namespace VGMGUI
                         else if (Infos[13].Count == 1) FadeOutCheckBox.IsChecked = (bool)Infos[13].Keys.First();
                         else FadeOutCheckBox.IsChecked = null;
                         //Layout=====================================================================
-                        if (Infos[14].Count == 0) LayoutTB.Text = String.Empty;
+                        if (Infos[14].Count == 0) LayoutTB.Text = string.Empty;
                         else if (Infos[14].Count == 1) LayoutTB.Text = Infos[14].Keys.First().ToString();
                         else LayoutTB.Text = App.Str("MW_Multiple");
                         //Interleave=====================================================================
-                        if (Infos[15].Count == 0) InterleaveTB.Text = String.Empty;
+                        if (Infos[15].Count == 0) InterleaveTB.Text = string.Empty;
                         else if (Infos[15].Count == 1) InterleaveTB.Text = Infos[15].Keys.First().ToString();
                         else InterleaveTB.Text = App.Str("MW_Multiple");
                         //Bitrate=====================================================================
-                        if (Infos[16].Count == 0) BitrateTB.Text = String.Empty;
+                        if (Infos[16].Count == 0) BitrateTB.Text = string.Empty;
                         else if (Infos[16].Count == 1) BitrateTB.Text = Infos[16].Keys.First().ToString();
                         else BitrateTB.Text = App.Str("MW_Multiple");
                         //SamplesToPlay=====================================================================
-                        if (Infos[17].Count == 0) SamplesToPlayTB.Text = String.Empty;
+                        if (Infos[17].Count == 0) SamplesToPlayTB.Text = string.Empty;
                         else if (Infos[17].Count == 1) SamplesToPlayTB.Text = Infos[17].Keys.First().ToString();
                         else SamplesToPlayTB.Text = App.Str("MW_Multiple");
                         //=====================================================================
@@ -274,7 +274,7 @@ namespace VGMGUI
         /// Inscrit une information dans les fichiers sélectionnés.
         /// </summary>
         /// <param name="info">L'information à inscrire.</param>
-        void WriteInfo(MediaInfos info)
+        private void WriteInfo(MediaInfos info)
         {
             object value;
             bool overflow = false;
@@ -455,7 +455,7 @@ namespace VGMGUI
         /// </summary>
         /// <param name="index">Index du dictionnaire où est la valeur.</param>
         /// <param name="value">Valeur à incrémenter.</param>
-        void RegisterInfo(int index, object value)
+        private void RegisterInfo(int index, object value)
         {
             if (Infos[index].ContainsKey(value)) Infos[index][value]++;
             else Infos[index].Add(value, 1);
@@ -466,7 +466,7 @@ namespace VGMGUI
         /// </summary>
         /// <param name="index">Index du dictionnaire où est la valeur.</param>
         /// <param name="value">Valeur à décrémenter.</param>
-        bool UnRegisterInfo(int index, object value)
+        private bool UnRegisterInfo(int index, object value)
         {
             if (Infos[index].ContainsKey(value))
             {
@@ -481,7 +481,7 @@ namespace VGMGUI
         /// Exécute un <see cref="RegisterInfo"/> sur toutes les <see cref="MediaInfos"/> d'un fichier.
         /// </summary>
         /// <param name="fichier">Le fichier à enregistrer.</param>
-        void RegisterAllInfos(Fichier fichier)
+        private void RegisterAllInfos(Fichier fichier)
         {
             RegisterInfo(0, fichier.Format);
             RegisterInfo(1, fichier.Encoding);
@@ -508,7 +508,7 @@ namespace VGMGUI
         /// Exécute un <see cref="UnRegisterInfo"/> sur toutes les <see cref="MediaInfos"/> d'un fichier.
         /// </summary>
         /// <param name="fichier">Le fichier à effacer.</param>
-        void UnRegisterAllInfos(Fichier fichier)
+        private void UnRegisterAllInfos(Fichier fichier)
         {
             UnRegisterInfo(0, fichier.Format);
             UnRegisterInfo(1, fichier.Encoding);
@@ -534,7 +534,7 @@ namespace VGMGUI
         /// <summary>
         /// Supprime toutes les <see cref="MediaInfos"/> de <see cref="Infos"/> et enregistre celles des fichiers sélectionnés.
         /// </summary>
-        void RefreshInfos()
+        private void RefreshInfos()
         {
             foreach (Dictionary<object, int> dict in Infos) dict?.Clear();
             if (tasklist.FILEList.SelectedItems.Count > 0)
@@ -548,22 +548,20 @@ namespace VGMGUI
         /// Inscrit les fichier récents dans <see cref="MainDestCB"/>.
         /// </summary>
         /// <param name="selectedItem">Le contenu du <see cref="ComboBoxItem"/> qui devra être sélectionné.</param>
-        void DisplayRecentFiles(string selectedItem = null)
+        private void DisplayRecentFiles(string selectedItem = null)
         {
-            var items = (from ComboBoxItem item in MainDestCB.Items select item).ToList();
+            foreach (ComboBoxItem item in MainDestCB.Items.OfType<ComboBoxItem>().ToArray()) if (item.Name.Contains("Recent")) MainDestCB.Items.Remove(item);
 
-            foreach (ComboBoxItem item in items)
+            var files = Settings.SettingsData.Global["RecentFiles"]?.Split(new[] { " | " }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (!files.IsNullOrEmpty())
             {
-                if (item.Name.Contains("Recent")) MainDestCB.Items.Remove(item);
-            }
-
-            var files = (Settings.SettingsData.Global["RecentFiles"]?.Split(new[] { " | " }, StringSplitOptions.RemoveEmptyEntries))?.ToList() ?? new List<string>();
-
-            for (int i = files.Count - 1; i >= 0; i--)
-            {
-                var item = new ComboBoxItem() { Name = "Recent" + i, Content = files[i] };
-                MainDestCB.Items.Insert(1, item);
-                if (item.Content.Equals(selectedItem)) MainDestCB.SelectedItem = item;
+                for (int i = files.Length - 1; i >= 0; i--)
+                {
+                    var item = new ComboBoxItem() { Name = "Recent" + i, Content = files[i] };
+                    MainDestCB.Items.Insert(1, item);
+                    if (item.Content.Equals(selectedItem)) MainDestCB.SelectedItem = item;
+                }
             }
         }
 
@@ -776,24 +774,24 @@ namespace VGMGUI
                     {
                         case "PrincipalBrowse":
                             {
-                                var files = (Settings.SettingsData.Global["RecentFiles"]?.Split(new[] { " | " }, StringSplitOptions.RemoveEmptyEntries))?.ToList() ?? new List<string>();
-                                if (!files.Contains(ofd.FileName))
+                                var files = Settings.SettingsData.Global["RecentFiles"]?.Split(new[] { " | " }, StringSplitOptions.RemoveEmptyEntries);
+                                if (files.IsNullOrEmpty() || !files.Contains(ofd.FileName))
                                 {
-                                    while (files.Count >= 5) files.RemoveAt(0);
-                                    files.Add(ofd.FileName);
+                                    var newFiles = (files ?? Enumerable.Empty<string>()).TakeLast(4).Concat(ofd.FileName).ToArray();
 
                                     StringBuilder sb = new StringBuilder();
 
-                                    for (int i = 0; i < files.Count; i++)
+                                    for (int i = 0; i < newFiles.Length - 1; i++)
                                     {
-                                        sb.Append(files[i]);
-                                        if (i < files.Count - 1) sb.Append(" | ");
+                                        sb.Append(newFiles[i]);
+                                        sb.Append(" | ");
                                     }
+                                    sb.Append(newFiles.Last());
 
                                     Settings.SettingsData.Global["RecentFiles"] = sb.ToString();
                                     if ((await Settings.TryWriteSettings()).Result) await Dispatcher.BeginInvoke(new Action(() => DisplayRecentFiles(ofd.FileName)));
                                 }
-                                else await Dispatcher.BeginInvoke(new Action(() => MainDestCB.SelectedItem = (from ComboBoxItem cbxitem in MainDestCB.Items select cbxitem).FirstOrDefault(cbitem => cbitem.Content.Equals(ofd.FileName))));
+                                else await Dispatcher.BeginInvoke(new Action(() => MainDestCB.SelectedItem = MainDestCB.Items.OfType<ComboBoxItem>().FirstOrDefault(cbitem => cbitem.Content.Equals(ofd.FileName))));
                             }
                             break;
                         case "SelectedTasksBrowse":

@@ -13,7 +13,7 @@
                 <!--=================================== Searchdelay ===================================-->
                 <StackPanel Orientation="Horizontal">
                     <Label Content="{DynamicResource STGS_SearchDelay1}" Margin="0,0,4,0"/>
-                    <benlib:SwitchableTextBox Name="stbx_searchdelay" ContentType="UnsignedIntegrer" GotFocus="stbx_GotFocus" LostFocus="stbx_LostFocus"/>
+                    <benlib:SwitchableTextBox Name="stbx_searchdelay" ContentType="UnsignedInteger" GotFocus="stbx_GotFocus" LostFocus="stbx_LostFocus"/>
                     <Label Content="{DynamicResource STGS_SearchDelay2}"/>
                 </StackPanel>
                 <!--=================================== Lang ===================================-->
@@ -37,7 +37,7 @@
                     <RadioButton Name="rbtn_samplesdisplay_s" Content="{DynamicResource STGS_SPLDSP_S}" Checked="rbtn_Checked"/>
                     <RadioButton Name="rbtn_samplesdisplay_hms" Content="{DynamicResource STGS_SPLDSP_HMS}" Margin="20,0,0,0" Checked="rbtn_Checked"/>
                     <Label Content="{DynamicResource STGS_SPLDSP_MAX1}" Margin="40,0,4,0"/>
-                    <benlib:SwitchableTextBox Name="stbx_maxdec" ContentType="UnsignedIntegrer" GotFocus="stbx_GotFocus" LostFocus="stbx_LostFocus"/>
+                    <benlib:SwitchableTextBox Name="stbx_maxdec" ContentType="UnsignedInteger" GotFocus="stbx_GotFocus" LostFocus="stbx_LostFocus"/>
                     <Label Content="{DynamicResource STGS_SPLDSP_MAX2}" Margin="4,0,0,0"/>
                 </StackPanel>
             </GroupBox>
@@ -60,27 +60,27 @@
                         <CheckBox Name="chbx_multith_conversion" Content="{DynamicResource STGS_MTH_Conversion}" Checked="chbx_checked" Unchecked="chbx_unchecked"/>
                         <StackPanel Orientation="Horizontal" Grid.Column="1">
                             <Label Content="{DynamicResource STGS_MTH_MaxConversion1}" Margin="0,0,4,0"/>
-                            <benlib:SwitchableTextBox Name="stbx_max_conversion" ContentType="UnsignedIntegrer" CancelWhenEmpty="True" GotFocus="stbx_GotFocus" LostFocus="stbx_LostFocus"/>
+                            <benlib:SwitchableTextBox Name="stbx_max_conversion" ContentType="UnsignedInteger" CancelWhenEmpty="True" GotFocus="stbx_GotFocus" LostFocus="stbx_LostFocus"/>
                             <Label Content="{DynamicResource STGS_MTH_MaxConversion2}" Margin="4,0,0,0"/>
                         </StackPanel>
                         <CheckBox Name="chbx_multith_adding" Content="{DynamicResource STGS_MTH_Adding}" Checked="chbx_checked" Unchecked="chbx_unchecked" Grid.Row="1" Margin="0,5,0,0"/>
                         <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="0,5,0,0">
                             <Label Content="{DynamicResource STGS_MTH_MaxAdding1}" Margin="0,0,4,0"/>
-                            <benlib:SwitchableTextBox Name="stbx_max_adding" ContentType="UnsignedIntegrer" CancelWhenEmpty="True" GotFocus="stbx_GotFocus" LostFocus="stbx_LostFocus"/>
+                            <benlib:SwitchableTextBox Name="stbx_max_adding" ContentType="UnsignedInteger" CancelWhenEmpty="True" GotFocus="stbx_GotFocus" LostFocus="stbx_LostFocus"/>
                             <Label Content="{DynamicResource STGS_MTH_MaxAdding2}" Margin="4,0,0,0"/>
                         </StackPanel>
                     </Grid>
                 </StackPanel>
             </GroupBox>
             <!--================================================== VGMStream ==================================================-->
-            <GroupBox Margin="0,5,0,0">
+            <!--<GroupBox Margin="0,5,0,0">
                 <GroupBox.Header>
                     <Label Content="{DynamicResource STGS_AdditionalFormats}"/>
                 </GroupBox.Header>
                 <StackPanel Margin="5">
                     <CheckBox Name="chbx_additionalformats_dkctfcsmp" Content="DKCTF CSMP" Margin="0,5,0,0" Checked="chbx_checked" Unchecked="chbx_unchecked" VerticalAlignment="Center"/>
                 </StackPanel>
-            </GroupBox>
+            </GroupBox>-->
             <!--================================================== Playing ==================================================-->
             <GroupBox Margin="0,5,0,0">
                 <GroupBox.Header>

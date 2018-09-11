@@ -39,6 +39,8 @@
     <sys:String x:Key="ST_objectSelectedOutOf">objet sélectionné sur</sys:String>
     <sys:String x:Key="ST_RAMUsage">Utilisation de la RAM :</sys:String>
     <sys:String x:Key="ST_Size">Réinitialiser la taille des éléments et de la fenêtre</sys:String>
+    <sys:String x:Key="ST_Conversion">Conversion : </sys:String>
+    <sys:String x:Key="ST_Pending">En attente</sys:String>
 
     <sys:String x:Key="ERR_InvalidDestination">La destination principale n'est pas valide.</sys:String>
     <sys:String x:Key="ERR_UnauthorizedCharacters">Caractères non autorisés : \ / : * ? " &lt; gt; |</sys:String>
@@ -89,7 +91,7 @@
     <sys:String x:Key="CM_Skip">Ignorer</sys:String>
 
     <sys:String x:Key="SRCH_Case">Respecter la case</sys:String>
-    <sys:String x:Key="SRCH_No">Afficher uniquement / Masquer les éléments correspondants</sys:String>
+    <sys:String x:Key="SRCH_Regex">Expressions régulières</sys:String>
 
     <sys:String x:Key="ABOUT_Credits">Crédits</sys:String>
     <sys:String x:Key="ABOUT_Icons">Icônes :</sys:String>
@@ -98,6 +100,8 @@
 
     <sys:String x:Key="AP_AddFiles">Ajouter des fichiers (Ctrl+O / Inser)</sys:String>
     <sys:String x:Key="AP_AddFolders">Ajouter des dossiers (Ctrl+Maj+O / Ctrl+Inser)</sys:String>
+    <sys:String x:Key="AP_AddFoldersSN">Ajouter des dossiers en excluant les fichiers ayant le même nom (Ctrl+Alt+Maj+O / Ctrl+Alt+Inser)</sys:String>
+    <sys:String x:Key="AP_AddFilesSN">Ajouter des fichiers en excluant les fichiers ayant le même nom (Ctrl+Alt+O / Alt+Inser)</sys:String>
     <sys:String x:Key="AP_Play">Lire (Espace)</sys:String>
     <sys:String x:Key="AP_Resume">Reprendre (Espace)</sys:String>
     <sys:String x:Key="AP_Pause">Pause (Espace)</sys:String>
@@ -147,6 +151,8 @@
     <sys:String x:Key="AP_Delete">Supprimer (Suppr)</sys:String>
     <sys:String x:Key="AP_DeleteAll">Supprimer tout (Maj+Suppr)</sys:String>
     <sys:String x:Key="AP_DeleteInvalidFiles">Supprimer les fichiers invalides (Ctrl+Suppr)</sys:String>
+    <sys:String x:Key="AP_DeleteDFiles">Supprimer les fichiers avec le même chemin d'accès (Alt+Suppr)</sys:String>
+    <sys:String x:Key="AP_DeleteSNFiles">Supprimer les fichiers avec le même nom (Ctrl+Alt+Suppr)</sys:String>
 
     <sys:String x:Key="MW_Copy">Copier les informations</sys:String>
     <sys:String x:Key="MW_Paste">Coller les informations</sys:String>
@@ -230,6 +236,7 @@
     <sys:String x:Key="STGS_CLRS_Error">Couleur d'erreur :</sys:String>
     <sys:String x:Key="STGS_STSBAR">Barre de statut (Ctrl+Maj+B)</sys:String>
     <sys:String x:Key="STGS_STSBAR_Count">Compteur d'éléments</sys:String>
+    <sys:String x:Key="STGS_STSBAR_Conversion">Informations sur la conversion</sys:String>
     <sys:String x:Key="STGS_STSBAR_RAM">Utilisation de la RAM</sys:String>
     <sys:String x:Key="STGS_STSBAR_StreamingType">Mode de streaming</sys:String>
     <sys:String x:Key="STGS_STSBAR_StreamingTypeLive">Direct (VLC 3.0)</sys:String>

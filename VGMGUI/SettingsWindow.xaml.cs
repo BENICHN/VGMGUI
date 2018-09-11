@@ -1,15 +1,14 @@
-﻿using System;
+﻿using BenLib;
+using BenLib.WPF;
+using IniParser.Model;
+using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using IniParser.Model;
-using BenLib;
-using BenLib.WPF;
 using static VGMGUI.Settings;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace VGMGUI
 {
@@ -23,14 +22,13 @@ namespace VGMGUI
         /// <summary>
         /// Paramètres utilisés dans cette instance.
         /// </summary>
-        IniData m_data;
+        private IniData m_data;
 
         /// <summary>
         /// Résultat de cette instance.
         /// </summary>
-        bool m_result;
-
-        bool m_valid = true;
+        private bool m_result;
+        private bool m_valid = true;
 
         #endregion
 
@@ -54,7 +52,7 @@ namespace VGMGUI
         /// Applique des paramètres à cette instance.
         /// </summary>
         /// <param name="m_data">Les paramètres à appliquer.</param>
-        void ApplySettings()
+        private void ApplySettings()
         {
             object o;
 
@@ -142,8 +140,8 @@ namespace VGMGUI
             if ((o = m_data["Multithreading"]["MaxAdding"].ToInt()) != null) stbx_max_adding.Text = ((int)o).ToString();
             else stbx_max_adding.Text = "5";
 
-            if ((o = m_data["AdditionalFormats"]["DKCTFCSMP"].ToBool()) != null) chbx_additionalformats_dkctfcsmp.IsChecked = (bool)o;
-            else chbx_additionalformats_dkctfcsmp.IsChecked = true;
+            //if ((o = m_data["AdditionalFormats"]["DKCTFCSMP"].ToBool()) != null) chbx_additionalformats_dkctfcsmp.IsChecked = (bool)o;
+            //else chbx_additionalformats_dkctfcsmp.IsChecked = true;
 
             if ((o = m_data["StatusBar"]["Display"].ToBool()) != null) chbx_stsbar.IsChecked = (bool)o;
             else chbx_stsbar.IsChecked = true;
@@ -169,9 +167,9 @@ namespace VGMGUI
             if ((o = m_data["StatusBar"]["Size"].ToBool()) != null) chbx_stsbar_size.IsChecked = (bool)o;
             else chbx_stsbar_size.IsChecked = true;
 
-            if ((o = m_data["Colors"]["Foreground"].ToColor()) != null) rect_foregroundcolor.Fill = new SolidColorBrush((Color)o);
-            if ((o = m_data["Colors"]["Background"].ToColor()) != null) rect_backgroundcolor.Fill = new SolidColorBrush((Color)o);
-            if ((o = m_data["Colors"]["Error"].ToColor()) != null) rect_errorcolor.Fill = new SolidColorBrush((Color)o);
+            if ((o = m_data["Colors"]["Foreground"].ToColor()) != null) rect_foregroundcolor.Fill = new SolidColorBrush((Color)o).GetAsTypedFrozen();
+            if ((o = m_data["Colors"]["Background"].ToColor()) != null) rect_backgroundcolor.Fill = new SolidColorBrush((Color)o).GetAsTypedFrozen();
+            if ((o = m_data["Colors"]["Error"].ToColor()) != null) rect_errorcolor.Fill = new SolidColorBrush((Color)o).GetAsTypedFrozen();
         }
 
         /// <summary>
@@ -193,7 +191,7 @@ namespace VGMGUI
             m_data["Multithreading"]["Adding"] = "True";
             m_data["Multithreading"]["MaxAdding"] = "5";
 
-            m_data["AdditionalFormats"]["DKCTFCSMP"] = "True";
+            //m_data["AdditionalFormats"]["DKCTFCSMP"] = "True";
 
             m_data["StatusBar"]["Display"] = "True";
             m_data["StatusBar"]["Counter"] = "True";
@@ -203,6 +201,7 @@ namespace VGMGUI
             m_data["StatusBar"]["PreAnalyse"] = "True";
             m_data["StatusBar"]["StreamingType"] = "True";
             m_data["StatusBar"]["Size"] = "True";
+            m_data["StatusBar"]["Conversion"] = "True";
 
             m_data["Colors"]["Foreground"] = "#16A085";
             m_data["Colors"]["Background"] = "#727272";
@@ -274,9 +273,9 @@ namespace VGMGUI
                 case "chbx_stopwhendelete":
                     m_data.Global["StopWhenDelete"] = "True";
                     break;
-                case "chbx_additionalformats_dkctfcsmp":
-                    m_data["AdditionalFormats"]["DKCTFCSMP"] = "True";
-                    break;
+                //case "chbx_additionalformats_dkctfcsmp":
+                //m_data["AdditionalFormats"]["DKCTFCSMP"] = "True";
+                //break;
                 case "chbx_stsbar":
                     m_data["StatusBar"]["Display"] = "True";
                     break;
@@ -322,9 +321,9 @@ namespace VGMGUI
                 case "chbx_stopwhendelete":
                     m_data.Global["StopWhenDelete"] = "False";
                     break;
-                case "chbx_additionalformats_dkctfcsmp":
-                    m_data["AdditionalFormats"]["DKCTFCSMP"] = "False";
-                    break;
+                //case "chbx_additionalformats_dkctfcsmp":
+                //m_data["AdditionalFormats"]["DKCTFCSMP"] = "False";
+                //break;
                 case "chbx_stsbar":
                     m_data["StatusBar"]["Display"] = "False";
                     break;
@@ -393,7 +392,7 @@ namespace VGMGUI
                         if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                         {
                             m_data["Colors"]["Foreground"] = colorDialog.Color.ToHex();
-                            rect_foregroundcolor.Fill = new SolidColorBrush(colorDialog.Color.ToMediaColor());
+                            rect_foregroundcolor.Fill = new SolidColorBrush(colorDialog.Color.ToMediaColor()).GetAsTypedFrozen();
                         }
                         break;
                     case "rect_backgroundcolor":
@@ -401,7 +400,7 @@ namespace VGMGUI
                         if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                         {
                             m_data["Colors"]["Background"] = colorDialog.Color.ToHex();
-                            rect_backgroundcolor.Fill = new SolidColorBrush(colorDialog.Color.ToMediaColor());
+                            rect_backgroundcolor.Fill = new SolidColorBrush(colorDialog.Color.ToMediaColor()).GetAsTypedFrozen();
                         }
                         break;
                     case "rect_errorcolor":
@@ -409,7 +408,7 @@ namespace VGMGUI
                         if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                         {
                             m_data["Colors"]["Error"] = colorDialog.Color.ToHex();
-                            rect_errorcolor.Fill = new SolidColorBrush(colorDialog.Color.ToMediaColor());
+                            rect_errorcolor.Fill = new SolidColorBrush(colorDialog.Color.ToMediaColor()).GetAsTypedFrozen();
                         }
                         break;
                 }
@@ -570,11 +569,11 @@ namespace VGMGUI
                 if ((o = data.Global["Mute"].ToBool()) != null) AP.Mute = (bool)o;
 
                 if ((o = data.Global["ConversionFolderName"]) != null) MainDestTB.Text = o as string;
-                if ((o = (SettingsData.Global["DefaultOutData"]?.Replace("\"", String.Empty).Split(new[] { " | " }, StringSplitOptions.None))?.ToList()) != null)
+                if ((o = SettingsData.Global["DefaultOutData"]?.Replace("\"", string.Empty)?.Split(new[] { " | " }, StringSplitOptions.None)) != null)
                 {
-                    var outData = (List<string>)o;
+                    var outData = (string[])o;
                     var s = SettingsData.Global["DefaultOutData"];
-                    if (outData.Count == 6)
+                    if (outData.Length == 6)
                     {
                         DefaultOutData = new FichierOutData()
                         {
@@ -588,20 +587,31 @@ namespace VGMGUI
                     }
                 }
 
-                if ((o = (SettingsData.Global["ColumnsInfo"]?.Split(new[] { " | " }, StringSplitOptions.RemoveEmptyEntries))) != null)
+                if ((o = SettingsData.Global["ColumnsInfo"]?.Split(new[] { " | " }, StringSplitOptions.RemoveEmptyEntries)) != null)
                 {
                     var columns = (tasklist.FILEList.View as GridView).Columns;
-                    var oldColumns = (tasklist.FILEList.View as GridView).Columns.ToList();
-                    var columnsInfo = (from string pair in (string[])o let num = pair.Split(new[] { " : " }, StringSplitOptions.None) where num.Count() == 2 let i = num[0].ToInt() where i != null let w = num[1].ToDouble() where w != null select new KeyValuePair<int, double>((int)i, (double)w)).ToList();
-                    if (columnsInfo.Count == oldColumns.Count && !columnsInfo.OrderBy(i => i.Key).Select((i, j) => i.Key - j).Distinct().Skip(1).Any())
+                    var oldColumns = columns.ToArray();
+
+                    var columnsInfo = ((string[])o).Select(info =>
                     {
-                        for (int i = 0; i < oldColumns.Count; i++)
+                        var num = info.Split(new[] { " : " }, StringSplitOptions.None);
+                        if (num.Length == 2)
+                        {
+                            var index = num[0].ToInt();
+                            return (Index: index ?? 0, Width: index == null ? double.NaN : num[1].ToDouble() ?? double.NaN);
+                        }
+                        else return (Index: 0, Width: double.NaN);
+                    }).Where(info => !double.IsNaN(info.Width)).ToArray();
+
+                    if (columnsInfo.Length == oldColumns.Length && !columnsInfo.OrderBy(i => i.Index).Select((i, j) => i.Index - j).Distinct().Skip(1).Any())
+                    {
+                        for (int i = 0; i < oldColumns.Length; i++)
                         {
                             int oldIndex = columns.IndexOf(oldColumns[i]);
-                            int newIndex = columnsInfo[i].Key;
+                            int newIndex = columnsInfo[i].Index;
 
                             columns.Move(oldIndex, newIndex);
-                            columns[newIndex].Width = columnsInfo[i].Value;
+                            columns[newIndex].Width = columnsInfo[i].Width;
                         }
                     }
                 }
@@ -610,7 +620,7 @@ namespace VGMGUI
                 if ((o = data["Window"]["Height"].ToDouble()) != null) Height = (double)o;
                 if ((o = data["Window"]["State"].ToEnum<WindowState>()) != null && (WindowState)o != WindowState.Minimized) WindowState = (WindowState)o;
 
-                if ((o = (SettingsData["Grids"]["TopGrid"]?.Split(new[] { " | " }, StringSplitOptions.RemoveEmptyEntries))) is string[] columndefsstr && columndefsstr.Length == 2)
+                if ((o = SettingsData["Grids"]["TopGrid"]?.Split(new[] { " | " }, StringSplitOptions.RemoveEmptyEntries)) is string[] columndefsstr && columndefsstr.Length == 2)
                 {
                     var columndefs = new GridLength?[] { columndefsstr[0].ToGridLength(), columndefsstr[1].ToGridLength() };
                     if (!columndefs.Contains(null))
@@ -619,7 +629,7 @@ namespace VGMGUI
                         TopGrid.ColumnDefinitions[1].Width = (GridLength)columndefs[1];
                     }
                 }
-                if ((o = (SettingsData["Grids"]["RightGrid"]?.Split(new[] { " | " }, StringSplitOptions.RemoveEmptyEntries))) is string[] rowdefsstr && rowdefsstr.Length == 2)
+                if ((o = SettingsData["Grids"]["RightGrid"]?.Split(new[] { " | " }, StringSplitOptions.RemoveEmptyEntries)) is string[] rowdefsstr && rowdefsstr.Length == 2)
                 {
                     var rowdefs = new GridLength?[] { rowdefsstr[0].ToGridLength(), rowdefsstr[1].ToGridLength() };
                     if (!rowdefs.Contains(null))
@@ -632,7 +642,7 @@ namespace VGMGUI
                 if ((o = data["Search"]["SearchFilter"]) != null) RestoreSearchFilter = o as string;
                 if ((o = data["Search"]["SearchColumn"].ToEnum<FileListColumn>()) != null) SearchColumn = (FileListColumn)o;
                 if ((o = data["Search"]["CaseSensitive"].ToBool()) != null) SearchCaseSensitive = ((bool)o);
-                if ((o = data["Search"]["No"].ToBool()) != null) SearchNo = ((bool)o);
+                if ((o = data["Search"]["Regex"].ToBool()) != null) SearchRegex = ((bool)o);
             }
 
             if ((o = data["Multithreading"]["Conversion"].ToBool()) != null) ConversionMultithreading = (bool)o;
@@ -649,31 +659,32 @@ namespace VGMGUI
             if ((o = data["StatusBar"]["PreAnalyse"].ToBool()) != null) StatusBar.PreAnalyse = (bool)o;
             if ((o = data["StatusBar"]["StreamingType"].ToBool()) != null) StatusBar.StreamingType = (bool)o;
             if ((o = data["StatusBar"]["Size"].ToBool()) != null) StatusBar.Size = (bool)o;
+            if ((o = data["StatusBar"]["Conversion"].ToBool()) != null) StatusBar.Conversion = (bool)o;
 
             if ((o = data.Global["StreamingType"].ToEnum<StreamingType>()) != null) Settings.StreamingType = (StreamingType)o;
 
-            if ((o = data["AdditionalFormats"]["DKCTFCSMP"].ToBool()) != null) AdditionalFormats.DKCTFCSMP = (bool)o;
+            //if ((o = data["AdditionalFormats"]["DKCTFCSMP"].ToBool()) != null) AdditionalFormats.DKCTFCSMP = (bool)o;
 
             if ((o = data["Colors"]["Foreground"].ToColor()) != null)
             {
                 Color ocolor = (Color)o;
 
-                Application.Current.Resources["ForegroundBrush"] = new SolidColorBrush(ocolor);
-                Application.Current.Resources["ForegroundBrush_Disabled"] = new SolidColorBrush(Color.FromArgb(80, ocolor.R, ocolor.G, ocolor.B));
+                Application.Current.Resources["ForegroundBrush"] = new SolidColorBrush(ocolor).GetAsTypedFrozen();
+                Application.Current.Resources["ForegroundBrush_Disabled"] = new SolidColorBrush(Color.FromArgb(80, ocolor.R, ocolor.G, ocolor.B)).GetAsTypedFrozen();
             }
             if ((o = data["Colors"]["Background"].ToColor()) != null)
             {
                 Color ocolor = (Color)o;
 
-                Application.Current.Resources["BackgroundBrush"] = new SolidColorBrush(ocolor);
-                Application.Current.Resources["BackgroundBrush_Disabled"] = new SolidColorBrush(Color.FromArgb(80, ocolor.R, ocolor.G, ocolor.B));
+                Application.Current.Resources["BackgroundBrush"] = new SolidColorBrush(ocolor).GetAsTypedFrozen();
+                Application.Current.Resources["BackgroundBrush_Disabled"] = new SolidColorBrush(Color.FromArgb(80, ocolor.R, ocolor.G, ocolor.B)).GetAsTypedFrozen();
             }
             if ((o = data["Colors"]["Error"].ToColor()) != null)
             {
                 Color ocolor = (Color)o;
 
-                Application.Current.Resources["ErrorBrush"] = new SolidColorBrush(ocolor);
-                Application.Current.Resources["ErrorBrush_Disabled"] = new SolidColorBrush(Color.FromArgb(80, ocolor.R, ocolor.G, ocolor.B));
+                Application.Current.Resources["ErrorBrush"] = new SolidColorBrush(ocolor).GetAsTypedFrozen();
+                Application.Current.Resources["ErrorBrush_Disabled"] = new SolidColorBrush(Color.FromArgb(80, ocolor.R, ocolor.G, ocolor.B)).GetAsTypedFrozen();
 
                 foreach (Fichier fichier in tasklist.Files) fichier.RefreshValidity();
             }

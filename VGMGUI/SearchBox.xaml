@@ -53,8 +53,8 @@
                     <ToggleButton Name="btn_case" Width="24" BorderThickness="0" ToolTip="{DynamicResource SRCH_Case}" IsChecked="{Binding Path=(local:Settings.SearchCaseSensitive), Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                         <Label Content="Aa" FontSize="14" FontWeight="SemiBold"/>
                     </ToggleButton>
-                    <ToggleButton Margin="5,0,0,0" Name="btn_no" Width="24" BorderThickness="0" ToolTip="{DynamicResource SRCH_No}" IsChecked="{Binding Path=(local:Settings.SearchNo), Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                        <Label Content="!" FontSize="14" FontWeight="Bold"/>
+                    <ToggleButton Margin="5,0,0,0" Name="btn_no" Width="24" BorderThickness="0" ToolTip="{DynamicResource SRCH_Regex}" IsChecked="{Binding Path=(local:Settings.SearchRegex), Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                        <Label Content=".*" FontSize="14" FontWeight="Bold"/>
                     </ToggleButton>
                     <ComboBox Name="cbx_column" Margin="5,0,0,0" FocusVisualStyle="{x:Null}" BorderThickness="0" SelectedIndex="0" SelectionChanged="cbx_column_SelectionChanged" Loaded="cbx_column_Loaded">
                         <ComboBox.Items>

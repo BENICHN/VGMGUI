@@ -1,11 +1,8 @@
-﻿using System.IO;
-using System.Linq;
+﻿using BenLib;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using System.Diagnostics;
-using BenLib;
 using Clipboard = System.Windows.Forms.Clipboard;
-using System;
 
 namespace VGMGUI
 {
@@ -25,29 +22,7 @@ namespace VGMGUI
             await PlayFile(fsender, true, true);
         }
 
-        private async void ConvertMI(object sender, RoutedEventArgs e)
-        {
-            Preconversion = true;
-
-            if ((File.Exists(App.VGMStreamPath) || await App.AskVGMStream()))
-            {
-                if (!MainDestTB.Text.ContainsAny(Path.GetInvalidFileNameChars()) && !IO.ReservedFilenames.Contains(MainDestTB.Text.ToUpper()))
-                {
-                    foreach (Fichier fichier in tasklist.FILEList.SelectedItems)
-                    {
-                        if ((fichier.FinalDestination = await GetOrCreateDestinationFileAsync(fichier)) != null)
-                        {
-                            FilesToConvertTMP.Add(fichier);
-                            fichier.SetValid(); // <=> fichier.State = "En attente"
-                        }
-                    } //Remplissage de "FilesToConvert"
-
-                    StartConversion();
-                }
-                else MessageBox.Show($"{App.Str("ERR_InvalidDestination")}{Environment.NewLine + Environment.NewLine}{App.Str("ERR_UnauthorizedCharacters")}{Environment.NewLine + Environment.NewLine}{App.Str("ERR_SystemReservedFilenames")}", App.Str("TT_Error"), MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            else Preconversion = false;
-        }
+        private async void ConvertMI(object sender, RoutedEventArgs e) => await LaunchConversion(tasklist.GetSelectedFiles());
 
         private void SkipMI(object sender, RoutedEventArgs e)
         {
@@ -98,7 +73,13 @@ namespace VGMGUI
     {
         private void DeleteMI(object sender, RoutedEventArgs e) => RemoveSelectedItems();
 
-        private void AnalyzeMI(object sender, RoutedEventArgs e) => AnalyzeFiles(GetSelectedFiles().ToArray());
+        private void CopyMI(object sender, RoutedEventArgs e) => CopySelectedFiles();
+
+        private void CutMI(object sender, RoutedEventArgs e) => CutSelectedFiles();
+
+        private void PasteMI(object sender, RoutedEventArgs e) => PasteFiles();
+
+        private void AnalyzeMI(object sender, RoutedEventArgs e) => AnalyzeFiles(GetSelectedFiles());
 
         private void UnCheckMI(object sender, RoutedEventArgs e)
         {

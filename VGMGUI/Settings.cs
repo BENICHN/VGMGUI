@@ -2,13 +2,9 @@
 using IniParser;
 using IniParser.Model;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace VGMGUI
 {
@@ -112,14 +108,14 @@ namespace VGMGUI
 
         public class AdditionalFormats
         {
-            public static bool DKCTFCSMP { get; set; } = true;
+            public static bool DKCTFCSMP { get; set; }
             public static bool Any => DKCTFCSMP;
         }
 
         private static FichierOutData m_defaultOutData;
         private static string s_searchFilter;
         private static bool s_searchCaseSensitive;
-        private static bool s_searchNo;
+        private static bool s_searchRegex;
         private static FileListColumn s_searchColumn;
         private static int s_searchDelay = 250;
         private static bool s_preAnalyse = true;
@@ -193,13 +189,13 @@ namespace VGMGUI
         /// <summary>
         /// Indique si la recherche doit respecter la case.
         /// </summary>
-        public static bool SearchNo
+        public static bool SearchRegex
         {
-            get => s_searchNo;
+            get => s_searchRegex;
             set
             {
-                s_searchNo = value;
-                StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("SearchNo"));
+                s_searchRegex = value;
+                StaticPropertyChanged?.Invoke(null, new PropertyChangedEventArgs("SearchRegex"));
             }
         }
 

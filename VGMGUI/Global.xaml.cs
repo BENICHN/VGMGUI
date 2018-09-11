@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using System.Windows;
-using BenLib;
-using BenLib.WPF;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Clipboard = System.Windows.Forms.Clipboard;
 
 namespace VGMGUI
 {
@@ -40,10 +35,14 @@ namespace VGMGUI
 
         private void ContextMenu_Opened(object sender, RoutedEventArgs e)
         {
-            if (sender is ContextMenu contextMenu && contextMenu.PlacementTarget is ListViewItem item && ItemsControl.ItemsControlFromItemContainer(item) is ListView listView)
+            if (sender is ContextMenu ctxtMenu && ctxtMenu.PlacementTarget is ListView lstView && lstView.Parent is Grid grd && grd.Parent is FileList flList) F_PasteMI.IsEnabled = flList.CanAdd && Clipboard.GetData("FichierCollection") is Fichier[] array && array.Length > 0;
+            if (sender is ContextMenu contextMenu && contextMenu.PlacementTarget is ListViewItem item && ItemsControl.ItemsControlFromItemContainer(item) is ListView listView && listView.Parent is Grid grid && grid.Parent is FileList fileList)
             {
+                CutMI.IsEnabled = fileList.CanRemove;
+                PasteMI.IsEnabled = fileList.CanAdd && Clipboard.GetData("FichierCollection") is Fichier[] array && array.Length > 0;
+
                 var selectedItems = listView.SelectedItems.OfType<Fichier>();
-                contextMenu.Items.FindCollectionItem<MenuItem>("SkipMI").IsEnabled = !selectedItems.All(fichier => !fichier.IsCancellable);
+                SkipMI.IsEnabled = selectedItems.Any(fichier => fichier.IsCancellable);
             }
         }
     }

@@ -130,7 +130,7 @@
                             <StackPanel Name="LoopCountSP" HorizontalAlignment="Left" Height="25" Orientation="Horizontal" Margin="5,0,0,0">
                                 <ContentPresenter Content="{DynamicResource Repeat}"/>
                                 <Label Name="LoopCountLabel" Content="{Binding Path=(local:Settings.DefaultOutDataLoopCount), UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0"/>
-                                <benlib:SwitchableTextBox x:Name="LoopCountBox" ContentType="UnsignedIntegrer" CancelWhenEmpty="True" Height="20" LostFocus="SwitchableTextBox_LostFocus"/>
+                                <benlib:SwitchableTextBox x:Name="LoopCountBox" ContentType="UnsignedInteger" CancelWhenEmpty="True" Height="20" LostFocus="SwitchableTextBox_LostFocus"/>
                                 <CheckBox Name="StartEndLoopCheckBox" Content="{DynamicResource MW_StartEndLoop}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5,0,0,0" Checked="CheckBox_CheckedUnchecked" Unchecked="CheckBox_CheckedUnchecked"/>
                             </StackPanel>
                             <GroupBox HorizontalAlignment="Left" Height="80" MinWidth="250" Margin="5,5,0,5" Padding="0,0,2,0">
@@ -188,15 +188,21 @@
             </ComboBox>
         </DockPanel>
         <Grid Grid.Row="1" Height="65" VerticalAlignment="Top">
-        <TextBlock VerticalAlignment="Top" HorizontalAlignment="Right" Text="\" FontSize="18" Foreground="{StaticResource TextBrush}" Margin="0,4,501,0" Grid.Row="1" FontFamily="Segoe UI SemiLight"/>
-        <TextBox Name="MainDestTB" Height="25" VerticalAlignment="Top" HorizontalAlignment="Right" Width="280" Text="Converted" benlib:TypedTextBox.ForbiddenStrings="{x:Static local:App.InvalidFileNameChars}" Margin="0,5,215,0" Grid.Row="1"/>
-        <Button x:Name="StartButton" Grid.Row="1" Content="{DynamicResource MW_StartConversion}" Margin="0,0,5,5" Height="55" VerticalAlignment="Bottom" Click="StartButton_Click" HorizontalAlignment="Right" Width="205" ToolTip="{DynamicResource MW_StartConversionToolTip}"/>
-        <ProgressBar Name="MainProgress" Margin="5,0,215,5" Grid.Row="1" Height="25" VerticalAlignment="Bottom" Maximum="100"/>
+            <TextBlock VerticalAlignment="Top" HorizontalAlignment="Right" Text="\" FontSize="18" Foreground="{StaticResource TextBrush}" Margin="0,4,501,0" FontFamily="Segoe UI SemiLight"/>
+            <TextBox Name="MainDestTB" Height="25" VerticalAlignment="Top" HorizontalAlignment="Right" Width="280" Text="Converted" benlib:TypedTextBox.ForbiddenStrings="{x:Static local:App.InvalidFileNameChars}" Margin="0,5,215,0" Grid.Row="1"/>
+            <Button x:Name="StartButton" Content="{DynamicResource MW_StartConversion}" Margin="0,0,5,5" Height="55" VerticalAlignment="Bottom" Click="StartButton_Click" HorizontalAlignment="Right" Width="205" ToolTip="{DynamicResource MW_StartConversionToolTip}"/>
+            <ProgressBar Name="MainProgress" Margin="5,0,215,5" Height="25" VerticalAlignment="Bottom" Maximum="100"/>
         </Grid>
         <StatusBar Name="statusBar" Height="25" Grid.Row="1" VerticalAlignment="Bottom" Visibility="{Binding Path=(local:StatusBar.Display), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" IsVisibleChanged="statusBar_IsVisibleChanged">
             <!--================================================== Counter ==================================================-->
             <Ellipse Margin="1,0,0,-1" Width="6" Height="6" Fill="{StaticResource StatusBarIconBrush}" Visibility="{Binding Path=(local:StatusBar.Counter), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
             <Label Name="listCountLabel" Margin="-3,0,0,0"  Visibility="{Binding Path=(local:StatusBar.Counter), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+            <!--================================================== Conversion ==================================================-->
+            <Separator Visibility="{Binding Path=(local:StatusBar.Conversion), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+            <ContentControl Name="ConversionIcon" Content="{DynamicResource Conversion}" Visibility="{Binding Path=(local:StatusBar.Conversion), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+            <Label Content="{DynamicResource ST_Conversion}" Visibility="{Binding Path=(local:StatusBar.Conversion), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+            <Label Name="conversionInfosLabel" Content="{DynamicResource ST_Pending}" Visibility="{Binding Path=(local:StatusBar.Conversion), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
+            <Label Name="conversionErrorsLabel" Foreground="{DynamicResource ErrorBrush}" Visibility="{Binding Path=(local:StatusBar.Conversion), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}"/>
             <!--=============================================================================================================-->
             <DockPanel HorizontalAlignment="Right" Margin="0,-3">
                 <!--================================================== StreamingType ==================================================-->
@@ -214,7 +220,7 @@
                 <CheckBox Name="PreAnalyseCB" Margin="5,0,0,0" Width="13" VerticalAlignment="Center" ToolTip="{DynamicResource STGS_PreAnalyse}"  Visibility="{Binding Path=(local:StatusBar.PreAnalyse), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" IsChecked="{Binding Path=(local:Settings.PreAnalyse), UpdateSourceTrigger=PropertyChanged}"/>
                 <!--================================================== SearchDelay ==================================================-->
                 <ContentControl Margin="7,0,0,0" Content="{DynamicResource Search}"  Visibility="{Binding Path=(local:StatusBar.SearchDelay), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" ToolTip="{DynamicResource STGS_SearchDelay0}"/>
-                <benlib:SwitchableTextBox Margin="0,-1,0,0" Name="SearchDelaySTBox"  Visibility="{Binding Path=(local:StatusBar.SearchDelay), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" CancelWhenEmpty="True" ContentType="UnsignedIntegrer" FinalText="{Binding Path=(local:Settings.SearchDelayString), Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="{DynamicResource STGS_SearchDelay0}"/>
+                <benlib:SwitchableTextBox Margin="0,-1,0,0" Name="SearchDelaySTBox"  Visibility="{Binding Path=(local:StatusBar.SearchDelay), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" CancelWhenEmpty="True" ContentType="UnsignedInteger" FinalText="{Binding Path=(local:Settings.SearchDelayString), Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="{DynamicResource STGS_SearchDelay0}"/>
                 <!--================================================== SamplesDisplay ==================================================-->
                 <Button Margin="1,0,0,0" Style="{StaticResource StatusBarButton}" Name="samplesDisplayButton" ToolTip="{DynamicResource STGS_SPLDSP}"  Visibility="{Binding Path=(local:StatusBar.SamplesDisplay), Converter={x:Static local:StatusBar.BoolToVisibilityConverter}, UpdateSourceTrigger=PropertyChanged}" Click="SamplesDisplayButton_Click">
                     <StackPanel Orientation="Horizontal">
@@ -230,6 +236,7 @@
             <StatusBar.ContextMenu>
                 <ContextMenu Name="StatusBarCM">
                     <MenuItem Header="{DynamicResource STGS_STSBAR_Count}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.Counter), UpdateSourceTrigger=PropertyChanged}"/>
+                    <MenuItem Header="{DynamicResource STGS_STSBAR_Conversion}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.Conversion), UpdateSourceTrigger=PropertyChanged}"/>
                     <MenuItem Header="{DynamicResource STGS_STSBAR_StreamingType}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.StreamingType), UpdateSourceTrigger=PropertyChanged}"/>
                     <MenuItem Header="{DynamicResource ST_Size}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.Size), UpdateSourceTrigger=PropertyChanged}"/>
                     <MenuItem Header="{DynamicResource STGS_PreAnalyse}" IsCheckable="True" IsChecked="{Binding Path=(local:StatusBar.PreAnalyse), UpdateSourceTrigger=PropertyChanged}"/>
