@@ -1,5 +1,7 @@
 ﻿# VGMGUI
-A graphic interface of vgmstream
+A graphic interface for vgmstream.
+
+:warning: Once vgmgui has downloaded vgmstream, you'll have to rename the file "vgmstream-cli.exe" to "test.exe" in the "vgmstream" folder.
 
 ![Main interface](https://raw.githubusercontent.com/BenNatNB/VGMGUI/master/VGMGUI/Documentation/EN/VGMGUI.png)
 
